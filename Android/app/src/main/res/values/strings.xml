@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name"> Team Zero Application </string>
-    <string name="centered_message"> Just a basic blank layout so far! </string>
+    <string name="app_name"> Team Zero Chat </string>
+    <string name="basic_message"> This is just a basic layout screen! </string>
 </resources>
