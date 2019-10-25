@@ -1,4 +1,14 @@
 <resources>
-    <string name="app_name"> Team Zero Chat </string>
-    <string name="basic_message"> Testing a simple Hello World here! </string>
+    <string name="app_name_text"> Team Zero Chat </string>
+    <string name="welcome_title_text"> Welcome to Team Zero Mobile App! </string>
+    <string name="enter_username_text"> Username </string>
+    <string name="enter_password_text"> Password </string>
+    <string name="confirm_password_text"> Confirm Password </string>
+    <string name="email_text"> E-Mail Address </string>
+    <string name="confirm_email_text"> Confirm E-Mail Address </string>
+    <string name="keep_me_signed_in_text"> Keep me signed in </string>
+    <string name="login_text"> Login </string>
+    <string name="register_text"> Register </string>
+    <string name="click_to_register_text"> Not a user yet? Click below to register </string>
+    <string name="registration_text"> Please fill the information below correctly </string>
 </resources>
