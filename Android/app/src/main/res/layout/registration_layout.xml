@@ -30,8 +30,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textViewRegistration"
-        app:layout_constraintVertical_bias="0.200" />
+        app:layout_constraintTop_toBottomOf="@id/textViewRegistration"
+        app:layout_constraintVertical_bias="0.150" />
 
     <EditText
         android:id="@+id/editTextPwd"
@@ -43,8 +43,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextUsername"
-        app:layout_constraintVertical_bias="0.150" />
+        app:layout_constraintTop_toBottomOf="@id/editTextUsername"
+        app:layout_constraintVertical_bias="0.050" />
 
     <EditText
         android:id="@+id/editTextConfirmPwd"
@@ -56,8 +56,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextPwd"
-        app:layout_constraintVertical_bias="0.100" />
+        app:layout_constraintTop_toBottomOf="@id/editTextPwd"
+        app:layout_constraintVertical_bias="0.050" />
 
     <EditText
         android:id="@+id/editTextEmail"
@@ -69,8 +69,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextConfirmPwd"
-        app:layout_constraintVertical_bias="0.150" />
+        app:layout_constraintTop_toBottomOf="@id/editTextConfirmPwd"
+        app:layout_constraintVertical_bias="0.050" />
 
     <EditText
         android:id="@+id/editTextConfirmEmail"
@@ -82,8 +82,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextEmail"
-        app:layout_constraintVertical_bias="0.150" />
+        app:layout_constraintTop_toBottomOf="@id/editTextEmail"
+        app:layout_constraintVertical_bias="0.050" />
 
     <Button
         android:id="@+id/submit_registration"
@@ -93,7 +93,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextConfirmEmail"
+        app:layout_constraintTop_toBottomOf="@id/editTextConfirmEmail"
         app:layout_constraintVertical_bias="0.300" />
 
 
