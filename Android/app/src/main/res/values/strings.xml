@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name"> Team Zero Chat </string>
-    <string name="basic_message"> This is just a basic layout screen! </string>
+    <string name="basic_message"> Testing a simple Hello World here! </string>
 </resources>
