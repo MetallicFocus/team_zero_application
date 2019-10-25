@@ -3,6 +3,9 @@
     <string name="welcome_title_text"> Welcome to Team Zero Mobile App! </string>
     <string name="enter_username_text"> Username </string>
     <string name="enter_password_text"> Password </string>
+    <string name="confirm_password_text"> Confirm Password </string>
+    <string name="email_text"> E-Mail Address </string>
+    <string name="confirm_email_text"> Confirm E-Mail Address </string>
     <string name="keep_me_signed_in_text"> Keep me signed in </string>
     <string name="login_text"> Login </string>
     <string name="register_text"> Register </string>
