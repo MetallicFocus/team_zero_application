@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".Registration">
 
     <TextView
-        android:id="@+id/title"
+        android:id="@+id/textViewRegistration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/welcome_title_text"
+        android:text="@string/registration_text"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -29,8 +30,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/title"
-        app:layout_constraintVertical_bias="0.200" />
+        app:layout_constraintTop_toBottomOf="@id/textViewRegistration"
+        app:layout_constraintVertical_bias="0.150" />
 
     <EditText
         android:id="@+id/editTextPwd"
@@ -42,52 +43,58 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextUsername"
-        app:layout_constraintVertical_bias="0.150" />
+        app:layout_constraintTop_toBottomOf="@id/editTextUsername"
+        app:layout_constraintVertical_bias="0.050" />
 
-    <CheckBox
-        android:id="@+id/checkBoxKeepSignedIn"
+    <EditText
+        android:id="@+id/editTextConfirmPwd"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/keep_me_signed_in_text"
+        android:ems="10"
+        android:inputType="textPassword"
+        android:hint="@string/confirm_password_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/editTextPwd"
-        app:layout_constraintVertical_bias="0.200" />
+        app:layout_constraintTop_toBottomOf="@id/editTextPwd"
+        app:layout_constraintVertical_bias="0.050" />
+
+    <EditText
+        android:id="@+id/editTextEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textEmailAddress"
+        android:hint="@string/email_text"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editTextConfirmPwd"
+        app:layout_constraintVertical_bias="0.050" />
+
+    <EditText
+        android:id="@+id/editTextConfirmEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textEmailAddress"
+        android:hint="@string/confirm_email_text"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editTextEmail"
+        app:layout_constraintVertical_bias="0.050" />
 
     <Button
-        android:id="@+id/login"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/login_text"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/checkBoxKeepSignedIn"
-        app:layout_constraintVertical_bias="0.300" />
-
-    <TextView
-        android:id="@+id/textViewClickToRegister"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/click_to_register_text"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/login"
-        app:layout_constraintVertical_bias="0.400" />
-
-    <Button
-        android:id="@+id/register"
+        android:id="@+id/submit_registration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/register_text"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textViewClickToRegister"
+        app:layout_constraintTop_toBottomOf="@id/editTextConfirmEmail"
         app:layout_constraintVertical_bias="0.300" />
+
 
 </android.support.constraint.ConstraintLayout>
