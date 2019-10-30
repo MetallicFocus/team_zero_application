@@ -15,9 +15,9 @@ public class Registration extends AppCompatActivity {
         1) Methods to check if username is:
          1') valid [X]
          2') available  []
-        2) Method that checks if both e-mails are the same AND in a correct format  []
+        2) Method that checks if both e-mails are the same AND in a correct format  [X]
         3) Method that checks if both passwords are the same AND strong enough      [X]
-        4) Protect against SQL Injection                                            []
+        4) Protect against SQL Injection                                            [X]
         5) Method that passes the information to the server to store in database    []
             5') Give the user a message stating that he should check his e-mail to confirm the account  []
                 and go back to the login screen                                     []
@@ -48,13 +48,13 @@ public class Registration extends AppCompatActivity {
 
         if(validateUsername(username)) {
             // Check if username is available to register
-            //checkUsernameAvailability(username);
+            checkUsernameAvailability(username);
 
             // Check if passwords are valid and if both are the same
             validatePasswords(password, confirmPassword);
 
             // Check if e-mails are valid and if both are the same
-            //validateEmails(email, confirmEmail);
+            validateEmails(email, confirmEmail);
         }
     }
 
@@ -81,8 +81,11 @@ public class Registration extends AppCompatActivity {
         return true;
     }
 
-    public void checkUsernameAvailability(String username) {
+    // TODO: Method that checks availability of username from database (fetch information)
+    public boolean checkUsernameAvailability(String username) {
         /* Check database for the availability of chosen username */
+
+        return true;
     }
 
     public boolean validatePasswords(String password, String confirmPassword) {
@@ -130,14 +133,40 @@ public class Registration extends AppCompatActivity {
         return true;
     }
 
-    public void validateEmails(String email, String confirmEmail) {
+    // TODO: Make this method RFC822 compliant? (http://www.ex-parrot.com/~pdw/Mail-RFC822-Address/Mail-RFC822-Address.html)
+    public boolean validateEmails(String email, String confirmEmail) {
         /* Check if:
-            1) E-mail contains '@' character
+            1) E-mail contains only one '@' character
             2) E-mail contains at least a dot ('.')
-           Make this method RFC822 compliant?
-           http://www.ex-parrot.com/~pdw/Mail-RFC822-Address/Mail-RFC822-Address.html
+            3) E-mail contains between 2 and 6 characters after a dot ('.')
          */
 
+        try {
+            boolean valid = (email != null) && email.matches("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}");
+
+            if (!valid) {
+                Toast.makeText(getApplicationContext(), "Invalid email format!\n" +
+                        "Please type in your email again", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+        } catch (PatternSyntaxException ex) {
+            // Invalid regex
+            ex.printStackTrace();
+            return false;
+        }
+
+        // Check if emails are the same
+        try {
+            if(!email.equals(confirmEmail)) {
+                Toast.makeText(getApplicationContext(), "Confirmed email is not identical!\nPlease type in your email again!", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        } catch(NullPointerException ex1) {
+            ex1.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
     public String filterForSQLInjection(String text) {
@@ -156,6 +185,7 @@ public class Registration extends AppCompatActivity {
         return newText;
     }
 
+    // TODO
     public void sendDataToDB(String username, String password, String email) {
         /* Method that delivers information to store in database
         *
