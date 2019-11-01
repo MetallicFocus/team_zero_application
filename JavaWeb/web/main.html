@@ -13,34 +13,78 @@
 			<el-container id="main-panel">
 				<el-aside id="left-panel">
 					<el-header id="self-info">
-						<el-avatar class="avatar" :src="self.url" style="margin-top: 5px;"></el-avatar>
+						<el-avatar class="avatar" :src="self.avatar" style="margin-top: 5px;"></el-avatar>
 						<label style="font-size: 30px">{{self.name}}</label>
 					</el-header>
 					<el-header id="search-bar">
-						<el-input placeholder="search for chat or history" style="width: 195px;"></el-input>
+						<el-input v-model="search" placeholder="search for chat or history" style="width: 195px;"></el-input>
 						<el-button type="primary" icon="el-icon-search"></el-button>
 					</el-header>
-					<el-main id="contact-panel">
+					<el-main id="chat-list-panel">
 						<div class="chat">
-							<el-avatar></el-avatar>
+							<el-row>
+								<el-col :span="6"><el-avatar class="avatar" :src="chats.chat1.avatar"></el-avatar></el-col>
+								<el-col :span="18">
+									<el-row style="margin-top: 3px;">
+										<el-col :span="18"><label class="name">{{chats.chat1.name}}</label></el-col>
+										<el-col :span="6"><label class="last-chat-time">{{chats.chat1.time}}</label></el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24"><label class="last-chat-content">{{chats.chat1.content}}</label></el-col>
+									</el-row>
+								</el-col>
+							</el-row>							
 						</div>
+						<div class="chat">
+							<el-row>
+								<el-col :span="6"><el-avatar class="avatar" :src="chats.chat2.avatar"></el-avatar></el-col>
+								<el-col :span="18">
+									<el-row style="margin-top: 3px;">
+										<el-col :span="18"><label class="name">{{chats.chat2.name}}</label></el-col>
+										<el-col :span="6"><label class="last-chat-time">{{chats.chat2.time}}</label></el-col>
+									</el-row>
+									<el-row>
+										<el-col :span="24"><label class="last-chat-content">{{chats.chat2.content}}</label></el-col>
+									</el-row>
+								</el-col>
+							</el-row>							
+						</div>						
 					</el-main>
 				</el-aside>
 				<el-container id="right-panel">
 					<el-header id="object-info">
-						<el-avatar class="avatar" :src="object.url" style="margin-top: 5px;"></el-avatar>
+						<el-avatar class="avatar" :src="object.avatar" style="margin-top: 5px;"></el-avatar>
 						<label style="font-size: 30px">{{object.name}}</label>
 					</el-header>
 					<el-main id="chatting-panel">
-						<div class="message">
-							
+						<div class="message-from-object">
+							<el-row>
+								<el-col :span="1" style="margin-right: 10px; margin-top: 2px;"><el-avatar :src="object.avatar"></el-avatar></el-col>
+								<el-col :span="10">
+									<el-card shadow="always">
+										<label>where have u been</label>
+										<label style="font-size: 12px; float: right;">23:55</label>
+									</el-card>
+								</el-col>							
+							</el-row>
 						</div>
-						<div class="message">
-							
+						<div class="message-from-self">
+							<el-row>
+								<el-col :span="10" :offset="12">
+									<el-card shadow="always">
+										<label style="width: 50px;">I was comin' for you.</label>
+										<label style="font-size: 12px; float: right; margin-top: 10px;">23:56</label>
+									</el-card>
+								</el-col>							
+								<el-col :span="1" style="margin-left: 10px; margin-top: 2px;"><el-avatar :src="self.avatar"></el-avatar></el-col>								
+							</el-row>
 						</div>
 					</el-main>
-					<el-footer id="text-panel">
-						
+					<el-footer id="text-panel">.
+						<el-row>
+							<el-col :span="22"><el-input v-model="textfield" style="margin-left: 5px;"></el-input></el-col>
+							<el-col :span="1"><el-button type="primary" icon="el-icon-check" style="margin-left: 15px;"></el-button></el-col>
+						</el-row>						
 					</el-footer>
 				</el-container>
 			</el-container>
@@ -53,13 +97,29 @@
 	      data: function() {
 	        return {
 				self: {
-					url: "./img/Joker.jpg",
+					avatar: "./img/Joker.jpg",
 					name: "Joker"
 				},
 				object: {
-					url: "./img/Harley.png",
+					avatar: "./img/Harley.png",
 					name: "Harley"
-				}
+				},
+				search: "",
+				chats: {
+					chat1: {
+						avatar: "",
+						name: "Team Zero",
+						time: "23:56",
+						content: "Nobody: Hello World!"
+					},
+					chat2: {
+						avatar: "./img/Harley.png",
+						name: "Harley",
+						time: "0:26",
+						content: "Me: I was comin' for you."
+					}
+				},
+				textfield: ""
 			}
 	      },
 		  methods: {
@@ -76,8 +136,9 @@
 		background-color: #E1F3D8;
 	  }
 	  
-	  #contact-panel {
+	  #chat-list-panel {
 		height: 480px;
+		overflow: auto;
 	  }
 	  
 	  #object-info {
@@ -93,8 +154,34 @@
 	  }
 	  
 	  .chat {
-		height: 100px;
-		background-color: #82DCD0;
+		height: 50px;
+		background-color: #ABE8E0;
+		margin-top: 2px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+	  }
+	  
+	  .chat:hover {
+		background-color: #97E2D8;
+	  }
+	  
+	  .chat .avatar {
+		width: 40px; 
+		height: 40px; 
+		border-radius: 20px;
+		margin: 5px 12px;
+	  }
+	  
+	  .chat .name {
+		font-weight: 600;
+	  }
+	  
+	  .chat .last-chat-time {
+		text-align: right;
+	  }
+	  
+	  .chat .last-chat-content {
+		line-height: 30px;
 	  }
 	  
 	  .avatar {
@@ -105,45 +192,26 @@
 	  
 	  .el-header {
 	    background-color: #2EC5B1;
-	    color: #333;
 	    text-align: left;
 	    line-height: 60px;
 	  }
 	  
 	  .el-footer {
 	    background-color: #F4F4F5;
-	    color: #333;
-	    text-align: center;
-	    line-height: 60px;
 	  }
 	  
 	  .el-aside {
 	    background-color: #ABE8E0;
-	    color: #333;
-	    text-align: center;
-	    line-height: 200px;
 	  }
 	  
 	  .el-main {
-	    background-color: #F2F8FE;
-	    color: #333;
-	    text-align: center;
-	    line-height: 160px;
+	    background-color: #EEFAF9;
 	  }
 	  
 	  .el-container {
 		height: 600px;
 		width: 1300px;
 	    margin-bottom: 40px;
-	  }
-	  
-	  .el-container:nth-child(5) .el-aside,
-	  .el-container:nth-child(6) .el-aside {
-	    line-height: 260px;
-	  }
-	  
-	  .el-container:nth-child(7) .el-aside {
-	    line-height: 320px;
 	  }
 	</style>
 </html>
