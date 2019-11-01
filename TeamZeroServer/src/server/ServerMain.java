@@ -121,8 +121,7 @@ public class ServerMain extends WebSocketServer {
 			}
 			else if (msgType == CASE_REGISTER) {
 				// TODO securely save passwords for authentication in future
-				
-				
+		
 			}
 			else if (msgType == CASE_TEXT_MESSAGE) {
 				sendClientText(websocket, json);
