@@ -4,6 +4,13 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+/**
+ * Unit test file for:
+ * 1) Username validation
+ * 2) Password validation
+ * 3) Email validation
+ */
+
 public class RegistrationUnitTests {
     @Test
     public void usernameIsValid() {
