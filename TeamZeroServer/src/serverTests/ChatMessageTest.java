@@ -3,7 +3,7 @@ import server.ChatMessage;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONString;
+
 
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ class ChatMessageTest {
 								+ recipient + "\",\"message\":\"" 
 								+ message + "\"}");
 		
-		ChatMessage msg = new ChatMessage(sender, recipient, message);
+		ChatMessage msg = new ChatMessage(sender, recipient, message, null);
 		
 			JSONObject json = msg.toJson();
 			Assert.assertEquals(expectedResult, json);
@@ -31,9 +31,6 @@ class ChatMessageTest {
 			e.printStackTrace();
 		}
 		
-		
-		
 	}
-	
 
 }
