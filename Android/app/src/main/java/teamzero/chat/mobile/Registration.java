@@ -1,9 +1,11 @@
 package teamzero.chat.mobile;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -19,8 +21,6 @@ public class Registration extends AppCompatActivity {
         3) Method that checks if both passwords are the same AND strong enough      [X]
         4) Protect against SQL Injection                                            [X]
         5) Method that passes the information to the server to store in database    []
-            5') Give the user a message stating that he should check his e-mail to confirm the account  []
-                and go back to the login screen                                     []
 
      */
 
@@ -46,15 +46,12 @@ public class Registration extends AppCompatActivity {
         System.out.println("username = " + username + "\n pwd = " + password + "\n conPwd = " + confirmPassword);
         System.out.println("email = " + email + "\n confirmEmail = " + confirmEmail);
 
-        if(validateUsername(username)) {
-            // Check if username is available to register
-            checkUsernameAvailability(username);
+        if(validateUsername(username) &&
+                checkUsernameAvailability(username) &&              // Check if username is available to register
+                validatePasswords(password, confirmPassword) &&     // Check if passwords are valid and if both are the same
+                validateEmails(email, confirmEmail)) {              // Check if e-mails are valid and if both are the same
 
-            // Check if passwords are valid and if both are the same
-            validatePasswords(password, confirmPassword);
-
-            // Check if e-mails are valid and if both are the same
-            validateEmails(email, confirmEmail);
+            sendDataToServer(username, password, email);
         }
     }
 
@@ -185,14 +182,25 @@ public class Registration extends AppCompatActivity {
         return newText;
     }
 
-    // TODO
-    public void sendDataToDB(String username, String password, String email) {
+    public void sendDataToServer(String username, String password, String email) {
         /* Method that delivers information to store in database
         *
         * To Think: Use PreparedStatement to make SQL Injection impossible by placing the data
         * directly inside the database (not affecting the INSERT statement in any way)
         *
         * */
+
+        // TODO: Send the information in JSON format to server and get into account
+        // Just for demo to go to the chat list screen:
+        Button registerButton = findViewById(R.id.submit_registration);
+
+        registerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(Registration.this, ChatList.class));
+            }
+        });
+        // End of demo area
     }
 
 }
