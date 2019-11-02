@@ -48,6 +48,7 @@ public class ServerMain extends WebSocketServer {
 	
 	private static final String JSON_KEY_RECIPIENT = "recipient";
 	
+	private static final String JSON_KEY_EMAIL = "email";
 	
 	/**
 	 * A hashmap of Connections to the client IDs of the clients they connect to
@@ -120,8 +121,12 @@ public class ServerMain extends WebSocketServer {
 				
 			}
 			else if (msgType == CASE_REGISTER) {
-				// TODO securely save passwords for authentication in future
-		
+				// TODO save pictures
+				String userName = json.getString(JSON_KEY_USERNAME);
+				String password = json.getString(JSON_KEY_PASSWORD);
+				String email = json.getString(JSON_KEY_EMAIL);
+				DbConnection dbConnection = new DbConnection();
+				dbConnection.addUser(userName, password, email);
 			}
 			else if (msgType == CASE_TEXT_MESSAGE) {
 				sendClientText(websocket, json);
