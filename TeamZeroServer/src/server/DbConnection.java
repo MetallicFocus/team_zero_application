@@ -5,6 +5,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -45,17 +47,32 @@ public class DbConnection {
 	public void addUser(String userName, String password, String email) {
 		DbConnection dbConnection = new DbConnection();
 		Connection conn = dbConnection.connect();
+		PreparedStatement ps;
 		try {
 			Statement stmt = conn.createStatement();
-			String sql = "INSERT INTO USERS (username,password,email) " + "VALUES ('" + userName + "', '" + getMd5(password)
-					+ "', '" + email + "');";
-			stmt.executeUpdate(sql);
+			String check = "SELECT * FROM USERS WHERE username = '" + userName + "' OR email = '" + email + "';";
+			ps = conn.prepareStatement(check);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				String existingUser = rs.getString("username");
+				String existingEmail = rs.getString("email");
+				// TODO: Send errors to frontend
+				if (existingUser.equals(userName)) {
+					System.out.println("Username already exists");
+				} else if (existingEmail.equals(email)) {
+					System.out.println("Email already exists");
+				}
+			} else {
+				String sql = "INSERT INTO USERS (username,password,email) " + "VALUES ('" + userName + "', '"
+						+ getMd5(password) + "', '" + email + "');";
+				stmt.executeUpdate(sql);
+				System.out.println("Added user.");
+			}
 			stmt.close();
-			System.out.println("Added user.");
+			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	private String getMd5(String input) {
@@ -68,10 +85,8 @@ public class DbConnection {
 				hashtext = "0" + hashtext;
 			}
 			return hashtext;
-		}
-		catch (NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
 }
