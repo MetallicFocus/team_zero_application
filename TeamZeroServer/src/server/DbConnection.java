@@ -47,11 +47,11 @@ public class DbConnection {
 	public void addUser(String userName, String password, String email) {
 		DbConnection dbConnection = new DbConnection();
 		Connection conn = dbConnection.connect();
-		PreparedStatement ps;
+		PreparedStatement ps = null;
 		try {
-			Statement stmt = conn.createStatement();
-			String check = "SELECT * FROM USERS WHERE username = '" + userName + "' OR email = '" + email + "';";
-			ps = conn.prepareStatement(check);
+			ps=conn.prepareStatement("SELECT * FROM USERS WHERE username = ? OR email = ?;");
+			ps.setString(1, userName);
+			ps.setString(2, email);
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				String existingUser = rs.getString("username");
@@ -63,12 +63,13 @@ public class DbConnection {
 					System.out.println("Email already exists");
 				}
 			} else {
-				String sql = "INSERT INTO USERS (username,password,email) " + "VALUES ('" + userName + "', '"
-						+ getMd5(password) + "', '" + email + "');";
-				stmt.executeUpdate(sql);
+				ps = conn.prepareStatement("INSERT INTO USERS (username,password,email) VALUES (?, ?, ?)");
+				ps.setString(1, userName);
+				ps.setString(2, getMd5(password));
+				ps.setString(3, email);
+				ps.executeUpdate();
 				System.out.println("Added user.");
 			}
-			stmt.close();
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
