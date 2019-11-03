@@ -192,14 +192,8 @@ public class Registration extends AppCompatActivity {
 
         // TODO: Send the information in JSON format to server and get into account
         // Just for demo to go to the chat list screen:
-        Button registerButton = findViewById(R.id.submit_registration);
 
-        registerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(Registration.this, ChatList.class));
-            }
-        });
+        startActivity(new Intent(Registration.this, ChatList.class));
         // End of demo area
     }
 
