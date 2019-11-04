@@ -11,4 +11,5 @@
     <string name="register_text"> Register </string>
     <string name="click_to_register_text"> Not a user yet? Click below to register </string>
     <string name="registration_text"> Please fill the information below correctly </string>
+    <string name="no_chats_found_text"> No chats open so far! </string>
 </resources>
