@@ -2,20 +2,21 @@ package teamzero.chat.mobile;
 
 import android.app.ProgressDialog;
 
-import android.content.Intent;
-
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 
 import android.os.Bundle;
 
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -31,6 +32,13 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+
+/*
+    TODO:   1) Make mock login with welcome message to test out UserDetails population  [X]
+            2) Display more info inside simple_list_item_2			                    [X]
+            3) Create new chat feature                                                  []
+            4) Make search fully functional                                             []
+ */
 
 public class ChatList extends AppCompatActivity {
 
@@ -54,6 +62,9 @@ public class ChatList extends AppCompatActivity {
         pd = new ProgressDialog(ChatList.this);
         pd.setMessage("Loading ...");
         pd.show();
+
+        Snackbar.make(findViewById(R.id.usersList), "Welcome back " + UserDetails.username, Snackbar.LENGTH_SHORT)
+                .setAction("Action", null).show();
 
         // TODO: Change URL to access JSON content from our server
         String url = "https://api.myjson.com/bins/lj6f8";
@@ -148,4 +159,22 @@ public class ChatList extends AppCompatActivity {
 
         pd.dismiss();
     }
+
+    // TODO: Make searching through chats functional
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_layout, menu);
+        /*
+        // Associate searchable configuration with the SearchView
+        SearchManager searchManager =
+                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView =
+                (SearchView) menu.findItem(R.id.search).getActionView();
+        searchView.setSearchableInfo(
+                searchManager.getSearchableInfo(getComponentName()));
+        */
+        return true;
+    }
+
 }

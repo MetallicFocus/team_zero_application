@@ -19,7 +19,13 @@
             </intent-filter>
         </activity>
         <activity android:name=".Registration"> </activity>
-        <activity android:name=".ChatList"> </activity>
+        <activity android:name=".ChatList">
+            <meta-data android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
