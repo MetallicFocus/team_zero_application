@@ -1,4 +1,6 @@
 package server;
+import java.util.Date;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -10,6 +12,7 @@ public class ChatMessage {
 	
 
 	private String senderUsername;
+	private Date timeSent;
 	
 	private String recipientUsername;
 	
@@ -22,10 +25,11 @@ public class ChatMessage {
 	 * @param recipientUsername user name of the recipient 
 	 * @param message
 	 */
-	public ChatMessage(String senderUsername, String recipientUsername, String message){
+	public ChatMessage(String senderUsername, String recipientUsername, String message, Date timeSent){
 		this.senderUsername = senderUsername;
 		this.recipientUsername = recipientUsername;
 		this.message = message;
+		this.setTimeSent(timeSent);
 	}
 
 	public String getMessage() {
@@ -65,6 +69,14 @@ public class ChatMessage {
 		json.append("message", message);
 		return json;
 		
+	}
+
+	public Date getTimeSent() {
+		return timeSent;
+	}
+
+	public void setTimeSent(Date timeSent) {
+		this.timeSent = timeSent;
 	}
 	
 	
