@@ -13,4 +13,8 @@
     <string name="registration_text"> Please fill the information below correctly </string>
     <string name="no_chats_found_text"> No chats open so far! </string>
     <string name="search_text"> Search chat </string>
+    <string name="send_msg_text"> SEND </string>
+    <string name="message_box_hint_text"> Type your message </string>
+    <string name="search_users_hint_text"> Type username to start a new chat with </string>
+    <string name="search_users_suggestive_text"> Type in the box down below to search for a user to chat with </string>
 </resources>

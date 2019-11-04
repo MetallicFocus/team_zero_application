@@ -2,6 +2,7 @@ package teamzero.chat.mobile;
 
 import android.app.ProgressDialog;
 
+import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -36,7 +37,7 @@ import java.util.Iterator;
 /*
     TODO:   1) Make mock login with welcome message to test out UserDetails population  [X]
             2) Display more info inside simple_list_item_2			                    [X]
-            3) Create new chat feature                                                  []
+            3) Create new chat feature                                                  [X]
             4) Make search fully functional                                             []
  */
 
@@ -88,10 +89,11 @@ public class ChatList extends AppCompatActivity {
         usersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 UserDetails.chatWith = chatList.get(position).get("username");
-                Snackbar.make(view, "Currently Under Development . . . Chat with " + UserDetails.chatWith, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+
                 // TODO: Start Activity --> Goto chat page with X person
+                startActivity(new Intent(ChatList.this, Chat.class));
             }
         });
 
@@ -99,9 +101,7 @@ public class ChatList extends AppCompatActivity {
         newChatBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Currently Under Development . . . New Chat Feature", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                // TODO: Start Activity --> Goto new chat page
+                startActivity(new Intent(ChatList.this, NewChat.class));
             }
         });
     }
