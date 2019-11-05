@@ -8,7 +8,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * A class to connect to and perform queries on the database
@@ -36,20 +35,12 @@ public class DbConnection {
 		return conn;
 	}
 
-	/**
-	 * @param args the command line arguments
-	 */
-	public static void main(String[] args) {
-		DbConnection dbConnection = new DbConnection();
-		dbConnection.connect();
-	}
-
 	public void addUser(String userName, String password, String email) {
 		DbConnection dbConnection = new DbConnection();
 		Connection conn = dbConnection.connect();
 		PreparedStatement ps = null;
 		try {
-			ps=conn.prepareStatement("SELECT * FROM USERS WHERE username = ? OR email = ?;");
+			ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? OR email = ?;");
 			ps.setString(1, userName);
 			ps.setString(2, email);
 			ResultSet rs = ps.executeQuery();
@@ -70,6 +61,22 @@ public class DbConnection {
 				ps.executeUpdate();
 				System.out.println("Added user.");
 			}
+			ps.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void deleteUser(String userName, String password) {
+		DbConnection dbConnection = new DbConnection();
+		Connection conn = dbConnection.connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("DELETE FROM USERS WHERE username = ? AND password = ?;");
+			ps.setString(1, userName);
+			ps.setString(2, getMd5(password));
+			ps.executeUpdate();
+			System.out.println("Deleted user.");
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();

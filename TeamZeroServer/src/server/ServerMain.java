@@ -128,7 +128,7 @@ public class ServerMain extends WebSocketServer {
 				// TODO check username/passwords match existing
 				
 			}
-			else if (msgType == CASE_REGISTER) {
+			else if (msgType.equals(CASE_REGISTER)) {
 				// TODO save pictures
 				String userName = json.getString(JSON_KEY_USERNAME);
 				String password = json.getString(JSON_KEY_PASSWORD);
@@ -136,14 +136,17 @@ public class ServerMain extends WebSocketServer {
 				DbConnection dbConnection = new DbConnection();
 				dbConnection.addUser(userName, password, email);
 			}
-			else if (msgType == CASE_TEXT_MESSAGE) {
+			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
 				sendClientText(websocket, json);
 				
 			}
-			else if (msgType == CASE_UNREGISTER) {
-				// TODO unregister client
+			else if (msgType.equals(CASE_UNREGISTER)) {
+				String userName = json.getString(JSON_KEY_USERNAME);
+				String password = json.getString(JSON_KEY_PASSWORD);
+				DbConnection dbConnection = new DbConnection();
+				dbConnection.deleteUser(userName, password);
 			}
-			else if (msgType == CASE_EDIT_PROFILE) {
+			else if (msgType.equals(CASE_EDIT_PROFILE)) {
 				// TODO edit profile
 			}
 			else {
