@@ -32,8 +32,10 @@ public class UserServiceImpl implements UserService {
     public String signIn(String identifier, String pwd) {
         if (identifier.contains("@")) {
             /* Todo: Get connection with server by user email. */
+            System.out.println("Test info: Email!");
         } else {
             /* Todo: Get connection with server by user name. */
+            System.out.println("Test info: User name!");
         }
         return null;
     }
