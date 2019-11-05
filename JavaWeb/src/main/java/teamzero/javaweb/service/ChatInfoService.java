@@ -1,4 +1,5 @@
 package teamzero.javaweb.service;
 
-public interface LoginService {
+public interface ChatInfoService {
+
 }
