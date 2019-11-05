@@ -48,11 +48,19 @@ public class ServerMain extends WebSocketServer {
 	
 	private static final String JSON_KEY_RECIPIENT = "recipient";
 	
+	private static final String JSON_KEY_EMAIL = "email";
 	
 	/**
 	 * A hashmap of Connections to the client IDs of the clients they connect to
 	 */
 	private HashMap<WebSocket, Integer> clientWebSockets;
+	
+	
+	/**
+	 * A hashmap of recipient client IDs to messages that still need to be sent to them
+	 */
+	private HashMap<Integer, String> recipientUnsentMessages;
+	
 	
 	/**
 	 * System entry point
@@ -71,6 +79,7 @@ public class ServerMain extends WebSocketServer {
 	public ServerMain(int port) throws UnknownHostException {
 		super(new InetSocketAddress(port));
 		clientWebSockets = new HashMap<WebSocket, Integer>();
+		recipientUnsentMessages = new HashMap<Integer, String>();
 	}
 	
 	private static void startServer() throws UnknownHostException {
@@ -120,8 +129,12 @@ public class ServerMain extends WebSocketServer {
 				
 			}
 			else if (msgType == CASE_REGISTER) {
-				// TODO securely save passwords for authentication in future
-		
+				// TODO save pictures
+				String userName = json.getString(JSON_KEY_USERNAME);
+				String password = json.getString(JSON_KEY_PASSWORD);
+				String email = json.getString(JSON_KEY_EMAIL);
+				DbConnection dbConnection = new DbConnection();
+				dbConnection.addUser(userName, password, email);
 			}
 			else if (msgType == CASE_TEXT_MESSAGE) {
 				sendClientText(websocket, json);
@@ -198,8 +211,8 @@ public class ServerMain extends WebSocketServer {
 				recipientSocket.send(message.toString());
 		}
 		else {
-			// TODO create a queue/pool of messages to send when clients connect
-			
+			// insert message into unsent messages map
+			recipientUnsentMessages.put(recipient.getId(), message.toString());	
 		}		
 	}
 	
@@ -223,12 +236,28 @@ public class ServerMain extends WebSocketServer {
 		}
 		return null;
 	}
+	
+	
+	/**
+	 * Send messages that were previously unsent to a given websocket. Intended to be called
+	 * when a client has newly logged in or reconnected.
+	 * @param websocket 
+	 */
+	private void sendUnsentMessages(WebSocket websocket) {
+		int recipientId = clientWebSockets.get(websocket);
+		String messageToSend = recipientUnsentMessages.get(recipientId);
+		if(!messageToSend.isEmpty() && messageToSend != null) {
+			websocket.send(messageToSend);
+		}
+	}
 
 	private void registerClient (WebSocket websocket, JSONObject message) {
 		// TODO register client
 	}
+	
 	private void loginClient (WebSocket websocket, JSONObject message) {
 		// TODO login client
+		
 	}
 	private void editClientProfile (WebSocket websocket, JSONObject message) {
 		// TODO edit client profile (picture?)
