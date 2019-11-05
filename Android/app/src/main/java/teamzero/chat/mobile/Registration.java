@@ -21,7 +21,6 @@ public class Registration extends AppCompatActivity {
         3) Method that checks if both passwords are the same AND strong enough      [X]
         4) Protect against SQL Injection                                            [X]
         5) Method that passes the information to the server to store in database    []
-
      */
 
     @Override
@@ -202,5 +201,4 @@ public class Registration extends AppCompatActivity {
         });
         // End of demo area
     }
-
 }
