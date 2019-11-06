@@ -15,9 +15,9 @@ import java.sql.SQLException;
  */
 public class DbConnection {
 
-	private final String url = "jdbc:postgresql://localhost:5432/testdb";
-	private final String user = "postgres";
-	private final String password = "123456";
+	private final String url = "jdbc:postgresql://ec2-54-228-252-67.eu-west-1.compute.amazonaws.com:5432/dfhffsp1a17jm1";
+	private final String user = "sdakjchdnvngqe";
+	private final String password = "5d3265328809eecb17f621d43a085c7809c77815bbdae835c5e58acc70ae0413";
 
 	/**
 	 * Connect to the PostgreSQL database
@@ -54,10 +54,10 @@ public class DbConnection {
 					System.out.println("Email already exists");
 				}
 			} else {
-				ps = conn.prepareStatement("INSERT INTO USERS (username,password,email) VALUES (?, ?, ?)");
+				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password) VALUES (?, ?, ?)");
 				ps.setString(1, userName);
-				ps.setString(2, getMd5(password));
-				ps.setString(3, email);
+				ps.setString(2, email);
+				ps.setString(3, getMd5(password));
 				ps.executeUpdate();
 				System.out.println("Added user.");
 			}
