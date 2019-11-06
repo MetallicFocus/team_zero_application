@@ -124,7 +124,7 @@ public class ServerMain extends WebSocketServer {
 		try {
 			JSONObject json = new JSONObject(message);
 			String msgType = json.getString(JSON_KEY_MESSAGE_TYPE);
-			if (msgType == CASE_LOGIN) {
+			if (msgType.equals(CASE_LOGIN)) {
 				String userName = json.getString(JSON_KEY_USERNAME);
 				String password = json.getString(JSON_KEY_PASSWORD);
 
@@ -175,18 +175,6 @@ public class ServerMain extends WebSocketServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		// TODO: check if message from host is a registration request
-		// or a chat message to forward and send it 
-		// to the appropriate class or methods
-		
-		
-
-		// TODO add client data to hashmap
-		// check if client exists in client manager, if not add.
-		// if client exists in client manager, set isOnline tag	
-		
 	}
 
 	/**
