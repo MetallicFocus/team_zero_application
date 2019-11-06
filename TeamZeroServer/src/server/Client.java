@@ -1,23 +1,21 @@
 package server;
 /**
  * 
- * Encapsulates a single chat Client
+ * Encapsulates a single online chat Client
  *
  */
 public class Client {
 	private String username;
 	private String email;
-	private int id;
-	private boolean isOnline;
+	private int id;;
 	
 
 	// TODO add an image object for profile pics 
-	public Client(String username, String email, int id, boolean isOnline) {
+	public Client(String username, String email, int id) {
 		super();
 		this.username = username;
 		this.email = email;
-		this.id = id;
-		this.isOnline = isOnline;
+		this.id = id;;
 	}
 	
 	
@@ -39,12 +37,5 @@ public class Client {
 	public void setId(int id) {
 		this.id = id;
 	}
-	public boolean isOnline() {
-		return isOnline;
-	}
-	public void setOnline(boolean isOnline) {
-		this.isOnline = isOnline;
-	}
-	
 
 }
