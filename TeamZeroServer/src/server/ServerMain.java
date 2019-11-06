@@ -2,6 +2,7 @@ package server;
 
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -29,7 +30,7 @@ public class ServerMain extends WebSocketServer {
 	
 	private static final String CASE_UNREGISTER = "UNREGISTER"; // delete client from system
 	
-	private static final String CASE_LOGIN = "LOGIN"; //login with username and password
+	private static final String CASE_LOGIN = "LOGIN"; //login with user name and password
 	
 	private static final String CASE_EDIT_PROFILE = "EDIT"; //edit profile details
 	
@@ -51,15 +52,15 @@ public class ServerMain extends WebSocketServer {
 	private static final String JSON_KEY_EMAIL = "email";
 	
 	/**
-	 * A hashmap of Connections to the client IDs of the clients they connect to
+	 * A map of Connections to the client IDs of the clients they connect to
 	 */
 	private HashMap<WebSocket, Integer> clientWebSockets;
 	
 	
 	/**
-	 * A hashmap of recipient client IDs to messages that still need to be sent to them
+	 * A map of recipient client IDs to a list of messages that still need to be sent to them
 	 */
-	private HashMap<Integer, String> recipientUnsentMessages;
+	private HashMap<Integer, ArrayList<String>> recipientUnsentMessages;
 	
 	
 	/**
@@ -72,14 +73,14 @@ public class ServerMain extends WebSocketServer {
 	}
 	
 	/**
-	 * Constructs a ServerMain object, and initialises the hashmap of websocket connections to client IDs
+	 * Constructs a ServerMain object, and initializes the map of web socket connections to client IDs
 	 * @param port
 	 * @throws UnknownHostException
 	 */
 	public ServerMain(int port) throws UnknownHostException {
 		super(new InetSocketAddress(port));
 		clientWebSockets = new HashMap<WebSocket, Integer>();
-		recipientUnsentMessages = new HashMap<Integer, String>();
+		recipientUnsentMessages = new HashMap<Integer, ArrayList<String>>();
 	}
 	
 	private static void startServer() throws UnknownHostException {
@@ -98,9 +99,8 @@ public class ServerMain extends WebSocketServer {
 	@Override
 	public void onClose(WebSocket websocket, int arg1, String arg2, boolean arg3) {
 		
-		// Set disconnected client's isOnline field to false
-		Client offlineClient = ClientManager.getInstance().getClientById(clientWebSockets.get(websocket));
-		offlineClient.setOnline(false);
+		// remove client from connected clients manager and from client websockets array
+		ClientManager.getInstance().removeClient(clientWebSockets.get(websocket));
 		clientWebSockets.remove(websocket);
 		System.out.println("Client connection closed: " + websocket.toString()); 
 		
@@ -124,9 +124,27 @@ public class ServerMain extends WebSocketServer {
 		try {
 			JSONObject json = new JSONObject(message);
 			String msgType = json.getString(JSON_KEY_MESSAGE_TYPE);
-			if (msgType == CASE_LOGIN) {
-				// TODO check username/passwords match existing
-				
+			if (msgType.equals(CASE_LOGIN)) {
+				String userName = json.getString(JSON_KEY_USERNAME);
+				String password = json.getString(JSON_KEY_PASSWORD);
+
+				DbConnection dbConnection = new DbConnection();
+				Client authenticatedClient = dbConnection.authenticateUser(userName, password);
+				// if the client is authenticated, get their info and add to connected clients
+				if (authenticatedClient != null) {
+					ClientManager.getInstance().addClient(authenticatedClient);
+					int id = authenticatedClient.getId();
+					clientWebSockets.put(websocket, id);
+					
+					// check if there are any unsent messages to send & send them
+					
+					sendUnsentMessages(websocket, id);
+					
+				}
+				else {
+					//TODO cant authenticate, send error response
+				}
+								
 			}
 			else if (msgType.equals(CASE_REGISTER)) {
 				// TODO save pictures
@@ -157,18 +175,6 @@ public class ServerMain extends WebSocketServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		// TODO: check if message from host is a registration request
-		// or a chat message to forward and send it 
-		// to the appropriate class or methods
-		
-		
-
-		// TODO add client data to hashmap
-		// check if client exists in client manager, if not add.
-		// if client exists in client manager, set isOnline tag	
-		
 	}
 
 	/**
@@ -181,11 +187,6 @@ public class ServerMain extends WebSocketServer {
 		System.out.println("WebSocket: " + websocket.toString());
 		System.out.println("Handshake: " + handshake.toString());
 		
-	}
-	
-	
-	private void unregisterClient(WebSocket websocket, JSONObject message) {
-		// TODO unregister client
 	}
 	
 	
@@ -210,17 +211,38 @@ public class ServerMain extends WebSocketServer {
 		String recipientUsername = message.getString(JSON_KEY_RECIPIENT);
 		Client recipient = ClientManager.getInstance().getClientByUsername(recipientUsername);
 		WebSocket recipientSocket = getWebSocketByClientId(recipient.getId());
-		if (recipient.isOnline() && recipientSocket != null) {
+		
+		if (recipientSocket != null) {
+			// if recipient is connected, send message right away
 				recipientSocket.send(message.toString());
 		}
 		else {
+			// if recipient is not currently connected
 			// insert message into unsent messages map
-			recipientUnsentMessages.put(recipient.getId(), message.toString());	
+			
+			int rId = recipient.getId();
+			ArrayList<String> unsentMessages;
+
+			// check if there already are any unsent messages
+			if (recipientUnsentMessages.containsKey(rId)){
+				unsentMessages = recipientUnsentMessages.get(rId);
+				unsentMessages.add(message.toString());
+				
+				// but the updated array list back in the map
+				recipientUnsentMessages.put(rId, unsentMessages);
+			}
+			else { 
+				// if there are no previous messages, add a new array with one message
+				unsentMessages = new ArrayList<String>();
+				unsentMessages.add(message.toString());
+				recipientUnsentMessages.put(rId, unsentMessages);	
+			}
+			
 		}		
 	}
 	
 	/**
-	 * Search for the websocket associated with a client ID within the connected clients hashmap
+	 * Search for the web socket associated with a client ID within the connected clients hash map
 	 * @param id
 	 * @return
 	 */
@@ -233,7 +255,7 @@ public class ServerMain extends WebSocketServer {
 			nextSet = clientIterator.next();
 			nextId = nextSet.getValue();
 			if (nextId == id) {
-				// return the websocket that was the key for the client ID value in the hashmap
+				// return the web socket that was the key for the client ID value in the hash map
 				return nextSet.getKey(); 
 			}
 		}
@@ -242,26 +264,23 @@ public class ServerMain extends WebSocketServer {
 	
 	
 	/**
-	 * Send messages that were previously unsent to a given websocket. Intended to be called
+	 * Send messages that were previously unsent to a given web socket. Intended to be called
 	 * when a client has newly logged in or reconnected.
 	 * @param websocket 
 	 */
-	private void sendUnsentMessages(WebSocket websocket) {
-		int recipientId = clientWebSockets.get(websocket);
-		String messageToSend = recipientUnsentMessages.get(recipientId);
-		if(!messageToSend.isEmpty() && messageToSend != null) {
-			websocket.send(messageToSend);
+	private void sendUnsentMessages(WebSocket websocket, int recipientId) {
+		ArrayList<String> messagesToSend = recipientUnsentMessages.get(recipientId);
+		Iterator<String> iterator = messagesToSend.iterator();
+		
+		//TODO: currently sends as separate messages. it may be preferable to send a single larger
+		// message with all the data?
+		while(iterator.hasNext()) {
+			String nextMessage = iterator.next();
+			websocket.send(nextMessage);
 		}
 	}
 
-	private void registerClient (WebSocket websocket, JSONObject message) {
-		// TODO register client
-	}
 	
-	private void loginClient (WebSocket websocket, JSONObject message) {
-		// TODO login client
-		
-	}
 	private void editClientProfile (WebSocket websocket, JSONObject message) {
 		// TODO edit client profile (picture?)
 	}
