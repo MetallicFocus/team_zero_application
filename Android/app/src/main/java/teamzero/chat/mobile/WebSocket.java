@@ -8,6 +8,14 @@ import org.java_websocket.handshake.ServerHandshake;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 public class WebSocket {
 
     private WebSocketClient mWebSocketClient;
@@ -55,11 +63,27 @@ public class WebSocket {
 
         mWebSocketClient.connect();
 
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+
+                while(!mWebSocketClient.getConnection().isOpen()) {
+                    // Wait for connection to open OR timeout to pass
+                }
+                return "Ready!";
+            }
+        });
+
         try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            // Timeout of 10 seconds to try the connection
+            System.out.println(future.get(10, TimeUnit.SECONDS));
+        } catch (TimeoutException | ExecutionException | InterruptedException e) {
+            future.cancel(true);
+            System.out.println("Timeout!");
         }
+
+        executor.shutdownNow();
     }
 
     public String getResponse() {
@@ -72,8 +96,10 @@ public class WebSocket {
     }
 
     public void sendMessage(String message) {
-        mWebSocketClient.send(message);
-        // Wait for 100 milliseconds
+        if(mWebSocketClient.getConnection().isOpen())
+            mWebSocketClient.send(message);
+        // Busy waiting to get message because ws is async (cannot make sync method).
+        // TODO: Think of better approach
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
