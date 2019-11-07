@@ -68,8 +68,8 @@ public class ClientManager {
 	 * @param id 
 	 * @param Client object to add
 	 */
-	public Client addClient(String username, String email, int id) {	
-		Client client = new Client(username, email, id);
+	public Client addClient(String username, String email, int id, boolean loggedIn) {	
+		Client client = new Client(username, email, id, loggedIn);
 		connectedClients.put(client.getId(), client);
 		return client;
 	}
