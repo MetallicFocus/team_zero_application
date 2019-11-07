@@ -20,27 +20,25 @@ public class MainActivity extends AppCompatActivity {
     Button loginButton;
     Button registerButton;
     EditText usernameInput;
-    WebSocketClient mWebSocketClient;
+    WebSocket webSocket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        connectWebSocket();
+        // Initialize the WebSocket (i.e. connection is established)
+        webSocket = new WebSocket();
 
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mWebSocketClient.send("Testing connection with server.");
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mWebSocketClient.close();
+        // Set the socket inside the handler and use it from now on
+        WebSocketHandler.setSocket(webSocket);
+
+        // Testing WebSocket handler from this activity
+        WebSocketHandler.getSocket().sendMessage("Test Message 1");
+        System.out.println("Response test from Main activity: " + WebSocketHandler.getSocket().getResponse());
+        WebSocketHandler.getSocket().sendMessage("Test Message 2");
+        System.out.println("Response test from Main activity: " + WebSocketHandler.getSocket().getResponse());
+        // End testing websocket handler
 
         loginButton = (Button) findViewById(R.id.login);
         registerButton = (Button) findViewById(R.id.register);
@@ -65,45 +63,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         // End of testing zone.
-    }
-
-    private void connectWebSocket() {
-
-        URI uri;
-        try {
-            // Used the following URI for testing purposes only
-            // TODO: Change URI to Heroku server
-            uri = new URI("ws://echo.websocket.org:80/");
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        mWebSocketClient = new WebSocketClient(uri) {
-
-            @Override
-            public void onOpen(ServerHandshake serverHandshake) {
-                Log.i("Websocket", "Opened");
-            }
-
-            @Override
-            public void onMessage(String message) {
-                Log.i("Websocket", "Received message = " + message);
-            }
-
-            @Override
-            public void onClose(int i, String s, boolean b) {
-                Log.i("Websocket", "Closed " + s);
-            }
-
-            @Override
-            public void onError(Exception e) {
-                Log.i("Websocket", "Error " + e.getMessage());
-            }
-        };
-
-        mWebSocketClient.connect();
-
     }
 
 }
