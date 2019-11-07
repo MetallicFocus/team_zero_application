@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 /**
- * A Singleton class that keeps track and control of  Client objects
+ * A Singleton class that keeps track and control of online Client objects
  */
 public class ClientManager {
 	
@@ -17,8 +17,7 @@ public class ClientManager {
 	 * The single Client Manager object
 	 */
 	private static ClientManager clientManager;
-	
-	private int clientCounter;
+
 	
 	
 	/**
@@ -27,7 +26,6 @@ public class ClientManager {
 	private ClientManager() {
 		connectedClients = new HashMap<Integer, Client>();
 		
-		clientCounter = 0;
 	}
 	
 	/**
@@ -67,11 +65,11 @@ public class ClientManager {
 	
 	/**
 	 * Adds a client to the client manager
+	 * @param id 
 	 * @param Client object to add
 	 */
-	public Client addClient(String username, String email, boolean isOnline) {	
-		int id = clientCounter ++; 
-		Client client = new Client(username, email, id, isOnline);
+	public Client addClient(String username, String email, int id, boolean loggedIn) {	
+		Client client = new Client(username, email, id, loggedIn);
 		connectedClients.put(client.getId(), client);
 		return client;
 	}
@@ -83,11 +81,14 @@ public class ClientManager {
 	public void removeClient(int id) {
 		connectedClients.remove(id);
 	}
-	
-	
-	
-	
-	
-	
+
+	/**
+	 * Add a client to the client manager
+	 * @param client to add
+	 */
+	public void addClient(Client client) { 
+		connectedClients.put(client.getId(), client);
+		
+	}
 
 }

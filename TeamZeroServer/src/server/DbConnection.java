@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 /**
  * A class to connect to and perform queries on the database
@@ -18,6 +19,11 @@ public class DbConnection {
 	private final String url = "jdbc:postgresql://ec2-54-228-252-67.eu-west-1.compute.amazonaws.com:5432/dfhffsp1a17jm1";
 	private final String user = "sdakjchdnvngqe";
 	private final String password = "5d3265328809eecb17f621d43a085c7809c77815bbdae835c5e58acc70ae0413";
+
+	private static final String COLUMN_USERNAME = "username";
+	private static final String COLUMN_EMAIL = "email";
+	private static final String COLUMN_ID = "id";
+	
 
 	/**
 	 * Connect to the PostgreSQL database
@@ -36,8 +42,7 @@ public class DbConnection {
 	}
 
 	public void addUser(String userName, String password, String email) {
-		DbConnection dbConnection = new DbConnection();
-		Connection conn = dbConnection.connect();
+		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
 			ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? OR email = ?;");
@@ -45,8 +50,8 @@ public class DbConnection {
 			ps.setString(2, email);
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
-				String existingUser = rs.getString("username");
-				String existingEmail = rs.getString("email");
+				String existingUser = rs.getString(COLUMN_USERNAME);
+				String existingEmail = rs.getString(COLUMN_EMAIL);
 				// TODO: Send errors to frontend
 				if (existingUser.equals(userName)) {
 					System.out.println("Username already exists");
@@ -68,8 +73,7 @@ public class DbConnection {
 	}
 
 	public void deleteUser(String userName, String password) {
-		DbConnection dbConnection = new DbConnection();
-		Connection conn = dbConnection.connect();
+		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
 			ps = conn.prepareStatement("DELETE FROM USERS WHERE username = ? AND password = ?;");
@@ -81,6 +85,67 @@ public class DbConnection {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Authenticates a set of user information. 
+	 * Checks the database to see if the username and password match an existing entry.
+	 * @param userName clients username
+	 * @param passWord clients password
+	 * @return the Client object if authenticated, otherwise null
+	 */
+	public Client authenticateUser(String userName, String password) {
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? AND password = ?;");
+			ps.setString(1, userName);
+			ps.setString(2, getMd5(password));
+
+			ResultSet rs = ps.executeQuery();
+			
+			if (rs.next()) {
+				String authenticatedUser = rs.getString(COLUMN_USERNAME);
+				if (authenticatedUser.equals(userName)) {
+					// user is authenticated
+					int clientId = rs.getInt(COLUMN_ID);
+					String clientEmail = rs.getString(COLUMN_EMAIL);
+					Client client = new Client(userName, clientEmail, clientId, true);
+					return client; 
+				}
+			}
+				
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null; 
+	}
+	
+	/**
+	 * Gets a list of all users from the database. Useful for updating client contact lists.
+	 * @return an arraylist of Client objects
+	 */
+	public ArrayList<Client> getAllUserInfo(){
+		ArrayList<Client> allClients = new ArrayList<Client>();
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS;");
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int clientId = rs.getInt(COLUMN_ID);
+				String clientEmail = rs.getString(COLUMN_EMAIL);
+				String clientUsername = rs.getString(COLUMN_USERNAME);
+
+				
+				//if the user is also in the client manager, set them to logged in
+				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
+				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				allClients.add(client);
+			}	
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return allClients;	
 	}
 
 	private String getMd5(String input) {
