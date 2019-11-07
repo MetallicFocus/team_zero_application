@@ -109,7 +109,7 @@ public class DbConnection {
 					// user is authenticated
 					int clientId = rs.getInt(COLUMN_ID);
 					String clientEmail = rs.getString(COLUMN_EMAIL);
-					Client client = new Client(userName, clientEmail, clientId);
+					Client client = new Client(userName, clientEmail, clientId, true);
 					return client; 
 				}
 			}
@@ -134,7 +134,11 @@ public class DbConnection {
 				int clientId = rs.getInt(COLUMN_ID);
 				String clientEmail = rs.getString(COLUMN_EMAIL);
 				String clientUsername = rs.getString(COLUMN_USERNAME);
-				Client client = new Client(clientUsername, clientEmail, clientId);
+
+				
+				//if the user is also in the client manager, set them to logged in
+				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
+				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
 				allClients.add(client);
 			}	
 		}

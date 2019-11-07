@@ -132,6 +132,7 @@ public class ServerMain extends WebSocketServer {
 				Client authenticatedClient = dbConnection.authenticateUser(userName, password);
 				// if the client is authenticated, get their info and add to connected clients
 				if (authenticatedClient != null) {
+					authenticatedClient.setLoggedIn(true); // setloggedInflag
 					ClientManager.getInstance().addClient(authenticatedClient);
 					int id = authenticatedClient.getId();
 					clientWebSockets.put(websocket, id);
@@ -155,10 +156,17 @@ public class ServerMain extends WebSocketServer {
 				dbConnection.addUser(userName, password, email);
 			}
 			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
-				sendClientText(websocket, json);
-				
+				// check if user is logged in first
+				if (isAuthenticated(websocket)) {
+					sendClientText(websocket, json);
+				}
+				else {
+					// TODO send back error message
+					System.out.println("Cannot send client message - sender is not logged in.");
+				}
 			}
 			else if (msgType.equals(CASE_UNREGISTER)) {
+				// TODO check if logged in first
 				String userName = json.getString(JSON_KEY_USERNAME);
 				String password = json.getString(JSON_KEY_PASSWORD);
 				DbConnection dbConnection = new DbConnection();
@@ -166,6 +174,7 @@ public class ServerMain extends WebSocketServer {
 			}
 			else if (msgType.equals(CASE_EDIT_PROFILE)) {
 				// TODO edit profile
+				// check if logged in first
 			}
 			else {
 				// TODO send error - unknown 
@@ -187,6 +196,21 @@ public class ServerMain extends WebSocketServer {
 		System.out.println("WebSocket: " + websocket.toString());
 		System.out.println("Handshake: " + handshake.toString());
 		
+		//TODO check if its the same as a previously logged in client so we dont
+		// have to authenticate again
+		
+		
+		
+	}
+	
+	/**
+	 * checks if the websocket associated with a client has previously logged in
+	 * @param websocket
+	 * @return
+	 */
+	private boolean isAuthenticated(WebSocket websocket) {
+		Client c = ClientManager.getInstance().getClientById(clientWebSockets.get(websocket));
+		return c.isLoggedIn();
 	}
 	
 	
@@ -207,10 +231,13 @@ public class ServerMain extends WebSocketServer {
 				message: message
 			}
 		*/
-		
 		String recipientUsername = message.getString(JSON_KEY_RECIPIENT);
 		Client recipient = ClientManager.getInstance().getClientByUsername(recipientUsername);
-		WebSocket recipientSocket = getWebSocketByClientId(recipient.getId());
+		WebSocket recipientSocket = null;
+		
+		if (recipient != null) {
+			recipientSocket = getWebSocketByClientId(recipient.getId());
+		}
 		
 		if (recipientSocket != null) {
 			// if recipient is connected, send message right away

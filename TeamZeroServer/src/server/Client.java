@@ -7,15 +7,16 @@ package server;
 public class Client {
 	private String username;
 	private String email;
-	private int id;;
+	private int id;
+	private boolean isLoggedIn;
 	
 
 	// TODO add an image object for profile pics 
-	public Client(String username, String email, int id) {
-		super();
+	public Client(String username, String email, int id, boolean isLoggedIn) {
 		this.username = username;
 		this.email = email;
-		this.id = id;;
+		this.id = id;
+		this.isLoggedIn = isLoggedIn;
 	}
 	
 	
@@ -36,6 +37,16 @@ public class Client {
 	}
 	public void setId(int id) {
 		this.id = id;
+	}
+
+
+	public boolean isLoggedIn() {
+		return isLoggedIn;
+	}
+
+
+	public void setLoggedIn(boolean isLoggedIn) {
+		this.isLoggedIn = isLoggedIn;
 	}
 
 }
