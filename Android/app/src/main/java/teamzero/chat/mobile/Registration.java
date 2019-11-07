@@ -28,6 +28,13 @@ public class Registration extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registration_layout);
+
+        // Testing WebSocket handler from this activity
+        System.out.println("Response test from Registration activity: " + WebSocketHandler.getSocket().getResponse());
+        WebSocketHandler.getSocket().sendMessage("Test Message 3");
+        System.out.println("Response test from Registration activity: " + WebSocketHandler.getSocket().getResponse());
+        WebSocketHandler.getSocket().closeConnection();
+        // End of testing
     }
 
     public void checkFields(View view) {
