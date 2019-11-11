@@ -1,8 +1,15 @@
 package teamzero.javaweb.service;
 
-import teamzero.javaweb.entity.UserInfo;
+import teamzero.javaweb.vo.UserInfoVo;
 
 public interface UserInfoService {
 
-    String update(UserInfo userInfo);
+    //update user information
+    Boolean updateUserInfo(Integer user_id, UserInfoVo userInfo);
+
+    //get user information by id
+    String getUserInfo(Integer user_id);
+
+    //search for user by user name
+    String searchUser(String user_name);
 }

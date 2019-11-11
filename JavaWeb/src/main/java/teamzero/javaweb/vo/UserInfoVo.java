@@ -1,47 +1,42 @@
 package teamzero.javaweb.vo;
 
+import java.sql.Blob;
 import java.util.List;
 
 public class UserInfoVo {
 
-    private Integer uid;
-    private String uname;
+    private Integer user_id;
+    private String user_name;
     private String email;
-    private String avatar;
-    private List<Integer> friendsid;
-    private List<Integer> groupsid;
-    private List<Integer> chatsid;
+    private Blob avatar;
+    private List<UserInfoVo> friends;
+    private List<GroupInfoVo> groups;
+    private List<ChatInfoVo> chats;
 
-    public UserInfoVo(Integer uid, String uname, String email, String avatar, List<Integer> friendsid, List<Integer> groupsid, List<Integer> chatsid) {
-        this.uid = uid;
-        this.uname = uname;
+    public UserInfoVo(Integer user_id, String user_name, String email, Blob avatar, List<UserInfoVo> friends, List<GroupInfoVo> groups, List<ChatInfoVo> chats) {
+        this.user_id = user_id;
+        this.user_name = user_name;
         this.email = email;
         this.avatar = avatar;
-        this.friendsid = friendsid;
-        this.groupsid = groupsid;
-        this.chatsid = chatsid;
+        this.friends = friends;
+        this.groups = groups;
+        this.chats = chats;
     }
 
-    public UserInfoVo(Integer uid, String uname, String email) {
-        this.uid = uid;
-        this.uname = uname;
-        this.email = email;
+    public Integer getUser_id() {
+        return user_id;
     }
 
-    public Integer getUid() {
-        return uid;
+    public void setUser_id(Integer user_id) {
+        this.user_id = user_id;
     }
 
-    public void setUid(Integer uid) {
-        this.uid = uid;
+    public String getUser_name() {
+        return user_name;
     }
 
-    public String getUname() {
-        return uname;
-    }
-
-    public void setUname(String uname) {
-        this.uname = uname;
+    public void setUser_name(String user_name) {
+        this.user_name = user_name;
     }
 
     public String getEmail() {
@@ -52,35 +47,35 @@ public class UserInfoVo {
         this.email = email;
     }
 
-    public String getAvatar() {
+    public Blob getAvatar() {
         return avatar;
     }
 
-    public void setAvatar(String avatar) {
+    public void setAvatar(Blob avatar) {
         this.avatar = avatar;
     }
 
-    public List<Integer> getFriendsid() {
-        return friendsid;
+    public List<UserInfoVo> getFriends() {
+        return friends;
     }
 
-    public void setFriendsid(List<Integer> friendsid) {
-        this.friendsid = friendsid;
+    public void setFriends(List<UserInfoVo> friends) {
+        this.friends = friends;
     }
 
-    public List<Integer> getGroupsid() {
-        return groupsid;
+    public List<GroupInfoVo> getGroups() {
+        return groups;
     }
 
-    public void setGroupsid(List<Integer> groupsid) {
-        this.groupsid = groupsid;
+    public void setGroups(List<GroupInfoVo> groups) {
+        this.groups = groups;
     }
 
-    public List<Integer> getChatsid() {
-        return chatsid;
+    public List<ChatInfoVo> getChats() {
+        return chats;
     }
 
-    public void setChatsid(List<Integer> chatsid) {
-        this.chatsid = chatsid;
+    public void setChats(List<ChatInfoVo> chats) {
+        this.chats = chats;
     }
 }

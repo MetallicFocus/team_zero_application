@@ -1,28 +1,37 @@
 package teamzero.javaweb.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import teamzero.javaweb.service.UserService;
+
+import javax.servlet.http.HttpSession;
 
 @Controller
+@RequestMapping(value = "sign_in")
 public class SignInController {
 
-    @Autowired
-    private UserService userService;
-
-    @GetMapping(value = {"/", "index"})
-    public String index(){
-        return "sign_in";
+    @GetMapping(value = "")
+    public String showSignIn() {
+        return "sign_in_vue";
     }
 
-    @RequestMapping(value = "sign_in", method = RequestMethod.POST)
-    public String signIn(@RequestParam("identifier") String identifier,
-                         @RequestParam("pwd") String pwd){
-        userService.signIn(identifier, pwd);
-        return "sign_in";
+    //Todo: id verification
+    @RequestMapping(value = "processing", method = RequestMethod.POST)
+    public String signIn(HttpSession session,
+                         @RequestParam("name") String name,
+                         @RequestParam("pwd") String password,
+                         Model model){
+        if (true) { //connect with server api for sign in
+            System.out.println(name + " " + password);
+            model.addAttribute("name", name);
+            model.addAttribute("pwd", password);
+            return "/test";
+        } else {
+            return "redirect:/sign_in";
+        }
+
     }
 }

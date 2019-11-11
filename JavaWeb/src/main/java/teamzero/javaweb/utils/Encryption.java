@@ -1,4 +1,4 @@
-package teamzero.javaweb.Utils;
+package teamzero.javaweb.utils;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

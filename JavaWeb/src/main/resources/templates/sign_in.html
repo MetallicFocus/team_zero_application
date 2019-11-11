@@ -10,43 +10,39 @@
 	</head>
 	<body>
 		<div id="app">
-		    <div v-bind:style='divStyle'>
-		    <el-form th:action="@{/test}" method="post" label-width="100px" style="margin-top: 80px; margin-left: 20px; margin-right: 30px; margin-bottom: 50px;">
-		      <el-form-item label="User Name / Email">
-		        <el-input v-model="formLabel.name" name="identifier"></el-input>
-		      </el-form-item>
-		      <el-form-item label="Password">
-		        <el-input v-model="formLabel.pwd" show-password name="pwd"></el-input>
-		      </el-form-item>
-			  <el-form-item style="margin-left: 10px;">
-			    <el-button style="width: 100px; height: 50px;" type='primary submit'>Sign In</el-button>
-				<el-button th:action="@{/show_sign_up}" style="width: 100px; height: 50px; margin-left: 50px;">Sign Up</el-button>
-			  </el-form-item>
-		    </el-form>
-			</div>
+		    <div :style='divStyle'>
+                <form th:action="@{/test/get}" method="get" style="margin-top: 80px; margin-left: 20px; margin-right: 30px; margin-bottom: 50px;">
+                    <div>
+                        <label>User Name:</label>
+                        <input name="name" v-model="ruleForm.name"/>
+                    </div>
+                    <div>
+                        <label>Password: </label>
+                        <input show-password name="pwd" v-model="ruleForm.pwd"/>
+                    </div>
+                    <div style="margin-left: 10px;">
+                        <button style="width: 100px; height: 50px;" type='submit'>Sign In</button>
+                        <button style="width: 100px; height: 50px; margin-left: 50px;">Sign Up</button>
+                    </div>
+                </form>
+            </div>
 		</div>
 	</body>
-	
+
 	<script>
-	    new Vue({
-	      el: '#app',
-	      data: function() {
-	        return {
-				formLabel: {
-				    name: '',
-				    pwd: ''					
-				},
-				divStyle: "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;"			
-			}
-	      },
-		  methods: {
-			  onSignIn() {
-				  <!--Todo: sign-in function-->
-			  },
-			  onSignUp() {
-				  window.location.href='sign_up.html';
-			  }
-		  }
-	    })
+        new Vue({
+            el: '#app',
+            data: function() {
+                return {
+                    ruleForm: {
+                        name: "",
+                        pwd: ""
+                    },
+                    divStyle: "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;"
+                }
+            },
+            methods: {
+            }
+        })
 	</script>
 </html>

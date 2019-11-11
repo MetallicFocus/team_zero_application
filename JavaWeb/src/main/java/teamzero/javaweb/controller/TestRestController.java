@@ -1,16 +1,18 @@
 package teamzero.javaweb.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/test")
 public class TestRestController {
 
-    @PostMapping(value = "")
-    public String index(){
-        return "Mapping successfully!";
+    @PostMapping(value = "/post")
+    public String testPost() {
+        return "Post successfully!";
     }
 
+    @GetMapping(value = "/get")
+    public String testGet() {
+        return "Get successfully!";
+    }
 }

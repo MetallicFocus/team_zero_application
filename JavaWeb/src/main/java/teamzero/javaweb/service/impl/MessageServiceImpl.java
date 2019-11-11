@@ -1,8 +1,10 @@
 package teamzero.javaweb.service.impl;
 
-import org.springframework.stereotype.Service;
 import teamzero.javaweb.service.MessageService;
+import teamzero.javaweb.vo.MessageVo;
 
-@Service
 public class MessageServiceImpl implements MessageService {
+    public Boolean sendMessage(MessageVo content) {
+        return null;
+    }
 }
