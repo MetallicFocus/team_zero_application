@@ -21,13 +21,19 @@ public class Registration extends AppCompatActivity {
         3) Method that checks if both passwords are the same AND strong enough      [X]
         4) Protect against SQL Injection                                            [X]
         5) Method that passes the information to the server to store in database    []
-
      */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registration_layout);
+
+        // Testing WebSocket handler from this activity
+        System.out.println("Response test from Registration activity: " + WebSocketHandler.getSocket().getResponse());
+        WebSocketHandler.getSocket().sendMessage("Test Message 3");
+        System.out.println("Response test from Registration activity: " + WebSocketHandler.getSocket().getResponse());
+        WebSocketHandler.getSocket().closeConnection();
+        // End of testing
     }
 
     public void checkFields(View view) {
@@ -192,15 +198,8 @@ public class Registration extends AppCompatActivity {
 
         // TODO: Send the information in JSON format to server and get into account
         // Just for demo to go to the chat list screen:
-        Button registerButton = findViewById(R.id.submit_registration);
 
-        registerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(Registration.this, ChatList.class));
-            }
-        });
+        startActivity(new Intent(Registration.this, ChatList.class));
         // End of demo area
     }
-
 }
