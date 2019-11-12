@@ -118,7 +118,6 @@ public class ServerMain extends WebSocketServer {
 	@Override
 	public void onMessage(WebSocket websocket, String message) {
 		System.out.println(message); 
-		websocket.send(message);
 
 		//parse JSON and get first element to check type
 		try {
@@ -130,16 +129,16 @@ public class ServerMain extends WebSocketServer {
 
 				DbConnection dbConnection = new DbConnection();
 				Client authenticatedClient = dbConnection.authenticateUser(userName, password);
+				websocket.send(userName + "Logged in.");
 				// if the client is authenticated, get their info and add to connected clients
 				if (authenticatedClient != null) {
 					authenticatedClient.setLoggedIn(true); // setloggedInflag
 					ClientManager.getInstance().addClient(authenticatedClient);
 					int id = authenticatedClient.getId();
 					clientWebSockets.put(websocket, id);
-					
 					// check if there are any unsent messages to send & send them
 					
-					sendUnsentMessages(websocket, id);
+//					sendUnsentMessages(websocket, id);
 					
 				}
 				else {
@@ -154,8 +153,14 @@ public class ServerMain extends WebSocketServer {
 				String email = json.getString(JSON_KEY_EMAIL);
 				DbConnection dbConnection = new DbConnection();
 				dbConnection.addUser(userName, password, email);
+				websocket.send(userName + " registered.");
 			}
 			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
+				String sender = json.getString(JSON_KEY_SENDER);
+				String recipient = json.getString(JSON_KEY_RECIPIENT);
+				String textMessage = json.getString(JSON_KEY_MESSAGE);
+				DbConnection dbConnection = new DbConnection();
+				dbConnection.addMessage(sender, recipient, textMessage);
 				// check if user is logged in first
 				if (isAuthenticated(websocket)) {
 					sendClientText(websocket, json);

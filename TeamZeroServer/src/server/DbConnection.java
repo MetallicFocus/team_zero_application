@@ -8,7 +8,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * A class to connect to and perform queries on the database
@@ -22,8 +24,8 @@ public class DbConnection {
 
 	private static final String COLUMN_USERNAME = "username";
 	private static final String COLUMN_EMAIL = "email";
-	private static final String COLUMN_ID = "id";
-	
+	private static final String COLUMN_ID = "user_id";
+	private static final String COLUMN_CHAT_ID = "chat_id";
 
 	/**
 	 * Connect to the PostgreSQL database
@@ -86,10 +88,11 @@ public class DbConnection {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
-	 * Authenticates a set of user information. 
-	 * Checks the database to see if the username and password match an existing entry.
+	 * Authenticates a set of user information. Checks the database to see if the
+	 * username and password match an existing entry.
+	 * 
 	 * @param userName clients username
 	 * @param passWord clients password
 	 * @return the Client object if authenticated, otherwise null
@@ -102,7 +105,7 @@ public class DbConnection {
 			ps.setString(2, getMd5(password));
 
 			ResultSet rs = ps.executeQuery();
-			
+
 			if (rs.next()) {
 				String authenticatedUser = rs.getString(COLUMN_USERNAME);
 				if (authenticatedUser.equals(userName)) {
@@ -110,21 +113,23 @@ public class DbConnection {
 					int clientId = rs.getInt(COLUMN_ID);
 					String clientEmail = rs.getString(COLUMN_EMAIL);
 					Client client = new Client(userName, clientEmail, clientId, true);
-					return client; 
+					return client;
 				}
 			}
-				
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		return null; 
+		return null;
 	}
-	
+
 	/**
-	 * Gets a list of all users from the database. Useful for updating client contact lists.
+	 * Gets a list of all users from the database. Useful for updating client
+	 * contact lists.
+	 * 
 	 * @return an arraylist of Client objects
 	 */
-	public ArrayList<Client> getAllUserInfo(){
+	public ArrayList<Client> getAllUserInfo() {
 		ArrayList<Client> allClients = new ArrayList<Client>();
 		Connection conn = this.connect();
 		try {
@@ -135,17 +140,88 @@ public class DbConnection {
 				String clientEmail = rs.getString(COLUMN_EMAIL);
 				String clientUsername = rs.getString(COLUMN_USERNAME);
 
-				
-				//if the user is also in the client manager, set them to logged in
+				// if the user is also in the client manager, set them to logged in
 				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
 				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
 				allClients.add(client);
-			}	
-		}
-		catch (SQLException e) {
+			}
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		return allClients;	
+		return allClients;
+	}
+
+	public void addMessage(String sender, String recipient, String textMessage) {
+		Connection conn = connect();
+		int chatId = 0;
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
+			ps.setInt(1, getUserIDFromUsername(sender));
+			ps.setInt(2, getUserIDFromUsername(recipient));
+			ps.setInt(3, getUserIDFromUsername(recipient));
+			ps.setInt(4, getUserIDFromUsername(sender));
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				chatId = rs.getInt(COLUMN_CHAT_ID);
+				ps = conn.prepareStatement(
+						"INSERT INTO messages (chat_id,sender_id,recipient_id,message_content,timesent,group_flag) VALUES (?, ?, ?, ?, ?, ?)");
+				ps.setInt(1, chatId);
+				ps.setInt(2, getUserIDFromUsername(sender));
+				ps.setInt(3, getUserIDFromUsername(recipient));
+				ps.setString(4, textMessage);
+				Date date = new Date();
+				Timestamp ts = new Timestamp(date.getTime());
+				ps.setTimestamp(5, ts);
+				ps.setBoolean(6, false);
+				ps.executeUpdate();
+				ps.close();
+			} else {
+				PreparedStatement ps1 = conn
+						.prepareStatement("INSERT INTO chats (user1,user2) VALUES (?, ?) RETURNING chat_id");
+				ps1.setInt(1, getUserIDFromUsername(sender));
+				ps1.setInt(2, getUserIDFromUsername(recipient));
+				ResultSet result = ps1.executeQuery();
+				if (result.next()) {
+					chatId = result.getInt(1);
+					System.out.println("Added in chats.");
+					ps1 = conn.prepareStatement(
+							"INSERT INTO messages (chat_id,sender_id,recipient_id,message_content,timesent,group_flag) VALUES (?, ?, ?, ?, ?, ?)");
+					ps1.setInt(1, chatId);
+					ps1.setInt(2, getUserIDFromUsername(sender));
+					ps1.setInt(3, getUserIDFromUsername(recipient));
+					ps1.setString(4, textMessage);
+					Date date = new Date();
+					Timestamp ts = new Timestamp(date.getTime());
+					ps1.setTimestamp(5, ts);
+					ps1.setBoolean(6, false);
+					ps1.executeUpdate();
+					ps1.close();
+				} else {
+					System.out.println("not working");
+				}
+
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public int getUserIDFromUsername(String userName) {
+		Connection conn = this.connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("SELECT user_id FROM USERS WHERE username = ?;");
+			ps.setString(1, userName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				int clientId = rs.getInt(COLUMN_ID);
+				return clientId;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 	private String getMd5(String input) {
