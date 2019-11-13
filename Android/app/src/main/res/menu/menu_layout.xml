@@ -4,14 +4,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/search"
         android:title="@string/search_text"
-        android:icon="@android:drawable/ic_menu_search"
+        android:icon="@drawable/ic_search_icon"
         app:showAsAction="collapseActionView|ifRoom"
         app:actionViewClass="android.widget.SearchView" />
+    <item android:id="@+id/profile_picture"
+        android:title="@string/profile_picture_text"
+        android:icon="@drawable/ic_user_default_avatar"
+        app:showAsAction="collapseActionView|ifRoom"/>
     <item android:id="@+id/settings"
         android:title="@string/settings_menu_text" >
         <menu>
             <item android:id="@+id/unregister"
-                android:title="@string/unregister_text" />
+            android:title="@string/unregister_text" />
+            <item android:id="@+id/delete_all_chats"
+                android:title="@string/delete_all_chats_text" />
         </menu>
     </item>
     <item android:id="@+id/sign_out"

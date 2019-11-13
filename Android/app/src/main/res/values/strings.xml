@@ -20,4 +20,6 @@
     <string name="settings_menu_text"> Settings </string>
     <string name="sign_out_text"> Sign Out </string>
     <string name="unregister_text"> Unregister </string>
+    <string name="profile_picture_text"> Profile picture </string>
+    <string name="delete_all_chats_text"> Delete all chats </string>
 </resources>
