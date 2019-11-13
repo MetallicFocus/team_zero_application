@@ -7,4 +7,13 @@
         android:icon="@android:drawable/ic_menu_search"
         app:showAsAction="collapseActionView|ifRoom"
         app:actionViewClass="android.widget.SearchView" />
+    <item android:id="@+id/settings"
+        android:title="@string/settings_menu_text" >
+        <menu>
+            <item android:id="@+id/unregister"
+                android:title="@string/unregister_text" />
+        </menu>
+    </item>
+    <item android:id="@+id/sign_out"
+        android:title="@string/sign_out_text" />
 </menu>

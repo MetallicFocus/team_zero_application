@@ -1,7 +1,9 @@
 package teamzero.chat.mobile;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -11,6 +13,7 @@ import android.os.Bundle;
 
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -19,6 +22,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -175,6 +179,60 @@ public class ChatList extends AppCompatActivity {
                 searchManager.getSearchableInfo(getComponentName()));
         */
         return true;
+    }
+
+    // Called when the user selects any item from the menu
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        // Get the id of the selected menu item to determine what the user clicked
+        switch (item.getItemId()) {
+
+            case R.id.sign_out:
+                signOutOrUnregister("Sign Out");
+                return true;
+
+            case R.id.unregister:
+                signOutOrUnregister("Unregister");
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public void signOutOrUnregister(final String choice) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setPositiveButton(choice, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked Sign Out OR Unregister
+
+                if(choice.equalsIgnoreCase("Sign Out")) {
+                    // TODO: Build and send JSON to server stating that the user signed out
+                }
+
+                if(choice.equalsIgnoreCase("Unregister")) {
+                    // TODO: Build and send JSON to server stating that the user wants to unregister
+                }
+
+                // Go back to home login/register screen
+                startActivity(new Intent(ChatList.this, MainActivity.class));
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog, go back
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.setTitle(choice);
+        dialog.setMessage("Are you sure you want to " + choice.toLowerCase() + "?");
+        dialog.show();
     }
 
 }
