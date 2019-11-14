@@ -58,9 +58,9 @@ public class ServerMain extends WebSocketServer {
 	
 	
 	/**
-	 * A map of recipient client IDs to a list of messages that still need to be sent to them
+	 * A map of recipient client username to a list of messages that still need to be sent to them
 	 */
-	private HashMap<Integer, ArrayList<String>> recipientUnsentMessages;
+	private HashMap<String, ArrayList<String>> recipientUnsentMessages;
 	
 	
 	/**
@@ -80,7 +80,7 @@ public class ServerMain extends WebSocketServer {
 	public ServerMain(int port) throws UnknownHostException {
 		super(new InetSocketAddress(port));
 		clientWebSockets = new HashMap<WebSocket, Integer>();
-		recipientUnsentMessages = new HashMap<Integer, ArrayList<String>>();
+		recipientUnsentMessages = new HashMap<String, ArrayList<String>>();
 	}
 	
 	private static void startServer() throws UnknownHostException {
@@ -117,9 +117,7 @@ public class ServerMain extends WebSocketServer {
 	 */
 	@Override
 	public void onMessage(WebSocket websocket, String message) {
-		System.out.println(message); 
-		websocket.send(message);
-
+		System.out.println("Message receieved from　client:" + message); 
 		//parse JSON and get first element to check type
 		try {
 			JSONObject json = new JSONObject(message);
@@ -132,18 +130,21 @@ public class ServerMain extends WebSocketServer {
 				Client authenticatedClient = dbConnection.authenticateUser(userName, password);
 				// if the client is authenticated, get their info and add to connected clients
 				if (authenticatedClient != null) {
+					//tell user login was successful
+					websocket.send("LOGIN success");
+					
 					authenticatedClient.setLoggedIn(true); // setloggedInflag
 					ClientManager.getInstance().addClient(authenticatedClient);
 					int id = authenticatedClient.getId();
 					clientWebSockets.put(websocket, id);
 					
 					// check if there are any unsent messages to send & send them
-					
-					sendUnsentMessages(websocket, id);
+					sendUnsentMessages(websocket, userName);
 					
 				}
 				else {
-					//TODO cant authenticate, send error response
+					System.out.println("Cannot authenticate user.");
+					websocket.send("LOGIN failed: Cannot authenticate user. Check login details.");
 				}
 								
 			}
@@ -153,7 +154,13 @@ public class ServerMain extends WebSocketServer {
 				String password = json.getString(JSON_KEY_PASSWORD);
 				String email = json.getString(JSON_KEY_EMAIL);
 				DbConnection dbConnection = new DbConnection();
-				dbConnection.addUser(userName, password, email);
+				boolean successful = dbConnection.addUser(userName, password, email);
+				if (successful) {
+					websocket.send("REGISTER success");
+				}
+				else {
+					websocket.send("REGISTER failed");
+				}
 			}
 			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
 				// check if user is logged in first
@@ -163,6 +170,7 @@ public class ServerMain extends WebSocketServer {
 				else {
 					// TODO send back error message
 					System.out.println("Cannot send client message - sender is not logged in.");
+					websocket.send("TEXT failed: Sender is not logged in.");
 				}
 			}
 			else if (msgType.equals(CASE_UNREGISTER)) {
@@ -170,7 +178,13 @@ public class ServerMain extends WebSocketServer {
 				String userName = json.getString(JSON_KEY_USERNAME);
 				String password = json.getString(JSON_KEY_PASSWORD);
 				DbConnection dbConnection = new DbConnection();
-				dbConnection.deleteUser(userName, password);
+				boolean success = dbConnection.deleteUser(userName, password);
+				if (success) {
+					websocket.send("UNREGISTER success");
+				}
+				else {
+					websocket.send("UNREGISTER failed");
+				}
 			}
 			else if (msgType.equals(CASE_EDIT_PROFILE)) {
 				// TODO edit profile
@@ -178,10 +192,10 @@ public class ServerMain extends WebSocketServer {
 			}
 			else {
 				// TODO send error - unknown 
-				websocket.send(message);
+				websocket.send("ERROR: Incorrect format");
 			}
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
+			websocket.send(e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -209,8 +223,10 @@ public class ServerMain extends WebSocketServer {
 	 * @return
 	 */
 	private boolean isAuthenticated(WebSocket websocket) {
-		Client c = ClientManager.getInstance().getClientById(clientWebSockets.get(websocket));
-		return c.isLoggedIn();
+		int id = clientWebSockets.get(websocket);
+		Client c = ClientManager.getInstance().getClientById(id);
+		if (c == null) return false;
+		return  c.isLoggedIn();
 	}
 	
 	
@@ -246,23 +262,22 @@ public class ServerMain extends WebSocketServer {
 		else {
 			// if recipient is not currently connected
 			// insert message into unsent messages map
-			
-			int rId = recipient.getId();
+	
 			ArrayList<String> unsentMessages;
 
 			// check if there already are any unsent messages
-			if (recipientUnsentMessages.containsKey(rId)){
-				unsentMessages = recipientUnsentMessages.get(rId);
+			if (recipientUnsentMessages.containsKey(recipientUsername)){
+				unsentMessages = recipientUnsentMessages.get(recipientUsername);
 				unsentMessages.add(message.toString());
 				
 				// but the updated array list back in the map
-				recipientUnsentMessages.put(rId, unsentMessages);
+				recipientUnsentMessages.put(recipientUsername, unsentMessages);
 			}
 			else { 
 				// if there are no previous messages, add a new array with one message
 				unsentMessages = new ArrayList<String>();
 				unsentMessages.add(message.toString());
-				recipientUnsentMessages.put(rId, unsentMessages);	
+				recipientUnsentMessages.put(recipientUsername, unsentMessages);	
 			}
 			
 		}		
@@ -295,16 +310,24 @@ public class ServerMain extends WebSocketServer {
 	 * when a client has newly logged in or reconnected.
 	 * @param websocket 
 	 */
-	private void sendUnsentMessages(WebSocket websocket, int recipientId) {
-		ArrayList<String> messagesToSend = recipientUnsentMessages.get(recipientId);
-		Iterator<String> iterator = messagesToSend.iterator();
+	private void sendUnsentMessages(WebSocket websocket, String recipientUsername) {
+		ArrayList<String> messagesToSend = recipientUnsentMessages.get(recipientUsername);
 		
+		// if there are no messages waiting, simply return
+		if (messagesToSend == null)
+		{
+			return;
+		}
+		
+		Iterator<String> iterator = messagesToSend.iterator();
 		//TODO: currently sends as separate messages. it may be preferable to send a single larger
 		// message with all the data?
 		while(iterator.hasNext()) {
 			String nextMessage = iterator.next();
 			websocket.send(nextMessage);
 		}
+		// delete the messages as they no longer require sending
+		recipientUnsentMessages.remove(recipientUsername);
 	}
 
 	
