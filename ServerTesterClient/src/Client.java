@@ -6,6 +6,15 @@ import org.java_websocket.handshake.ServerHandshake;
 
 public class Client extends WebSocketClient {
 	
+
+	private static final String MESSAGE_TYPE_REGISTER = "REGISTER";
+	
+	private static final String MESSAGE_TYPE_UNREGISTER = "UNREGISTER";
+
+	private static final String MESSAGE_TYPE_LOGIN = "LOGIN";
+
+	private static final String MESSAGE_TYPE_TEXT = "TEXT";
+	
 	public static void main(String args[]) throws URISyntaxException {
 		Client c = new Client(new URI("ws://localhost:1234"));
 		c.connect();
@@ -48,8 +57,53 @@ public class Client extends WebSocketClient {
 		System.out.println("connected with server: " + arg0.toString());
 		System.out.println("Sending test message");
 
-		String message = "test message";
+		ClientRegisterLoginAndMessageTest test = new ClientRegisterLoginAndMessageTest();
+		
+		String client1Registers = test.getClient1RegisterMessage();
+		this.send(client1Registers);
+		
+		try {
+			this.wait(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		String client2Registers = test.getClient2RegisterMessage();
+		this.send(client2Registers);
+
+		try {
+			this.wait(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		String client1LogsIn = test.getClient1LoginMessage();
+		this.send(client1LogsIn);
+
+		try {
+			this.wait(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		String client2LogsIn = test.getClient2LoginMessage();
+		this.send(client2LogsIn);
+
+		try {
+			this.wait(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		String message = test.getClient1To2TextMessage();
 		this.send(message);
+
+		try {
+			this.wait(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		
 	}
 
