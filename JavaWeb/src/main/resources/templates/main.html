@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Main</title>
+		<link rel="stylesheet" type="text/css" href="/style/theme/index.css"/>
+		<script type="text/javascript" src="/js/vue.js"></script>
+		<!-- import JavaScript -->
+		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+	</head>
+	<body>
+		<div id="app" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);">
+			<el-container id="main-panel">
+				<el-aside id="left-panel">
+					<el-header id="self-info">
+						<el-avatar class="avatar" :src="self.avatar" style="margin-top: 5px;"></el-avatar>
+						<label style="font-size: 30px">{{self.name}}</label>
+					</el-header>
+					<el-header id="search-bar">
+						<el-input v-model="search" placeholder="search for chat or history" style="width: 195px;"></el-input>
+						<el-button type="primary" icon="el-icon-search"></el-button>
+					</el-header>
+					<el-main id="chat-list-panel">
+						<single-chat v-for="chat in chatlist" :id="chat.id" :avatar="chat.avatar" :name="chat.name" :time="chat.time" :content="chat.content" :show="chat.show" :chatlist="chatlist" ></single-chat>
+					</el-main>
+				</el-aside>
+				<single-chat-panel v-for="chat in chatlist" :chat="chat" v-show="chat.show"></single-chat-panel>
+			</el-container>
+		</div>
+	</body>
+	
+	<script>
+		Vue.component('single-chat', {
+		  props: ['id', 'avatar', 'name', 'time', 'content'],
+		  data: function () {
+		    return {
+		    }
+		  },
+		  template: '<div class="chat"><el-row><el-col :span="6"><el-avatar class="avatar" :src="avatar"></el-avatar></el-col><el-col :span="18"><el-row style="margin-top: 3px;"><el-col :span="18"><label class="name">{{name}}</label></el-col><el-col :span="6"><label class="last-chat-time">{{time}}</label></el-col></el-row><el-row><el-col :span="24"><label class="last-chat-content">{{content}}</label></el-col></el-row></el-col></el-row></div>',
+		  methods: {
+		  }
+		}),
+		Vue.component('single-chat-panel', {
+		  props: ['chat'],
+		  data: function () {
+		    return {
+		    }
+		  },
+		  template: '<el-container class="right-panel"><el-header id="object-info"><el-avatar class="avatar" :src="chat.avatar" style="margin-top: 5px;"></el-avatar><label style="font-size: 30px">{{chat.name}}</label></el-header><el-main id="chatting-panel"><div v-for="message in chat.messages"><single-message-from-object v-if="message.objectflag" :avatar="message.avatar" :time="message.time" :content="message.content"></single-message-from-object><single-message-from-self v-else :avatar="message.avatar" :time="message.time" :content="message.content"></single-message-from-self></div></el-main><el-footer id="text-panel"><el-row><el-col :span="22"><el-input v-model="textfield" style="margin-left: 5px;"></el-input></el-col><el-col :span="1"><el-button type="primary" icon="el-icon-check" style="margin-left: 15px;"></el-button></el-col></el-row></el-footer></el-container>'
+		}),
+		Vue.component('single-message-from-object', {
+		  props: ['avatar', 'time', 'content'],
+		  data: function () {
+		    return {
+		    }
+		  },
+		  template: '<div class="message-from-object"><el-row style="margin-top: 20px;"><el-col :span="1" style="margin-right: 10px; margin-top: 2px;"><el-avatar :src="avatar"></el-avatar></el-col><el-col :span="10"><el-card shadow="always"><label>{{content}}</label><label style="font-size: 12px; float: right; margin-top: 10px;">{{time}}</label></el-card></el-col></el-row></div>'
+		}),
+		Vue.component('single-message-from-self', {
+		  props: ['avatar', 'time', 'content'],
+		  data: function () {
+		    return {
+		    }
+		  },
+		  template: '<div class="message-from-self"><el-row style="margin-top: 20px;"><el-col :span="10" :offset="12"><el-card shadow="always"><label style="width: 50px;">{{content}}</label><label style="font-size: 12px; float: right; margin-top: 10px;">{{time}}</label></el-card></el-col><el-col :span="1" style="margin-left: 10px; margin-top: 2px;"><el-avatar :src="avatar"></el-avatar></el-col></el-row></div>'
+		}),
+		
+		new Vue({
+		  el: '#app',
+		  data: function() {
+		    return {
+				self: {
+					avatar: "/img/Joker.jpg",
+					name: "Joker"
+				},
+				search: "",			
+				chatlist: {
+					chat1: {
+						id: "1",
+						avatar: "/img/Joker.jpg",
+						name: "Object",
+						time: "00:00",
+						content: "me: test!",
+						show: 1,
+						messages: {
+							message1: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "11111111111!",
+								objectflag: 1
+							},
+							message2: {
+								avatar: "/img/Joker.jpg",
+								time: "00:00",
+								content: "22222222222!",
+								objectflag: 0
+							},
+							message3: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "333333333!",
+								objectflag: 1
+							},
+							message4: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "444444444444!",
+								objectflag: 1
+							},
+							message5: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "55555555555!",
+								objectflag: 1
+							},
+							message6: {
+								avatar: "/img/Joker.jpg",
+								time: "00:00",
+								content: "666666666!",
+								objectflag: 0
+							},
+							message7: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "77777777!",
+								objectflag: 1
+							},
+							message8: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "888888888!",
+								objectflag: 1
+							}
+						}
+					},
+					chat2: {
+						id: "2",
+						avatar: "/img/Joker.jpg",
+						name: "test2",
+						time: "00:00",
+						content: "me: test2!",
+						show: 0,
+						messages: {
+							message1: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "test2!",
+								objectflag: "object"
+							},
+							message2: {
+								avatar: "/img/Joker.jpg",
+								time: "00:00",
+								content: "test2!",
+								objectflag: "self"
+							},
+							message3: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "test2!",
+								objectflag: "object"
+							},
+							message4: {
+								avatar: "/img/Joker.jpg",
+								time: "00:00",
+								content: "test2!",
+								objectflag: "self"
+							}
+						}
+					},
+					chat3: {
+						id: "3",
+						avatar: "/img/Joker.jpg",
+						name: "test3",
+						time: "00:00",
+						content: "me: test3!",
+						show: 0,
+						messages: {
+							message1: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "test3!",
+								objectflag: "object"
+							},
+							message2: {
+								avatar: "/img/Joker.jpg",
+								time: "00:00",
+								content: "test3!",
+								objectflag: "self"
+							},
+							message3: {
+								avatar: "/img/Harley.png",
+								time: "00:00",
+								content: "test3!",
+								objectflag: "object"
+							},
+							message4: {
+								avatar: "/img/Joker.jpg",
+								time: "00:00",
+								content: "test!",
+								objectflag: "self"
+							}
+						}
+					}
+				}
+			}
+		  },
+		  methods: {
+		  }
+		})
+	</script>
+	
+	<style>
+	  #self-info {
+		  
+	  }
+	  
+	  #search-bar {
+		background-color: #E1F3D8;
+	  }
+	  
+	  #chat-list-panel {
+		height: 480px;
+		overflow: auto;
+	  }
+	  
+	  #object-info {
+		  
+	  }
+	  
+	  #chatting-panel {
+		background-color: #F5F7FA;
+	  }
+	  
+	  #text-panel {
+		background-color: #FBFDFF;
+		margin-top: 20px;
+	  }
+	  
+	  .chat {
+		height: 50px;
+		background-color: #ABE8E0;
+		margin-top: 2px;
+		padding-top: 10px;
+		padding-bottom: 10px;
+	  }
+	  
+	  .chat:hover {
+		background-color: #97E2D8;
+	  }
+	  
+	  .chat .avatar {
+		width: 40px; 
+		height: 40px; 
+		border-radius: 20px;
+		margin: 5px 12px;
+	  }
+	  
+	  .chat .name {
+		font-weight: 600;
+	  }
+	  
+	  .chat .last-chat-time {
+		text-align: right;
+	  }
+	  
+	  .chat .last-chat-content {
+		line-height: 30px;
+	  }
+	  
+	  .avatar {
+		width: 50px; 
+		height: 50px; 
+		border-radius: 25px;
+	  }
+	  
+	  .el-header {
+	    background-color: #2EC5B1;
+	    text-align: left;
+	    line-height: 60px;
+	  }
+	  
+	  .el-footer {
+	    background-color: #F4F4F5;
+	  }
+	  
+	  .el-aside {
+	    background-color: #ABE8E0;
+	  }
+	  
+	  .el-main {
+	    background-color: #EEFAF9;
+	  }
+	  
+	  .el-container {
+		height: 600px;
+		width: 1300px;
+	    margin-bottom: 40px;
+	  }
+	</style>
+</html>
+

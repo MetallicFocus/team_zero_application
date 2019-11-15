@@ -79,5 +79,4 @@ public class Registration extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
 }
