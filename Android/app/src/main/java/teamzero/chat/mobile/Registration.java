@@ -1,40 +1,28 @@
 package teamzero.chat.mobile;
 
-import android.content.Context;
 import android.content.Intent;
+
 import android.os.Bundle;
+
 import android.support.v7.app.AppCompatActivity;
+
 import android.view.View;
-import android.widget.Button;
+
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONException;
+
 import java.util.regex.PatternSyntaxException;
 
+import tools.JSONConstructor;
+
 public class Registration extends AppCompatActivity {
-
-    /* TODO:
-        1) Methods to check if username is:
-         1') valid [X]
-         2') available  []
-        2) Method that checks if both e-mails are the same AND in a correct format  [X]
-        3) Method that checks if both passwords are the same AND strong enough      [X]
-        4) Protect against SQL Injection                                            [X]
-        5) Method that passes the information to the server to store in database    []
-
-     */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registration_layout);
-
-        // Testing WebSocket handler from this activity
-        System.out.println("Response test from Registration activity: " + WebSocketHandler.getSocket().getResponse());
-        WebSocketHandler.getSocket().sendMessage("Test Message 3");
-        System.out.println("Response test from Registration activity: " + WebSocketHandler.getSocket().getResponse());
-        WebSocketHandler.getSocket().closeConnection();
-        // End of testing
     }
 
     public void checkFields(View view) {
@@ -54,11 +42,10 @@ public class Registration extends AppCompatActivity {
         System.out.println("email = " + email + "\n confirmEmail = " + confirmEmail);
 
         if(validateUsername(username) &&
-                checkUsernameAvailability(username) &&              // Check if username is available to register
                 validatePasswords(password, confirmPassword) &&     // Check if passwords are valid and if both are the same
                 validateEmails(email, confirmEmail)) {              // Check if e-mails are valid and if both are the same
 
-            sendDataToServer(username, password, email);
+            sendRegistrationRequestToServer(username, password, email, "null");
         }
     }
 
@@ -74,7 +61,7 @@ public class Registration extends AppCompatActivity {
             boolean valid = (username != null) && username.matches("\\b[a-zA-Z][a-zA-Z0-9\\-._]{3,30}\\b");
 
             if (!valid) {
-                Toast.makeText(getApplicationContext(), "Username is invalid!\nPlease try another username!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.invalid_username_text, Toast.LENGTH_LONG).show();
                 return false;
             }
 
@@ -82,13 +69,6 @@ public class Registration extends AppCompatActivity {
             // Invalid regex
             ex.printStackTrace();
         }
-        return true;
-    }
-
-    // TODO: Method that checks availability of username from database (fetch information)
-    public boolean checkUsernameAvailability(String username) {
-        /* Check database for the availability of chosen username */
-
         return true;
     }
 
@@ -108,13 +88,7 @@ public class Registration extends AppCompatActivity {
             boolean valid = (password != null) && password.matches("(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#!?$%^&+])(?=\\S+$).{6,30}");
 
             if (!valid) {
-                Toast.makeText(getApplicationContext(), "Invalid password!\n" +
-                        "Please make sure:\n\n" +
-                        "1) Password contains at least 1 uppercase character\n" +
-                        "2) Password contains at least 1 lowercase character\n" +
-                        "3) Password contains at least 1 digit\n" +
-                        "4) Password contains at least 1 special character\n" +
-                        "5) Password is between 6 and 30 characters", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), R.string.invalid_password_text, Toast.LENGTH_LONG).show();
                 return false;
             }
 
@@ -127,7 +101,7 @@ public class Registration extends AppCompatActivity {
         // Check if passwords are the same
         try {
             if(!password.equals(confirmPassword)) {
-                Toast.makeText(getApplicationContext(), "Confirmed password is not identical!\nPlease try again!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.invalid_confirmed_password_text, Toast.LENGTH_SHORT).show();
                 return false;
             }
         } catch(NullPointerException ex1) {
@@ -137,7 +111,7 @@ public class Registration extends AppCompatActivity {
         return true;
     }
 
-    // TODO: Make this method RFC822 compliant? (http://www.ex-parrot.com/~pdw/Mail-RFC822-Address/Mail-RFC822-Address.html)
+    // Make this method RFC822 compliant? (http://www.ex-parrot.com/~pdw/Mail-RFC822-Address/Mail-RFC822-Address.html)
     public boolean validateEmails(String email, String confirmEmail) {
         /* Check if:
             1) E-mail contains only one '@' character
@@ -149,8 +123,7 @@ public class Registration extends AppCompatActivity {
             boolean valid = (email != null) && email.matches("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}");
 
             if (!valid) {
-                Toast.makeText(getApplicationContext(), "Invalid email format!\n" +
-                        "Please type in your email again", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.invalid_email_text, Toast.LENGTH_SHORT).show();
                 return false;
             }
 
@@ -163,7 +136,7 @@ public class Registration extends AppCompatActivity {
         // Check if emails are the same
         try {
             if(!email.equals(confirmEmail)) {
-                Toast.makeText(getApplicationContext(), "Confirmed email is not identical!\nPlease type in your email again!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), R.string.invalid_confirmed_email_text, Toast.LENGTH_SHORT).show();
                 return false;
             }
         } catch(NullPointerException ex1) {
@@ -189,19 +162,24 @@ public class Registration extends AppCompatActivity {
         return newText;
     }
 
-    public void sendDataToServer(String username, String password, String email) {
-        /* Method that delivers information to store in database
-        *
-        * To Think: Use PreparedStatement to make SQL Injection impossible by placing the data
-        * directly inside the database (not affecting the INSERT statement in any way)
-        *
-        * */
+    public void sendRegistrationRequestToServer(String username, String password, String email, Object picture) {
 
-        // TODO: Send the information in JSON format to server and get into account
-        // Just for demo to go to the chat list screen:
+        try {
+            System.out.println("JSON = " + new JSONConstructor().constructRegisterJSON(username, password, email, picture));
 
-        startActivity(new Intent(Registration.this, ChatList.class));
-        // End of demo area
+            // Send JSON to server
+            WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructRegisterJSON(username, password, email, picture));
+
+            // TODO: Get response from server and parse it. If SUCCESS, login. Else, refresh this screen
+            //if(parseResponse(WebSocketHandler.getSocket().getResponse()).equalsIgnoreCase("success")) {
+            startActivity(new Intent(Registration.this, ChatList.class));
+            // }
+            // else
+            // Get error, display it in a toast and refresh this screen
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 }

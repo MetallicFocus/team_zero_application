@@ -207,6 +207,13 @@ public class ChatList extends AppCompatActivity {
                     // TODO: Build and send JSON to server stating that the user wants to unregister
                 }
 
+                // TODO: Delete this -- Testing WebSocket closed connection
+                System.out.println("Response test from ChatList activity: " + WebSocketHandler.getSocket().getResponse());
+                WebSocketHandler.getSocket().sendMessage("Test Message 3");
+                System.out.println("Response test from ChatList activity: " + WebSocketHandler.getSocket().getResponse());
+                WebSocketHandler.getSocket().closeConnection();
+                // End of testing
+
                 // Go back to home login/register screen
                 startActivity(new Intent(ChatList.this, MainActivity.class));
             }
