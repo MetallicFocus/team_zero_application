@@ -24,7 +24,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +31,6 @@ import java.util.List;
 import database.AppDatabaseClient;
 import database.StoredChatList;
 
-/*
-    TODO:   1) Make mock login with welcome message to test out UserDetails population  [X]
-            2) Display more info inside simple_list_item_2			                    [X]
-            3) Create new chat feature                                                  [X]
-            4) Make search fully functional                                             []
- */
 
 public class ChatList extends AppCompatActivity {
 
