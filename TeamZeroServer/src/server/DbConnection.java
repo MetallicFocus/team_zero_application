@@ -22,7 +22,7 @@ public class DbConnection {
 
 	private static final String COLUMN_USERNAME = "username";
 	private static final String COLUMN_EMAIL = "email";
-	private static final String COLUMN_ID = "id";
+	private static final String COLUMN_ID = "user_id";
 	
 
 	/**
@@ -41,7 +41,8 @@ public class DbConnection {
 		return conn;
 	}
 
-	public void addUser(String userName, String password, String email) {
+	public boolean addUser(String userName, String password, String email) {
+		boolean success = true;
 		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
@@ -55,8 +56,10 @@ public class DbConnection {
 				// TODO: Send errors to frontend
 				if (existingUser.equals(userName)) {
 					System.out.println("Username already exists");
+					success = false;
 				} else if (existingEmail.equals(email)) {
 					System.out.println("Email already exists");
+					success = false;
 				}
 			} else {
 				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password) VALUES (?, ?, ?)");
@@ -65,14 +68,17 @@ public class DbConnection {
 				ps.setString(3, getMd5(password));
 				ps.executeUpdate();
 				System.out.println("Added user.");
+				success = true;
 			}
 			ps.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			success = false;
 		}
+		return success;
 	}
 
-	public void deleteUser(String userName, String password) {
+	public boolean deleteUser(String userName, String password) {
 		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
@@ -82,9 +88,11 @@ public class DbConnection {
 			ps.executeUpdate();
 			System.out.println("Deleted user.");
 			ps.close();
+			return true;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 	
 	/**

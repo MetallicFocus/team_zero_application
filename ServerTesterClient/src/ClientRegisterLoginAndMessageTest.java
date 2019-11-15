@@ -15,19 +15,36 @@ public class ClientRegisterLoginAndMessageTest {
 	private String password2 = "testpassword2";
 	
 	public String getClient1RegisterMessage() {
-		String jsonMsg = "	{\n" + 
-				"\"type\": \"REGISTER\"" + 
+		String jsonMsg =
+				"{\"type\": \"REGISTER\"" + 
 				", \"username\":\"" + username1 + 
 				"\", \"password\":\"" + password1 + 
 				"\", \"email\":\"" + email1 +
 				"\", \"picture\":null}";
+		return jsonMsg;	
+		}	
+
+	public String getClient1UnRegisterMessage() {
+		String jsonMsg = 
+				"{\"type\": \"UNREGISTER\"" + 
+				", \"username\":\"" + username1 + 
+				"\", \"password\":\"" + password1 + 
+				"\"}";
 		return jsonMsg;
-		
+	}
+
+	public String getClient2UnRegisterMessage() {
+		String jsonMsg =
+				"{\"type\": \"UNREGISTER\"" + 
+				", \"username\":\"" + username2 + 
+				"\", \"password\":\"" + password2 + 
+				"\"}";
+		return jsonMsg;
 	}
 	
 	public String getClient2RegisterMessage() {
-		String jsonMsg = "	{\n" + 
-				"\"type\": \"REGISTER\"" + 
+		String jsonMsg =  
+				"{\"type\": \"REGISTER\"" + 
 				", \"username\":\"" + username2 + 
 				"\", \"password\":\"" + password2 + 
 				"\", \"email\":\"" + email2 +
@@ -36,8 +53,8 @@ public class ClientRegisterLoginAndMessageTest {
 		
 	}	
 	public String getClient1LoginMessage() {
-		String jsonMsg = "	{\n" + 
-				"\"type\": \"LOGIN\"" + 
+		String jsonMsg = 
+				"{\"type\": \"LOGIN\"" + 
 				", \"username\":\"" + username1 + 
 				"\", \"password\":\"" + password1 + 
 				"\"}";
@@ -46,8 +63,8 @@ public class ClientRegisterLoginAndMessageTest {
 	}
 
 	public String getClient2LoginMessage() {
-		String jsonMsg = "	{\n" + 
-				"\"type\": \"LOGIN\"" + 
+		String jsonMsg = 
+				"{\"type\": \"LOGIN\"" + 
 				", \"username\":\"" + username2 + 
 				"\", \"password\":\"" + password2 + 
 				"\"}";
@@ -55,8 +72,8 @@ public class ClientRegisterLoginAndMessageTest {
 		
 	}
 	public String getClient1To2TextMessage() {
-		String jsonMsg = "	{\n" + 
-				"\"type\": \"TEXT\"" + 
+		String jsonMsg =  
+				"{\"type\": \"TEXT\"" + 
 				", \"sender\":\"" + username1 + 
 				"\", \"recipient\":\"" + username2 + 
 				"\", \"message\":\"test message from some test client 1 to test client 2.\"}";  
@@ -112,6 +129,14 @@ public class ClientRegisterLoginAndMessageTest {
 
 	public void setPassword2(String password2) {
 		this.password2 = password2;
+	}
+
+	public String getClient1BadLoginMessage() {
+		String jsonMsg = 
+				"{\"type\": \"LOGIN\"" + 
+				", \"username\":\"" + username1 + 
+				"\", \"password\":\"wrongpassword\"}";
+		return jsonMsg;
 	}
 
 }
