@@ -1,16 +1,21 @@
 package teamzero.chat.mobile;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.AsyncTask;
 
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -19,20 +24,13 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
+
+import database.AppDatabaseClient;
+import database.StoredChatList;
 
 /*
     TODO:   1) Make mock login with welcome message to test out UserDetails population  [X]
@@ -47,8 +45,7 @@ public class ChatList extends AppCompatActivity {
     TextView noChatsFoundTextDisplay;
     FloatingActionButton newChatBtn;
 
-    ArrayList<HashMap<String, String>> chatList = new ArrayList<>();
-    int totalUsers = 0;
+    List<StoredChatList> storedChatList = new ArrayList<>();
     ProgressDialog pd;
 
     @Override
@@ -67,30 +64,14 @@ public class ChatList extends AppCompatActivity {
         Snackbar.make(findViewById(R.id.usersList), "Welcome back " + UserDetails.username, Snackbar.LENGTH_SHORT)
                 .setAction("Action", null).show();
 
-        // TODO: Change URL to access JSON content from our server
-        String url = "https://api.myjson.com/bins/lj6f8";
-
-        StringRequest request = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String s) {
-                doOnSuccess(s);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError volleyError) {
-                System.out.println("" + volleyError);
-            }
-        });
-
-        RequestQueue rQueue = Volley.newRequestQueue(ChatList.this);
-        rQueue.add(request);
+        getStoredChatList();
 
         // When the user clicks on a specific chat from his history, go to that conversation
         usersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                UserDetails.chatWith = chatList.get(position).get("username");
+                UserDetails.chatWith = storedChatList.get(position).getUsername();
 
                 // TODO: Start Activity --> Goto chat page with X person
                 startActivity(new Intent(ChatList.this, Chat.class));
@@ -106,33 +87,36 @@ public class ChatList extends AppCompatActivity {
         });
     }
 
-    public void doOnSuccess(String s) {
+    private void getStoredChatList() {
+        class GetStoredChatList extends AsyncTask<Void, Void, List<StoredChatList>> {
 
-        try {
-            JSONObject obj = new JSONObject(s);
-
-            Iterator i = obj.keys();
-            String key = "";
-
-            HashMap<String, String> specificUserDetails;
-
-            while(i.hasNext()){
-                specificUserDetails = new HashMap<>();
-                key = i.next().toString();
-                // Populate the hashmap representing chat list details to a specific chat from the list
-                specificUserDetails.put("username", key);
-                specificUserDetails.put("last_message", obj.getJSONObject(key).getString("last_message"));
-                // Add a chat from the list to the final array
-                chatList.add(specificUserDetails);
-                totalUsers++;
+            @Override
+            protected List<StoredChatList> doInBackground(Void... voids) {
+                // SELECT * FROM storedchatlist
+                List<StoredChatList> scl = AppDatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .storedChatListDao()
+                        .getAll();
+                return scl;
             }
 
-        } catch (JSONException e) {
-            e.printStackTrace();
+            @Override
+            protected void onPostExecute(List<StoredChatList> scl) {
+                super.onPostExecute(scl);
+                // Get the chat list and store it on main thread
+                storedChatList = scl;
+                displayChatList();
+            }
         }
 
-        // If there are no chats with other users found in history, display a suggestive text
-        if(totalUsers < 1) {
+        GetStoredChatList gt = new GetStoredChatList();
+        gt.execute();
+    }
+
+    public void displayChatList() {
+
+        if(storedChatList.size() == 0) {
             noChatsFoundTextDisplay.setVisibility(View.VISIBLE);
             usersList.setVisibility(View.GONE);
         }
@@ -142,22 +126,24 @@ public class ChatList extends AppCompatActivity {
             usersList.setVisibility(View.VISIBLE);
 
             // Overridden the getView of ArrayAdapter in order to access both text1 and text2 (from simple_list_item_2) and write on them right away
-            ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_2, android.R.id.text1, chatList) {
+            ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_2, android.R.id.text1, storedChatList) {
                 @Override
                 public View getView(int position, View convertView, ViewGroup parent) {
                     View view = super.getView(position, convertView, parent);
                     TextView text1 = (TextView) view.findViewById(android.R.id.text1);
                     TextView text2 = (TextView) view.findViewById(android.R.id.text2);
 
-                    text1.setText(chatList.get(position).get("username"));
-                    text2.setText(chatList.get(position).get("last_message"));
+                    text1.setText(storedChatList.get(position).getUsername());
+                    text2.setText(storedChatList.get(position).getLastMessageContent());
                     return view;
                 }
             };
             usersList.setAdapter(adapter);
         }
 
+        // Close the progress dialog when action is finished
         pd.dismiss();
+
     }
 
     // TODO: Make searching through chats functional
@@ -175,6 +161,117 @@ public class ChatList extends AppCompatActivity {
                 searchManager.getSearchableInfo(getComponentName()));
         */
         return true;
+    }
+
+    // Called when the user selects any item from the menu
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        // Get the id of the selected menu item to determine what the user clicked
+        switch (item.getItemId()) {
+
+            case R.id.sign_out:
+                signOutOrUnregister("Sign Out");
+                return true;
+
+            case R.id.unregister:
+                signOutOrUnregister("Unregister");
+                return true;
+
+            case R.id.profile_picture:
+                // TODO: Choose profile picture -- Goto profile page
+                return true;
+
+            case R.id.delete_all_chats:
+                deleteAllChatsPrompt();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public void signOutOrUnregister(final String choice) {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setPositiveButton(choice, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked Sign Out OR Unregister
+
+                if(choice.equalsIgnoreCase("Sign Out")) {
+                    // TODO: Build and send JSON to server stating that the user signed out
+                }
+
+                if(choice.equalsIgnoreCase("Unregister")) {
+                    // TODO: Build and send JSON to server stating that the user wants to unregister
+                }
+
+                // Go back to home login/register screen
+                startActivity(new Intent(ChatList.this, MainActivity.class));
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog, go back
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.setTitle(choice);
+        dialog.setMessage("Are you sure you want to " + choice.toLowerCase() + "?");
+        dialog.show();
+    }
+
+    public void deleteAllChatsPrompt() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setPositiveButton("DELETE", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked DELETE button
+                deleteAllChats();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User cancelled the dialog, go back
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.setTitle("Delete all chats");
+        dialog.setMessage("Are you sure you want to delete all the chats?");
+        dialog.show();
+    }
+
+    private void deleteAllChats() {
+        class DeleteAllChats extends AsyncTask<Void, Void, List<StoredChatList>> {
+
+            @Override
+            protected List<StoredChatList> doInBackground(Void... voids) {
+                // DELETE FROM storedchatlist
+                AppDatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .storedChatListDao()
+                        .deleteAll();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(List<StoredChatList> scl) {
+                super.onPostExecute(scl);
+                // Refresh
+                startActivity(new Intent(ChatList.this, ChatList.class));
+            }
+        }
+
+        DeleteAllChats gt = new DeleteAllChats();
+        gt.execute();
     }
 
 }

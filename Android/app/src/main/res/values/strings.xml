@@ -17,4 +17,9 @@
     <string name="message_box_hint_text"> Type your message </string>
     <string name="search_users_hint_text"> Type username to start a new chat with </string>
     <string name="search_users_suggestive_text"> Type in the box down below to search for a user to chat with </string>
+    <string name="settings_menu_text"> Settings </string>
+    <string name="sign_out_text"> Sign Out </string>
+    <string name="unregister_text"> Unregister </string>
+    <string name="profile_picture_text"> Profile picture </string>
+    <string name="delete_all_chats_text"> Delete all chats </string>
 </resources>
