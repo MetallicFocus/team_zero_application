@@ -33,8 +33,9 @@ public class ClientManager {
 	 * @return the single client manager
 	 */
 	public static ClientManager getInstance() {
-		if (clientManager == null)
+		if (clientManager == null) {
 			clientManager = new ClientManager();
+		}
 		return clientManager;
 	}
 
