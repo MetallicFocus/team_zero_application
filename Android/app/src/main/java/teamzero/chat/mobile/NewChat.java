@@ -28,6 +28,11 @@ public class NewChat extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_chat_layout);
 
+        // Check if the SupportActionBar is instantiated
+        assert getSupportActionBar() != null;
+        // If it is, display a back button on the action bar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         suggestiveTextTextView = (TextView) findViewById(R.id.searchUsersSuggestiveTextView);
         searchUsersBtn = (FloatingActionButton) findViewById(R.id.SearchUsersButton);
         searchUsersEditText = (EditText) findViewById(R.id.SearchUsersEditText);
@@ -76,6 +81,14 @@ public class NewChat extends AppCompatActivity {
 
         AddUserToStoredChatList st = new AddUserToStoredChatList();
         st.execute();
+    }
+
+    // Finishes current activity (dismisses dialogs, closes search) and goes to the parent activity
+    // The method is called when the user clicks on the back button on the upper-left hand side
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
     }
 
 }

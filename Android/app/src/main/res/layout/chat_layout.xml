@@ -23,12 +23,12 @@
         android:layout_height="2dp"
         android:background="#dfdfdf"
         android:layout_marginBottom="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/MsgBox"
+        app:layout_constraintBottom_toTopOf="@+id/MsgBoxLayout"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
 
     <LinearLayout
-        android:id="@+id/MsgBox"
+        android:id="@+id/MsgBoxLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -39,7 +39,7 @@
         app:layout_constraintLeft_toLeftOf="parent">
 
         <EditText
-            android:id="@+id/MsgBoxHint"
+            android:id="@+id/MsgBox"
             android:hint="@string/message_box_hint_text"
             android:background="@android:color/transparent"
             android:layout_gravity="center"
