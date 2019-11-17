@@ -156,13 +156,13 @@ public class ServerMain extends WebSocketServer {
 				websocket.send(userName + " registered.");
 			}
 			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
-				String sender = json.getString(JSON_KEY_SENDER);
-				String recipient = json.getString(JSON_KEY_RECIPIENT);
-				String textMessage = json.getString(JSON_KEY_MESSAGE);
-				DbConnection dbConnection = new DbConnection();
-				dbConnection.addMessage(sender, recipient, textMessage);
 				// check if user is logged in first
 				if (isAuthenticated(websocket)) {
+					String sender = json.getString(JSON_KEY_SENDER);	
+					String recipient = json.getString(JSON_KEY_RECIPIENT);
+					String textMessage = json.getString(JSON_KEY_MESSAGE);
+					DbConnection dbConnection = new DbConnection();
+					dbConnection.addMessage(sender, recipient, textMessage);
 					sendClientText(websocket, json);
 				}
 				else {
@@ -267,7 +267,7 @@ public class ServerMain extends WebSocketServer {
 				// if there are no previous messages, add a new array with one message
 				unsentMessages = new ArrayList<String>();
 				unsentMessages.add(message.toString());
-				recipientUnsentMessages.put(rId, unsentMessages);	
+				recipientUnsentMessages.put(rId, unsentMessages);
 			}
 			
 		}		
