@@ -21,34 +21,59 @@ public class Client extends WebSocketClient {
 
 		System.out.println("Scenario 1 - client 1 and 2 register, login, then client 1 sends client 2 a message while both are logged in.\n");
 		Client1 c1 = new Client1(new URI("ws://localhost:1234"));
+		Client2 c2 = new Client2(new URI("ws://localhost:1234"));
 		System.out.println("Client 1 connecting");
 		c1.connect();
-		
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 
-		c1.register();
 		
-		c1.login();
+		c2.connect();
+
 		
-		Client2 c2 = new Client2(new URI("ws://localhost:1234"));
-		c2.connect(); //  this connection seems to take a long time - WHY?
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
+		// set up just in case for tests
+		c1.unregister();
+		c2.unregister();
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		c1.register();
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		c1.login();
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+        
+
 		c2.register();
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 		
 		c2.login();
 
 		try {
-			Thread.sleep(200);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -56,7 +81,7 @@ public class Client extends WebSocketClient {
 		c1.text();
 
 		try {
-			Thread.sleep(500);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -83,12 +108,18 @@ public class Client extends WebSocketClient {
 
 		c1.register();
 		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		c1.login();
 		
 		c2.register();
 
 		try {
-			Thread.sleep(200);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -96,7 +127,7 @@ public class Client extends WebSocketClient {
 		c1.text();
 
 		try {
-			Thread.sleep(500);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -104,7 +135,7 @@ public class Client extends WebSocketClient {
 		c2.login();
 		
 		try {
-			Thread.sleep(500);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -130,6 +161,12 @@ public class Client extends WebSocketClient {
 				+ "log in with bad password.\n");
 		
 		c1.register();
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		
 		c1.badLogin();
 		
@@ -204,7 +241,7 @@ class Client1 extends Client{
 	}
 	
 	public void unregister(){
-		System.out.println("Sending message to unregister client 2...");
+		System.out.println("Sending message to unregister client 1...");
 		String message = test.getClient2UnRegisterMessage();
 		this.send(message);
 	}

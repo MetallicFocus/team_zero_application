@@ -10,6 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Date;
 
 /**
@@ -17,6 +19,8 @@ import java.util.Date;
  *
  */
 public class DbConnection {
+	
+	private static final Logger LOGGER = Logger.getLogger("ServerLog");
 
 	private final String url = "jdbc:postgresql://ec2-54-228-252-67.eu-west-1.compute.amazonaws.com:5432/dfhffsp1a17jm1";
 	private final String user = "sdakjchdnvngqe";
@@ -36,9 +40,10 @@ public class DbConnection {
 		Connection conn = null;
 		try {
 			conn = DriverManager.getConnection(url, user, password);
-			System.out.println("Connected to the PostgreSQL server successfully.");
+			LOGGER.log( Level.FINE, "Connected to the PostgreSQL server successfully.");
 		} catch (SQLException e) {
-			System.out.println(e.getMessage());
+			LOGGER.log( Level.SEVERE, "Could not connect to PostgreSQL server - {0}", e.getMessage());
+			
 		}
 		return conn;
 	}
@@ -57,10 +62,13 @@ public class DbConnection {
 				String existingEmail = rs.getString(COLUMN_EMAIL);
 				// TODO: Send errors to frontend
 				if (existingUser.equals(userName)) {
-					System.out.println("Username already exists");
+
+					LOGGER.log( Level.WARNING, "Username already exists");
 					success = false;
 				} else if (existingEmail.equals(email)) {
-					System.out.println("Email already exists");
+
+					LOGGER.log( Level.WARNING, "Email already exists");
+					
 					success = false;
 				}
 			} else {
@@ -69,10 +77,12 @@ public class DbConnection {
 				ps.setString(2, email);
 				ps.setString(3, getMd5(password));
 				ps.executeUpdate();
-				System.out.println("Added user.");
+
+				LOGGER.log( Level.FINE, "Added user {0}", userName);
 				success = true;
 			}
 			ps.close();
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			success = false;
@@ -88,8 +98,10 @@ public class DbConnection {
 			ps.setString(1, userName);
 			ps.setString(2, getMd5(password));
 			ps.executeUpdate();
-			System.out.println("Deleted user.");
+
+			LOGGER.log( Level.FINE, "Deleted user {0}", userName);
 			ps.close();
+			conn.close();
 			return true;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -121,10 +133,10 @@ public class DbConnection {
 					int clientId = rs.getInt(COLUMN_ID);
 					String clientEmail = rs.getString(COLUMN_EMAIL);
 					Client client = new Client(userName, clientEmail, clientId, true);
-					return client;
+					conn.close();
+					return client; 
 				}
 			}
-
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -153,6 +165,7 @@ public class DbConnection {
 				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
 				allClients.add(client);
 			}
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

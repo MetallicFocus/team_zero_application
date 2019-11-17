@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -11,12 +12,21 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.json.*;
+import java.util.logging.*;
 
 /**
  * Main Server class and system entry point.
  */
 public class ServerMain extends WebSocketServer {
 
+	private static final Logger LOGGER = Logger.getLogger("ServerLog");
+	
+	/*
+	 * Logging level to control Console log output. Set to All to see everything.
+	 * Set to FINE to see everything except messages sent from server
+	 * Set to INFO to only see highest level connection and error info
+	 */
+	private static final Level LOG_LEVEL = Level.ALL;
 
 	private static final int LOCAL_PORT = 1234;
 	
@@ -31,8 +41,13 @@ public class ServerMain extends WebSocketServer {
 	private static final String CASE_UNREGISTER = "UNREGISTER"; // delete client from system
 	
 	private static final String CASE_LOGIN = "LOGIN"; //login with user name and password
-	
+
 	private static final String CASE_EDIT_PROFILE = "EDIT"; //edit profile details
+
+	private static final String MESSAGE_REPLY_SUCCESS = "SUCCESS"; //feedback reply to clients 
+	private static final String MESSAGE_REPLY_FAILED = "FAILED"; //feedback reply to clients 
+	
+	private static final String MESSAGE_REPLY = "REPLY"; //feedback reply to clients 
 	
 	/**
 	 * JSON keys or attributes that the server expects within data sent from the client
@@ -68,8 +83,35 @@ public class ServerMain extends WebSocketServer {
 	 * @throws UnknownHostException 
 	 */
 	public static void main(String[] args) throws UnknownHostException {
-		System.out.println("System started");
+		setupLogger();
+		LOGGER.log( Level.INFO, "System started");
 		startServer();
+	}
+	
+	/**
+	 * Sets up the logger and handlers so that information can be logged to the console
+	 * and an external text file 
+	 */
+	private static void setupLogger() {
+		  // create console handler to output to console
+		 ConsoleHandler consoleHandler = new ConsoleHandler();
+		 consoleHandler.setLevel(LOG_LEVEL);
+		 LOGGER.addHandler(consoleHandler);
+		 LOGGER.setLevel(Level.ALL);
+		 LOGGER.setUseParentHandlers(false);	
+		 // create file handler to output to file
+		Handler fileHandler;
+		try {
+			fileHandler = new FileHandler("ServerLog.txt",false);
+			 SimpleFormatter plainText = new SimpleFormatter();
+			 fileHandler.setFormatter(plainText);
+			 fileHandler.setLevel(Level.ALL);
+			 LOGGER.addHandler(fileHandler);
+		} catch (SecurityException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			LOGGER.log(Level.WARNING, "Could not create Server Log file.");
+		} 
 	}
 	
 	/**
@@ -85,14 +127,13 @@ public class ServerMain extends WebSocketServer {
 	
 	private static void startServer() throws UnknownHostException {
 		int port;
-		
 		try {
 			// get port information on heroku
 			port = Integer.parseInt(System.getenv("PORT"));
-			System.out.println("port is" + port);
 		}catch(NumberFormatException e) {
 			port = LOCAL_PORT;
 		}
+		LOGGER.log( Level.INFO, "Port is {0}", String.valueOf(port));
 		new ServerMain(port).start();
 	}
 
@@ -100,16 +141,15 @@ public class ServerMain extends WebSocketServer {
 	public void onClose(WebSocket websocket, int arg1, String arg2, boolean arg3) {
 		
 		// remove client from connected clients manager and from client websockets array
-		ClientManager.getInstance().removeClient(clientWebSockets.get(websocket));
+		int clientId = clientWebSockets.get(websocket);
+		ClientManager.getInstance().removeClient(clientId);
 		clientWebSockets.remove(websocket);
-		System.out.println("Client connection closed: " + websocket.toString()); 
-		
+		LOGGER.log( Level.INFO, "Client connection closed: {0}", websocket.toString());	
 	}
 
 	@Override
 	public void onError(WebSocket arg0, Exception arg1) {
-		System.out.println(arg1.toString());
-		
+		LOGGER.log( Level.WARNING, "Server onError called: {0}", arg1.getMessage());
 	}
 
 	/**
@@ -117,7 +157,8 @@ public class ServerMain extends WebSocketServer {
 	 */
 	@Override
 	public void onMessage(WebSocket websocket, String message) {
-		System.out.println("Message receieved from　client:" + message); 
+		LOGGER.log( Level.FINE, "Message received from　client: {0}", message);
+		
 		//parse JSON and get first element to check type
 		try {
 			JSONObject json = new JSONObject(message);
@@ -132,7 +173,7 @@ public class ServerMain extends WebSocketServer {
 				// if the client is authenticated, get their info and add to connected clients
 				if (authenticatedClient != null) {
 					//tell user login was successful
-					websocket.send("LOGIN success");
+					websocket.send(generateReplyToClient(CASE_LOGIN, MESSAGE_REPLY_SUCCESS, ""));
 					
 					authenticatedClient.setLoggedIn(true); // setloggedInflag
 					ClientManager.getInstance().addClient(authenticatedClient);
@@ -142,8 +183,13 @@ public class ServerMain extends WebSocketServer {
 					sendUnsentMessages(websocket, userName);
 				}
 				else {
-					System.out.println("Cannot authenticate user.");
-					websocket.send("LOGIN failed: Cannot authenticate user. Check login details.");
+					LOGGER.log( Level.FINE, 
+							"Cannot authenticate username ({0}) and password ({1})", 
+							new String[] {userName,password});
+					websocket.send((generateReplyToClient(
+										CASE_LOGIN,
+										MESSAGE_REPLY_FAILED, 
+										"Cannot authenticate user. Check login details.")));
 				}
 								
 			}
@@ -155,10 +201,11 @@ public class ServerMain extends WebSocketServer {
 				DbConnection dbConnection = new DbConnection();
 				boolean successful = dbConnection.addUser(userName, password, email);
 				if (successful) {
-					websocket.send("REGISTER success");
+					websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_SUCCESS, ""));
 				}
 				else {
-					websocket.send("REGISTER failed");
+					// TODO need to get message from DB
+					websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_FAILED, ""));
 				}
 			}
 			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
@@ -172,9 +219,13 @@ public class ServerMain extends WebSocketServer {
 					sendClientText(websocket, json);
 				}
 				else {
-					// TODO send back error message
-					System.out.println("Cannot send client message - sender is not logged in.");
-					websocket.send("TEXT failed: Sender is not logged in.");
+					LOGGER.log( Level.FINE, 
+							"Cannot send client message - sender is not logged in. {0}", websocket.toString());
+					websocket.send(
+							generateReplyToClient(
+									CASE_TEXT_MESSAGE,
+									MESSAGE_REPLY_FAILED, 
+									"Sender is not logged in"));
 				}
 			}
 			else if (msgType.equals(CASE_UNREGISTER)) {
@@ -184,10 +235,14 @@ public class ServerMain extends WebSocketServer {
 				DbConnection dbConnection = new DbConnection();
 				boolean success = dbConnection.deleteUser(userName, password);
 				if (success) {
-					websocket.send("UNREGISTER success");
+					websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_SUCCESS, ""));		
+					// remove user from connected lists
+					int clientId = clientWebSockets.get(websocket);
+					ClientManager.getInstance().removeClient(clientId);
+					clientWebSockets.remove(websocket);
 				}
 				else {
-					websocket.send("UNREGISTER failed");
+					websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_FAILED, ""));
 				}
 			}
 			else if (msgType.equals(CASE_EDIT_PROFILE)) {
@@ -195,11 +250,10 @@ public class ServerMain extends WebSocketServer {
 				// check if logged in first
 			}
 			else {
-				// TODO send error - unknown 
-				websocket.send("ERROR: Incorrect format");
+				websocket.send(generateReplyToClient(msgType, MESSAGE_REPLY_FAILED, "unrecognised type"));
 			}
 		} catch (JSONException e) {
-			websocket.send(e.getMessage());
+			websocket.send(generateReplyToClient("", MESSAGE_REPLY_FAILED, "Bad JSON Format: " + e.getMessage()));
 			e.printStackTrace();
 		}
 	}
@@ -210,15 +264,8 @@ public class ServerMain extends WebSocketServer {
 	@Override
 	public void onOpen(WebSocket websocket, ClientHandshake handshake) {
 		
-		System.out.println("Connection established with a client.");
-		System.out.println("WebSocket: " + websocket.toString());
-		System.out.println("Handshake: " + handshake.toString());
-		
-		//TODO check if its the same as a previously logged in client so we dont
-		// have to authenticate again
-		
-		
-		
+		LOGGER.log( Level.INFO, 
+				"Connection established with a client: {0}", websocket.toString());
 	}
 	
 	/**
@@ -308,6 +355,29 @@ public class ServerMain extends WebSocketServer {
 		return null;
 	}
 	
+	/**
+	 * Generates a JSON reply message for clients given the original request type,
+	 * the feedback (success or failure) and an optional message to append
+	 * @param originalType
+	 * @param feedback
+	 * @param message
+	 * @return a JSON string in the format {"type":"reply","reply":originalType: feedback,"message":message}
+	 */
+	private String generateReplyToClient(String originalType, String feedback, String message) {
+		// using StringBuilder instead of JSONObject because 
+		//JSONObject seems to create unnecessary arrays
+		StringBuilder sb = new StringBuilder();	
+		sb.append("{\"").append(JSON_KEY_MESSAGE_TYPE)
+				.append("\":\"").append(MESSAGE_REPLY).append("\",");
+		sb.append("\"").append(MESSAGE_REPLY).append("\":\"")
+			.append(originalType).append(": ").append(feedback).append("\",");	
+		sb.append("\"").append(JSON_KEY_MESSAGE).append("\":\"")
+			.append(message).append("\"}");
+		
+		LOGGER.log(Level.FINER, "Sending reply: {0}", sb.toString());
+		return sb.toString();
+	}
+	
 	
 	/**
 	 * Send messages that were previously unsent to a given web socket. Intended to be called
@@ -328,6 +398,9 @@ public class ServerMain extends WebSocketServer {
 		// message with all the data?
 		while(iterator.hasNext()) {
 			String nextMessage = iterator.next();
+			LOGGER.log(Level.FINER, 
+					"Sending user {0} previously unsent message: {1}",
+					new String[] {recipientUsername, nextMessage});
 			websocket.send(nextMessage);
 		}
 		// delete the messages as they no longer require sending
