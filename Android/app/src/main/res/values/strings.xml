@@ -10,6 +10,11 @@
     <string name="login_text"> Login </string>
     <string name="register_text"> Register </string>
     <string name="click_to_register_text"> Not a user yet? Click below to register </string>
+    <string name="invalid_username_text"> Invalid username!\nPlease make sure it contains only:\n\n1) Letters (lowercase and uppercase)\n2) Numbers\n3) Characters \'-\', \'.\' or \'_\' </string>
+    <string name="invalid_password_text"> Invalid password!\nPlease make sure:\n\n1) Password contains at least 1 uppercase character\n2) Password contains at least 1 lowercase character\n3) Password contains at least 1 digit\n4) Password contains at least 1 special character\n5) Password is between 6 and 30 characters </string>
+    <string name="invalid_confirmed_password_text"> Confirmed password is not identical!\nPlease try again! </string>
+    <string name="invalid_email_text"> Invalid email format!\nPlease type in your email again </string>
+    <string name="invalid_confirmed_email_text"> Confirmed email is not identical!\nPlease type in your email again! </string>
     <string name="registration_text"> Please fill the information below correctly </string>
     <string name="no_chats_found_text"> No chats open so far! </string>
     <string name="search_text"> Search chat </string>
@@ -17,4 +22,9 @@
     <string name="message_box_hint_text"> Type your message </string>
     <string name="search_users_hint_text"> Type username to start a new chat with </string>
     <string name="search_users_suggestive_text"> Type in the box down below to search for a user to chat with </string>
+    <string name="settings_menu_text"> Settings </string>
+    <string name="sign_out_text"> Sign Out </string>
+    <string name="unregister_text"> Unregister </string>
+    <string name="profile_picture_text"> Profile picture </string>
+    <string name="delete_all_chats_text"> Delete all chats </string>
 </resources>
