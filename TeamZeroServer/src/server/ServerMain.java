@@ -128,6 +128,7 @@ public class ServerMain extends WebSocketServer {
 
 				DbConnection dbConnection = new DbConnection();
 				Client authenticatedClient = dbConnection.authenticateUser(userName, password);
+				websocket.send(userName + "Logged in.");
 				// if the client is authenticated, get their info and add to connected clients
 				if (authenticatedClient != null) {
 					//tell user login was successful
@@ -137,10 +138,8 @@ public class ServerMain extends WebSocketServer {
 					ClientManager.getInstance().addClient(authenticatedClient);
 					int id = authenticatedClient.getId();
 					clientWebSockets.put(websocket, id);
-					
 					// check if there are any unsent messages to send & send them
 					sendUnsentMessages(websocket, userName);
-					
 				}
 				else {
 					System.out.println("Cannot authenticate user.");
@@ -165,6 +164,11 @@ public class ServerMain extends WebSocketServer {
 			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
 				// check if user is logged in first
 				if (isAuthenticated(websocket)) {
+					String sender = json.getString(JSON_KEY_SENDER);	
+					String recipient = json.getString(JSON_KEY_RECIPIENT);
+					String textMessage = json.getString(JSON_KEY_MESSAGE);
+					DbConnection dbConnection = new DbConnection();
+					dbConnection.addMessage(sender, recipient, textMessage);
 					sendClientText(websocket, json);
 				}
 				else {
