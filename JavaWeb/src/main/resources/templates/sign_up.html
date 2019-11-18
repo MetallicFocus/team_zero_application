@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 	<head>
 		<meta charset="utf-8">
 		<title>Sign Up</title>
-		<link rel="stylesheet" type="text/css" href="style/theme/index.css"/>
-		<script type="text/javascript" src="js/vue.js"></script>
+		<link rel="stylesheet" type="text/css" th:href="@{/style/theme/index.css}"/>
+		<script type="text/javascript" th:src="@{/js/vue.js}"></script>
 		<!-- import JavaScript -->
 		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
 	</head>
 	<body>
-		<div id="app" v-bind:style='divStyle'>
+		<div id="app" :style='divStyle'>
 		<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="150px" class="demo-ruleForm">
 		  <el-form-item label="Email Address" prop="email">
 		    <el-input v-model="ruleForm.email"></el-input>
