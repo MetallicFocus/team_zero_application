@@ -14,6 +14,6 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
-	<classpathentry kind="lib" path="/Users/1r15u/Documents/GitHub/group_app/team_zero_application/TeamZeroServer/java-websocket-1.3.0.jar"/>
+	<classpathentry kind="lib" path="/Users/1r15u/Documents/GitHub/team_zero_application/TeamZeroServer/java-websocket-1.3.0.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
