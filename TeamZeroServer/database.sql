@@ -2,13 +2,8 @@ CREATE TABLE users(
     user_id serial PRIMARY KEY,
     username VARCHAR (50) UNIQUE NOT NULL,
     email VARCHAR (355) UNIQUE NOT NULL,
-    password VARCHAR (50) NOT NULL
-);
-
-CREATE TABLE user_info(
-    user_id integer PRIMARY KEY,
-    avatar BYTEA,
-    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    password VARCHAR (50) NOT NULL,
+    avatar BYTEA
 );
 
 CREATE TABLE groups(
@@ -33,14 +28,24 @@ CREATE TABLE chats(
     FOREIGN KEY (user2) REFERENCES users (user_id)
 );
 
-CREATE TABLE messages(
+CREATE TABLE chat_message (
     mesasge_id serial PRIMARY KEY,
     chat_id integer NOT NULL,
     sender_id integer NOT NULL,
     recipient_id integer NOT NULL,
+    message_content VARCHAR (300) NOT NULL,
     timesent TIMESTAMP NOT NULL,
-    group_flag BOOLEAN NOT NULL,
     FOREIGN KEY (chat_id) REFERENCES chats (chat_id),
     FOREIGN KEY (sender_id) REFERENCES users (user_id),
     FOREIGN KEY (recipient_id) REFERENCES users (user_id)
+);
+
+CREATE TABLE group_message (
+    group_message_id serial PRIMARY KEY,
+    sender_id integer NOT NULL,
+    group_id integer NOT NULL,
+    timesent TIMESTAMP NOT NULL,
+    message_content VARCHAR (300) NOT NULL,
+    FOREIGN KEY (sender_id) REFERENCES users (user_id),
+    FOREIGN KEY (group_id) REFERENCES groups (group_id)
 );
