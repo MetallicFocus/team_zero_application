@@ -90,6 +90,12 @@ public class DbConnection {
 		return success;
 	}
 
+	/**
+	 * TODO note currently this will not work if there are any chat messages where this user is referenced.
+	 * @param userName
+	 * @param password
+	 * @return
+	 */
 	public boolean deleteUser(String userName, String password) {
 		Connection conn = connect();
 		PreparedStatement ps = null;
@@ -137,6 +143,8 @@ public class DbConnection {
 					return client; 
 				}
 			}
+			ps.close();
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -165,6 +173,7 @@ public class DbConnection {
 				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
 				allClients.add(client);
 			}
+			ps.close();
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -220,8 +229,10 @@ public class DbConnection {
 				} else {
 					System.out.println("not working");
 				}
+				ps.close();
 
 			}
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -236,9 +247,12 @@ public class DbConnection {
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				int clientId = rs.getInt(COLUMN_ID);
+				ps.close();
+				conn.close();
 				return clientId;
 			}
-
+			ps.close();
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
