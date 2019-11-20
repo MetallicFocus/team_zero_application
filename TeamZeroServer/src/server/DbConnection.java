@@ -19,7 +19,7 @@ import java.util.Date;
  *
  */
 public class DbConnection {
-	
+
 	private static final Logger LOGGER = Logger.getLogger("ServerLog");
 
 	private final String url = "jdbc:postgresql://ec2-54-228-252-67.eu-west-1.compute.amazonaws.com:5432/dfhffsp1a17jm1";
@@ -40,10 +40,10 @@ public class DbConnection {
 		Connection conn = null;
 		try {
 			conn = DriverManager.getConnection(url, user, password);
-			LOGGER.log( Level.FINE, "Connected to the PostgreSQL server successfully.");
+			LOGGER.log(Level.FINE, "Connected to the PostgreSQL server successfully.");
 		} catch (SQLException e) {
-			LOGGER.log( Level.SEVERE, "Could not connect to PostgreSQL server - {0}", e.getMessage());
-			
+			LOGGER.log(Level.SEVERE, "Could not connect to PostgreSQL server - {0}", e.getMessage());
+
 		}
 		return conn;
 	}
@@ -63,12 +63,12 @@ public class DbConnection {
 				// TODO: Send errors to frontend
 				if (existingUser.equals(userName)) {
 
-					LOGGER.log( Level.WARNING, "Username already exists");
+					LOGGER.log(Level.WARNING, "Username already exists");
 					success = false;
 				} else if (existingEmail.equals(email)) {
 
-					LOGGER.log( Level.WARNING, "Email already exists");
-					
+					LOGGER.log(Level.WARNING, "Email already exists");
+
 					success = false;
 				}
 			} else {
@@ -78,7 +78,7 @@ public class DbConnection {
 				ps.setString(3, getMd5(password));
 				ps.executeUpdate();
 
-				LOGGER.log( Level.FINE, "Added user {0}", userName);
+				LOGGER.log(Level.FINE, "Added user {0}", userName);
 				success = true;
 			}
 			ps.close();
@@ -90,6 +90,12 @@ public class DbConnection {
 		return success;
 	}
 
+	/**
+	 * TODO note currently this will not work if there are any chat messages where this user is referenced.
+	 * @param userName
+	 * @param password
+	 * @return
+	 */
 	public boolean deleteUser(String userName, String password) {
 		Connection conn = connect();
 		PreparedStatement ps = null;
@@ -99,7 +105,7 @@ public class DbConnection {
 			ps.setString(2, getMd5(password));
 			ps.executeUpdate();
 
-			LOGGER.log( Level.FINE, "Deleted user {0}", userName);
+			LOGGER.log(Level.FINE, "Deleted user {0}", userName);
 			ps.close();
 			conn.close();
 			return true;
@@ -134,9 +140,11 @@ public class DbConnection {
 					String clientEmail = rs.getString(COLUMN_EMAIL);
 					Client client = new Client(userName, clientEmail, clientId, true);
 					conn.close();
-					return client; 
+					return client;
 				}
 			}
+			ps.close();
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -165,6 +173,7 @@ public class DbConnection {
 				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
 				allClients.add(client);
 			}
+			ps.close();
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -176,7 +185,8 @@ public class DbConnection {
 		Connection conn = connect();
 		int chatId = 0;
 		try {
-			PreparedStatement ps = conn.prepareStatement("SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
 			ps.setInt(1, getUserIDFromUsername(sender));
 			ps.setInt(2, getUserIDFromUsername(recipient));
 			ps.setInt(3, getUserIDFromUsername(recipient));
@@ -185,7 +195,7 @@ public class DbConnection {
 			if (rs.next()) {
 				chatId = rs.getInt(COLUMN_CHAT_ID);
 				ps = conn.prepareStatement(
-						"INSERT INTO messages (chat_id,sender_id,recipient_id,message_content,timesent,group_flag) VALUES (?, ?, ?, ?, ?, ?)");
+						"INSERT INTO chat_message (chat_id,sender_id,recipient_id,message_content,timesent) VALUES (?, ?, ?, ?, ?)");
 				ps.setInt(1, chatId);
 				ps.setInt(2, getUserIDFromUsername(sender));
 				ps.setInt(3, getUserIDFromUsername(recipient));
@@ -193,7 +203,6 @@ public class DbConnection {
 				Date date = new Date();
 				Timestamp ts = new Timestamp(date.getTime());
 				ps.setTimestamp(5, ts);
-				ps.setBoolean(6, false);
 				ps.executeUpdate();
 				ps.close();
 			} else {
@@ -206,7 +215,7 @@ public class DbConnection {
 					chatId = result.getInt(1);
 					System.out.println("Added in chats.");
 					ps1 = conn.prepareStatement(
-							"INSERT INTO messages (chat_id,sender_id,recipient_id,message_content,timesent,group_flag) VALUES (?, ?, ?, ?, ?, ?)");
+							"INSERT INTO chat_message (chat_id,sender_id,recipient_id,message_content,timesent) VALUES (?, ?, ?, ?, ?)");
 					ps1.setInt(1, chatId);
 					ps1.setInt(2, getUserIDFromUsername(sender));
 					ps1.setInt(3, getUserIDFromUsername(recipient));
@@ -214,14 +223,15 @@ public class DbConnection {
 					Date date = new Date();
 					Timestamp ts = new Timestamp(date.getTime());
 					ps1.setTimestamp(5, ts);
-					ps1.setBoolean(6, false);
 					ps1.executeUpdate();
 					ps1.close();
 				} else {
 					System.out.println("not working");
 				}
+				ps.close();
 
 			}
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -236,9 +246,12 @@ public class DbConnection {
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				int clientId = rs.getInt(COLUMN_ID);
+				ps.close();
+				conn.close();
 				return clientId;
 			}
-
+			ps.close();
+			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
