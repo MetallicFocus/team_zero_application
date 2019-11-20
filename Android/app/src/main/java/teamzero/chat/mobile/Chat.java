@@ -9,6 +9,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import tools.JSONConstructor;
+
 public class Chat extends AppCompatActivity {
 
     EditText messageToSend;
@@ -33,8 +38,23 @@ public class Chat extends AppCompatActivity {
         sendMsgButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                System.out.println("Message to send towards " + UserDetails.chatWith + " = " + messageToSend.getText().toString());
-                // TODO: Send request JSON to server with message towards recipient
+
+                System.out.println("You: " + messageToSend.getText().toString());
+
+                try {
+                    // Send TEXT JSON request to server to send to the other user
+                    // TODO: Change second argument into UserDetails.chatWith
+                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.username, messageToSend.getText().toString()));
+
+                    // TODO: Make use of ExecutorService
+                    Thread.sleep(2000);
+
+                    // TODO: Get responses and show them async
+                    JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+                    System.out.println(UserDetails.username + ": "+ responseJSON.get("message").toString());
+                } catch (JSONException | InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         });
 

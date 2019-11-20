@@ -16,6 +16,9 @@
     <string name="invalid_email_text"> Invalid email format!\nPlease type in your email again </string>
     <string name="invalid_confirmed_email_text"> Confirmed email is not identical!\nPlease type in your email again! </string>
     <string name="registration_text"> Please fill the information below correctly </string>
+    <string name="login_failed_text"> Invalid Username / Password </string>
+    <string name="registration_success_login_fail_text"> Registration successful but login failed\n\nPlease try again! </string>
+    <string name="registration_unsuccessful_text"> Registration unsuccessful!\n\nPlease try again with other credentials! </string>
     <string name="no_chats_found_text"> No chats open so far! </string>
     <string name="search_text"> Search chat </string>
     <string name="send_msg_text"> SEND </string>

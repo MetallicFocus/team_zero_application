@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import tools.JSONConstructor;
 import tools.RegistrationValidator;
@@ -63,19 +64,40 @@ public class Registration extends AppCompatActivity {
     public void sendRegistrationRequestToServer(String username, String password, String email, Object picture) {
 
         try {
-            System.out.println("JSON = " + new JSONConstructor().constructRegisterJSON(username, password, email, picture));
 
-            // Send JSON to server
+            // Send register JSON request to server
             WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructRegisterJSON(username, password, email, picture));
 
-            // TODO: Get response from server and parse it. If SUCCESS, login. Else, refresh this screen
-            //if(parseResponse(WebSocketHandler.getSocket().getResponse()).equalsIgnoreCase("success")) {
-            startActivity(new Intent(Registration.this, ChatList.class));
-            // }
-            // else
-            // Get error, display it in a toast and refresh this screen
+            // TODO: Use ExecutorService to wait until response is received or timeout
+            Thread.sleep(500);
 
-        } catch (JSONException e) {
+            // Get response from server and parse it. If registration is successful, try to login
+            JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+
+            if (responseJSON.get("REPLY").toString().equalsIgnoreCase("REGISTER: SUCCESS")) {
+
+                // Then LOGIN
+                WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructLoginJSON(username, password));
+
+                // TODO: Use ExecutorService to wait until response is received or timeout
+                Thread.sleep(500);
+
+                responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+
+                if(responseJSON.get("REPLY").toString().equalsIgnoreCase("LOGIN: SUCCESS")) {
+
+                    // Assign username and password to UserDetails only after a success response from server
+                    UserDetails.username = username;
+                    UserDetails.password = password;
+
+                    startActivity(new Intent(Registration.this, ChatList.class));
+                }
+                else Toast.makeText(getApplicationContext(), R.string.registration_success_login_fail_text, Toast.LENGTH_LONG).show();
+
+            }
+            else Toast.makeText(getApplicationContext(), R.string.registration_unsuccessful_text, Toast.LENGTH_LONG).show();
+
+        } catch (JSONException | InterruptedException e) {
             e.printStackTrace();
         }
     }

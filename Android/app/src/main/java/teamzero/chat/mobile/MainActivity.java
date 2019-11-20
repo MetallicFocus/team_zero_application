@@ -8,10 +8,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,13 +44,6 @@ public class MainActivity extends AppCompatActivity {
         // Set the socket inside the handler and use it from now on
         WebSocketHandler.setSocket(webSocket);
 
-        // Testing WebSocket handler from this activity
-        WebSocketHandler.getSocket().sendMessage("Test Message 1");
-        System.out.println("Response test from Main activity: " + WebSocketHandler.getSocket().getResponse());
-        WebSocketHandler.getSocket().sendMessage("Test Message 2");
-        System.out.println("Response test from Main activity: " + WebSocketHandler.getSocket().getResponse());
-        // End testing websocket handler
-
         loginButton = (Button) findViewById(R.id.login);
         registerButton = (Button) findViewById(R.id.register);
         usernameInput = (EditText) findViewById(R.id.editTextUsername);
@@ -61,8 +56,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // TODO: Contact the server to establish connection and login after clicking on login btn
-        // Start of testing zone:
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -70,25 +63,38 @@ public class MainActivity extends AppCompatActivity {
                 username = usernameInput.getText().toString();
                 password = passwordInput.getText().toString();
 
-                // TODO: Do the below actions only if fields are secure from SQL Injection
-                //if(rV.validateUsername(username) && rV.validatePassword(password))
+                // Do the below actions only if fields are secure from SQL Injection
+                if(rV.validateUsername(username) && rV.validatePassword(password)) {
 
-                // Send JSON to server
-                try {
-                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructLoginJSON(username, password));
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    try {
+
+                        // Send login JSON request to server
+                        WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructLoginJSON(username, password));
+
+                        // TODO: Make use of ExecutorService
+                        Thread.sleep(500);
+
+                        JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+
+                        if (responseJSON.get("REPLY").toString().equalsIgnoreCase("LOGIN: SUCCESS")) {
+
+                            // Assign username and password to UserDetails only after a success response from server
+                            UserDetails.username = username;
+                            UserDetails.password = password;
+
+                            startActivity(new Intent(MainActivity.this, ChatList.class));
+                        }
+                        else Toast.makeText(getApplicationContext(), R.string.login_failed_text, Toast.LENGTH_SHORT).show();
+
+                    } catch (JSONException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
                 }
-
-                // TODO: Assign UserDetails.username only after a success response from server
-                UserDetails.username = username;
-
-                startActivity(new Intent(MainActivity.this, ChatList.class));
-
-                // TODO: If received a failed response from server, display suggestive message
+                else Toast.makeText(getApplicationContext(), R.string.login_failed_text, Toast.LENGTH_SHORT).show();
             }
         });
-        // End of testing zone.
+
     }
 
 }
