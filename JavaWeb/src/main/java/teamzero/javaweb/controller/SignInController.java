@@ -15,23 +15,6 @@ public class SignInController {
 
     @GetMapping(value = "")
     public String showSignIn() {
-        return "sign_in_vue";
-    }
-
-    //Todo: id verification
-    @RequestMapping(value = "processing", method = RequestMethod.POST)
-    public String signIn(HttpSession session,
-                         @RequestParam("name") String name,
-                         @RequestParam("pwd") String password,
-                         Model model){
-        if (true) { //connect with server api for sign in
-            System.out.println(name + " " + password);
-            model.addAttribute("name", name);
-            model.addAttribute("pwd", password);
-            return "/test";
-        } else {
-            return "redirect:/sign_in";
-        }
-
+        return "sign_in";
     }
 }

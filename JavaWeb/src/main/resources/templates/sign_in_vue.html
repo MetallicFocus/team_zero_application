@@ -3,11 +3,11 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Sign in</title>
-		<link rel="stylesheet" type="text/css" href="/style/theme/index.css"/>
-		<script type="text/javascript" src="/js/vue.js"></script>
+		<link rel="stylesheet" type="text/css" href="../static/style/theme/index.css"/>
+		<script type="text/javascript" src="../static/js/vue.js"></script>
+        <script type="text/javascript" src="../static/js/md5.js"></script>
 		<!-- import JavaScript -->
 		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
-        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 	</head>
 	<body>
 		<div id="app">
@@ -25,37 +25,79 @@
 			  </el-form-item>
 		    </el-form>
             </div>
+            <div>{{test}}</div>
 		</div>
 	</body>
 	
 	<script>
-        Vue.prototype.$axios = axios;
         var app = new Vue({
             el: '#app',
-            data: function() {
+            response: function() {
                 return {
                     ruleForm: {
                         name: "",
                         pwd: ""
                     },
-                    divStyle: "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;"
+                    divStyle: "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;",
+                    websocket: null,
+                    request: "",
+                    response: "",
+                    test: ""
                 }
             },
+            mounted() {
+                if ('WebSocket' in window) {
+                    this.websocket = new WebSocket('ws://localhost:1234');
+                    this.initWebSocket();
+                } else {
+                    alert('Websocket is not supported by this browser!');
+                }
+            },
+            beforeDestroy() {
+                this.websocket.close();
+            },
             methods: {
+                initWebSocket() {
+                    //connection occurs error
+                    this.websocket.onerror = this.setErrorMessage;
+                    //connection succeeds
+                    this.websocket.onopen = this.setOnopenMessage;
+                    //get response from Server
+                    this.websocket.onmessage = this.setOnmessageMessage;
+                    //connection closes
+                    this.websocket.onclose = this.setOncloseMessage;
+                    //connection closes automatically after leaving websites
+                    window.onbeforeunload = this.websocket.close();
+                },
+                setErrorMessage() {
+                    this.response = "WebSocket occurs error." + '   Status：' + this.websocket.readyState;
+                },
+                setOnopenMessage() {
+                    this.response = "WebSocket succeeds." + '   status：' + this.websocket.readyState;
+                },
+                setOnmessageMessage(event) {
+                    this.response = 'Server response：' + event.data;
+                },
+                setOncloseMessage() {
+                    this.response = "WebSocket closes." + '   status：' + this.websocket.readyState;
+                },
+                //send message (JSON) to Server
+                send() {
+                    this.websocket.send(this.request);
+                },
                 on_sign_in : function () {
-                    this.$axios({
-                        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                        method: 'post',
-                        url: '/sign_in/processing',
-                        data: {
-                            name: this.ruleForm.name,
-                            pwd: this.ruleForm.pwd
-                        }
-                    });
+                    this.request = "{\n" +
+                                        "type: \"LOGIN\",\n" +
+                                        "username:" + this.ruleForm.name + ",\n" +
+                                        "password:" + hex_md5(this.ruleForm.pwd) + "\n" +
+                                    "}";
+                    send();
+                    this.test = JSON.parse(this.request);
                 },
                 on_sign_up : function () {
                     window.location.href="/sign_up";
-                }
+                },
+
             }
         })
 

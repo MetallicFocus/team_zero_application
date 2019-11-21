@@ -1,36 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 	<head>
 		<meta charset="utf-8">
 		<title>Sign in</title>
-		<link rel="stylesheet" type="text/css" th:href="@{/style/theme/index.css}"/>
-		<script type="text/javascript" th:src="@{/js/vue.js}"></script>
+		<link rel="stylesheet" type="text/css" href="/style/theme/index.css"/>
+		<script type="text/javascript" src="/js/vue.js"></script>
+        <script type="text/javascript" src="/js/md5.js"></script>
 		<!-- import JavaScript -->
 		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.bootcss.com/qs/6.5.1/qs.min.js"></script>
 	</head>
 	<body>
 		<div id="app">
-		    <div :style='divStyle'>
-                <form th:action="@{/test/get}" method="get" style="margin-top: 80px; margin-left: 20px; margin-right: 30px; margin-bottom: 50px;">
-                    <div>
-                        <label>User Name:</label>
-                        <input name="name" v-model="ruleForm.name"/>
-                    </div>
-                    <div>
-                        <label>Password: </label>
-                        <input show-password name="pwd" v-model="ruleForm.pwd"/>
-                    </div>
-                    <div style="margin-left: 10px;">
-                        <button style="width: 100px; height: 50px;" type='submit'>Sign In</button>
-                        <button style="width: 100px; height: 50px; margin-left: 50px;">Sign Up</button>
-                    </div>
-                </form>
+		    <div :style='divStyle'>            
+		    <el-form label-width="100px" style="margin-top: 80px; margin-left: 20px; margin-right: 30px; margin-bottom: 50px;">
+		      <el-form-item label="User Name: ">
+		        <el-input name="name" v-model="ruleForm.name"></el-input>
+			  </el-form-item>
+		      <el-form-item label="Password: ">
+		        <el-input show-password name="pwd" v-model="ruleForm.pwd"></el-input>
+			  </el-form-item>
+			  <el-form-item style="margin-left: 10px;">
+			    <el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button>
+				<el-button style="width: 100px; height: 50px; margin-left: 50px;" v-on:click="onSignUp()">Sign Up</el-button>
+			  </el-form-item>
+		    </el-form>
             </div>
 		</div>
 	</body>
-
+	
 	<script>
-        new Vue({
+        var app = new Vue({
             el: '#app',
             data: function() {
                 return {
@@ -38,10 +39,92 @@
                         name: "",
                         pwd: ""
                     },
-                    divStyle: "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;"
+                    divStyle: "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;",
+                    websocket: null,
+                    request: "",
+                    response: "",
+                    parsed_response: "",
+                    chats: "",
+                    parsed_chats: ""
                 }
             },
+            mounted() {
+                if ('WebSocket' in window) {
+                    this.websocket = new WebSocket('ws://localhost:1234');
+                    this.initWebSocket();
+                } else {
+                    alert('Websocket is not supported by this browser!');
+                    return null;
+                }
+            },
+            beforeDestroy() {
+                this.websocket.close();
+            },
             methods: {
+                initWebSocket() {
+                    //connection occurs error
+                    this.websocket.onerror = this.setErrorMessage;
+                    //connection succeeds
+                    this.websocket.onopen = this.setOnopenMessage;
+                    //get response from Server
+                    this.websocket.onmessage = this.setOnmessageMessage;
+                    //connection closes
+                    this.websocket.onclose = this.setOncloseMessage;
+                    //connection closes automatically after leaving websites
+                    window.onbeforeunload = this.onBeforeUnload;
+                },
+                setErrorMessage() {
+                    this.response = "WebSocket occurs error." + '   Status：' + this.websocket.readyState;
+                },
+                setOnopenMessage() {
+                    this.response = "WebSocket succeeds." + '   status：' + this.websocket.readyState;
+                },
+                setOnmessageMessage(event) {
+                    this.response = event.data;
+                },
+                setOncloseMessage() {
+                    this.response = "WebSocket closes." + '   status：' + this.websocket.readyState;
+                },
+                onBeforeUnload() {
+                    this.websocket.close();
+                },
+                //send message (JSON) to Server
+                send() {
+                    this.websocket.send(this.request);
+                },
+                onSignIn : function () {
+                    if (true) {//Todo: determine if connection is successful
+                        this.request = "{\n" +
+                            "type: \"LOGIN\",\n" +
+                            "username:\"" + this.ruleForm.name + "\",\n" +
+                            "password:\"" + hex_md5(this.ruleForm.pwd) + "\"\n" +
+                            "}";
+                        this.send();
+                        this.parsed_response = JSON.parse(this.response);
+                        if (this.parsed_response.REPLY === 'LOGIN: SUCCESS')
+                            // window.location.href="/chat/main"; //Todo: post user information to initialize chat
+                            this.initPost();
+                        else
+                            alert(this.parsed_response.message);
+                    } else {
+                        alert("Error: " + this.response);
+                    }
+                },
+                onSignUp : function () {
+                    window.location.href="/sign_up";
+                },
+                initPost : function () {
+                    let url = location.protocol + "/chat/sign_in";
+
+                    let o={
+                        id:2
+                    };
+                    axios.post(url,Qs.stringify(o)).then(res=>{
+                        console.log(res);
+                    }).catch(err=>{
+                        console.log(err);
+                    })
+                }
             }
         })
 	</script>
