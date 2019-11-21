@@ -2,15 +2,15 @@
 
 public class ClientRegisterLoginAndMessageTest {
 
-	private String email1 = "testclient@testclient.com";
+	private String email1 = "testclient01@testclient.com";
 	
-	private String username1 = "ClientRegisterLoginAndMessageTest";
+	private String username1 = "ClientRegisterLoginAndMessageTest01";
 	
 	private String password1 = "testpassword";
 	
-	private String email2 = "testclient2@testclient.com";
+	private String email2 = "testclient02@testclient.com";
 	
-	private String username2 = "ClientRegisterLoginAndMessageTest2";
+	private String username2 = "ClientRegisterLoginAndMessageTest02";
 	
 	private String password2 = "testpassword2";
 	
@@ -76,7 +76,7 @@ public class ClientRegisterLoginAndMessageTest {
 				"{\"type\": \"TEXT\"" + 
 				", \"sender\":\"" + username1 + 
 				"\", \"recipient\":\"" + username2 + 
-				"\", \"message\":\"test message from some test client 1 to test client 2.\"}";  
+				"\", \"message\":\"another test message from some test client 1 to test client 2.\"}";  
 		return jsonMsg;
 		
 	}
@@ -136,6 +136,12 @@ public class ClientRegisterLoginAndMessageTest {
 				"{\"type\": \"LOGIN\"" + 
 				", \"username\":\"" + username1 + 
 				"\", \"password\":\"wrongpassword\"}";
+		return jsonMsg;
+	}
+
+	public String getGetAllContactsMessage() {
+		String jsonMsg = 
+				"{\"type\": \"GETALLCONTACTS\"}";
 		return jsonMsg;
 	}
 

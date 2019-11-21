@@ -179,7 +179,7 @@ public class DbConnection {
 			e.printStackTrace();
 		}
 		return allClients;
-	}
+	} 
 
 	public void addMessage(String sender, String recipient, String textMessage) {
 		Connection conn = connect();
@@ -187,6 +187,8 @@ public class DbConnection {
 		try {
 			PreparedStatement ps = conn.prepareStatement(
 					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
+			
+			// TODO do this within same statement to avoid making multiple DB calls
 			ps.setInt(1, getUserIDFromUsername(sender));
 			ps.setInt(2, getUserIDFromUsername(recipient));
 			ps.setInt(3, getUserIDFromUsername(recipient));
@@ -213,7 +215,7 @@ public class DbConnection {
 				ResultSet result = ps1.executeQuery();
 				if (result.next()) {
 					chatId = result.getInt(1);
-					System.out.println("Added in chats.");
+					LOGGER.log(Level.FINE, "Adding text message to chats: {0}", textMessage);
 					ps1 = conn.prepareStatement(
 							"INSERT INTO chat_message (chat_id,sender_id,recipient_id,message_content,timesent) VALUES (?, ?, ?, ?, ?)");
 					ps1.setInt(1, chatId);
@@ -226,7 +228,7 @@ public class DbConnection {
 					ps1.executeUpdate();
 					ps1.close();
 				} else {
-					System.out.println("not working");
+					LOGGER.log(Level.WARNING, "Could not add text message to chats in DB: {0}", textMessage);
 				}
 				ps.close();
 
