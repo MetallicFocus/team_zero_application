@@ -180,6 +180,40 @@ public class DbConnection {
 		}
 		return allClients;
 	} 
+	
+	/**
+	 * Gets a list of users from the database that match the query.
+	 * 
+	 * @return an arraylist of Client objects
+	 */
+	public ArrayList<Client> getSearchedUsers(String query) {
+		ArrayList<Client> searchedClients = new ArrayList<Client>();
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE lower(username) LIKE ?;");
+			
+			ps.setString(1, "%" + query + "%");
+			ResultSet rs = ps.executeQuery();
+			LOGGER.log(Level.INFO, "getSearchedUsers prepared statement is:  {0}", ps); //debug
+			
+			while (rs.next()) {
+				int clientId = rs.getInt(COLUMN_ID);
+				String clientEmail = rs.getString(COLUMN_EMAIL);
+				String clientUsername = rs.getString(COLUMN_USERNAME);
+
+				// if the user is also in the client manager, set them to logged in
+				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
+				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				searchedClients.add(client);
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return searchedClients;
+	} 
+	
 
 	public void addMessage(String sender, String recipient, String textMessage) {
 		Connection conn = connect();

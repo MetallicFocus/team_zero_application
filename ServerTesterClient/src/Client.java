@@ -59,7 +59,9 @@ public class Client extends WebSocketClient {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+
         c1.getAllContacts();
+        c1.searchSomeContacts("a");
 
 		c2.register();
 		
@@ -70,7 +72,7 @@ public class Client extends WebSocketClient {
 		}
 		
 		
-		c2.login();
+		//c2.login();
 
 		try {
 			Thread.sleep(1000);
@@ -78,7 +80,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 	
-		c1.text();
+		//c1.text();
 
 		try {
 			Thread.sleep(1000);
@@ -205,10 +207,16 @@ public class Client extends WebSocketClient {
 		System.out.println("Client onOpen:" + arg0);
 		
 	}
-	
+
 	public void getAllContacts() {
 		System.out.println("Sending message to getAllContacts...");
 		String requestAllContacts = test.getGetAllContactsMessage();
+		this.send(requestAllContacts);
+	}
+
+	public void searchSomeContacts(String search) {
+		System.out.println("Sending message to searchContacts...");
+		String requestAllContacts = test.searchContactsMessage(search);
 		this.send(requestAllContacts);
 	}
 
