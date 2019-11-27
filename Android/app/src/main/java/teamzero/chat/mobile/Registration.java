@@ -25,6 +25,11 @@ public class Registration extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registration_layout);
+
+        // Check if the SupportActionBar is instantiated
+        assert getSupportActionBar() != null;
+        // If it is, display a back button on the action bar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
     public void checkFields(View view) {
@@ -101,4 +106,13 @@ public class Registration extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+    // Finishes current activity (dismisses dialogs, closes search) and goes to the parent activity
+    // The method is called when the user clicks on the back button on the upper-left hand side
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
+    }
+
 }

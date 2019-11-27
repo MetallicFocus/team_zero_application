@@ -23,8 +23,11 @@
     <string name="search_text"> Search chat </string>
     <string name="send_msg_text"> SEND </string>
     <string name="message_box_hint_text"> Type your message </string>
-    <string name="search_users_hint_text"> Type username to start a new chat with </string>
-    <string name="search_users_suggestive_text"> Type in the box down below to search for a user to chat with </string>
+    <string name="search_users_hint_text"> Search for specific user… </string>
+    <string name="search_users_suggestive_text"> Type in the box down below to search for a user to chat with\n\nTo display a full list of users from this chat app, just search without any text </string>
+    <string name="fetching_from_server_error_text"> Error fetching data from server. Please try again! </string>
+    <string name="search_all_contacts_not_found_text"> No contacts found on our database.\nPlease try again! </string>
+    <string name="search_contact_not_found_text"> No contact found with the requested name.\nPlease try another name! </string>
     <string name="settings_menu_text"> Settings </string>
     <string name="sign_out_text"> Sign Out </string>
     <string name="unregister_text"> Unregister </string>
