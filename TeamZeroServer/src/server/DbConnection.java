@@ -179,7 +179,41 @@ public class DbConnection {
 			e.printStackTrace();
 		}
 		return allClients;
-	}
+	} 
+	
+	/**
+	 * Gets a list of users from the database that match the query.
+	 * 
+	 * @return an arraylist of Client objects
+	 */
+	public ArrayList<Client> getSearchedUsers(String query) {
+		ArrayList<Client> searchedClients = new ArrayList<Client>();
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE lower(username) LIKE ?;");
+			
+			ps.setString(1, "%" + query + "%");
+			ResultSet rs = ps.executeQuery();
+			LOGGER.log(Level.INFO, "getSearchedUsers prepared statement is:  {0}", ps); //debug
+			
+			while (rs.next()) {
+				int clientId = rs.getInt(COLUMN_ID);
+				String clientEmail = rs.getString(COLUMN_EMAIL);
+				String clientUsername = rs.getString(COLUMN_USERNAME);
+
+				// if the user is also in the client manager, set them to logged in
+				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
+				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				searchedClients.add(client);
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return searchedClients;
+	} 
+	
 
 	public void addMessage(String sender, String recipient, String textMessage) {
 		Connection conn = connect();
@@ -187,6 +221,8 @@ public class DbConnection {
 		try {
 			PreparedStatement ps = conn.prepareStatement(
 					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
+			
+			// TODO do this within same statement to avoid making multiple DB calls
 			ps.setInt(1, getUserIDFromUsername(sender));
 			ps.setInt(2, getUserIDFromUsername(recipient));
 			ps.setInt(3, getUserIDFromUsername(recipient));
@@ -213,7 +249,7 @@ public class DbConnection {
 				ResultSet result = ps1.executeQuery();
 				if (result.next()) {
 					chatId = result.getInt(1);
-					System.out.println("Added in chats.");
+					LOGGER.log(Level.FINE, "Adding text message to chats: {0}", textMessage);
 					ps1 = conn.prepareStatement(
 							"INSERT INTO chat_message (chat_id,sender_id,recipient_id,message_content,timesent) VALUES (?, ?, ?, ?, ?)");
 					ps1.setInt(1, chatId);
@@ -226,7 +262,7 @@ public class DbConnection {
 					ps1.executeUpdate();
 					ps1.close();
 				} else {
-					System.out.println("not working");
+					LOGGER.log(Level.WARNING, "Could not add text message to chats in DB: {0}", textMessage);
 				}
 				ps.close();
 
