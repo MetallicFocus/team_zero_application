@@ -2,6 +2,7 @@ package teamzero.chat.mobile;
 
 import android.content.Intent;
 
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -177,6 +178,9 @@ public class NewChat extends AppCompatActivity {
                 View view = super.getView(position, convertView, parent);
                 TextView text1 = (TextView) view.findViewById(android.R.id.text1);
                 TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+
+                // If the user is online, show the status in green, else in red
+                text2.setTextColor(usersFoundList.get(position).getStatus().equalsIgnoreCase("online") ? Color.parseColor("#0fd443") : Color.parseColor("#d42c0f"));
 
                 text1.setText(usersFoundList.get(position).getUsername());
                 text2.setText(usersFoundList.get(position).getStatus());
