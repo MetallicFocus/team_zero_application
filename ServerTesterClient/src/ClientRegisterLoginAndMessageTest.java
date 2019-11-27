@@ -145,4 +145,11 @@ public class ClientRegisterLoginAndMessageTest {
 		return jsonMsg;
 	}
 
+	public String searchContactsMessage(String search) {
+		String jsonMsg = 
+				"{\"type\": \"SEARCHCONTACTS\"" +
+				", \"search\": \"" + search + "\"}";
+		return jsonMsg;
+	}
+
 }

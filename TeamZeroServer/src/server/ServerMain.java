@@ -44,6 +44,8 @@ public class ServerMain extends WebSocketServer {
 
 	private static final String CASE_GETALLCONTACTS = "GETALLCONTACTS"; // get all contactable user information
 
+	private static final String CASE_SEARCHCONTACTS = "SEARCHCONTACTS"; // search contactable user information
+
 	private static final String CASE_EDIT_PROFILE = "EDIT"; //edit profile details
 
 	private static final String MESSAGE_REPLY_SUCCESS = "SUCCESS"; //feedback reply to clients 
@@ -65,8 +67,10 @@ public class ServerMain extends WebSocketServer {
 	private static final String JSON_KEY_SENDER = "sender";
 	
 	private static final String JSON_KEY_RECIPIENT = "recipient";
-	
+
 	private static final String JSON_KEY_EMAIL = "email";
+	
+	private static final String JSON_KEY_SEARCH = "search";
 	
 	/**
 	 * A map of Connections to the client IDs of the clients they connect to
@@ -268,6 +272,25 @@ public class ServerMain extends WebSocketServer {
 						}
 						// send the list of clients 
 						websocket.send(allClientsReply.toString());
+					}		
+					break;
+				case CASE_SEARCHCONTACTS:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						String search = json.getString(JSON_KEY_SEARCH);
+						ArrayList<Client> searchedClients = dbConnection.getSearchedUsers(search);
+						JSONObject searchedClientsReply = new JSONObject();
+						searchedClientsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						searchedClientsReply.put(MESSAGE_REPLY, CASE_SEARCHCONTACTS + ": SUCCESS");
+						for(Client c : searchedClients) {
+							JSONObject client = new JSONObject();
+							client.put("IsLoggedIn", c.isLoggedIn());
+							client.put(JSON_KEY_EMAIL, c.getEmail());
+							client.put(JSON_KEY_USERNAME, c.getUsername());
+							searchedClientsReply.accumulate("contacts", client);
+						}
+						// send the list of clients 
+						websocket.send(searchedClientsReply.toString());
 					}		
 					break;
 				default:
