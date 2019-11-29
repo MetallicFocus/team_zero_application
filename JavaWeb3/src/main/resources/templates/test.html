@@ -3,123 +3,134 @@
 <head>
 	<meta charset="utf-8">
 	<title>Main</title>
-	<link rel="stylesheet" type="text/css" href="/style/theme/index.css"/>
-	<script type="text/javascript" src="/js/vue.js"></script>
+	<link rel="stylesheet" type="text/css" href="../static/style/theme/index.css"/>
+	<script type="text/javascript" src="../static/js/vue.js"></script>
 	<!-- import JavaScript -->
 	<script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdn.bootcss.com/qs/6.5.1/qs.min.js"></script>
 </head>
 <body>
-<!-- readyState表示连接有四种状态：
-CONNECTING (0)：表示还没建立连接；
-OPEN (1)： 已经建立连接，可以进行通讯；
-CLOSING (2)：通过关闭握手，正在关闭连接；
-CLOSED (3)：连接已经关闭或无法打开； -->
-<div id="WebSocket">
-	<input type="text" v-model="text">
-	<button>发送消息</button>
-	<br>
-	<button @click="closeWebSocket()">关闭websocket连接</button>
-	<br>
-	<div>{{test}}</div>
-    <comp @test-click="addText($event, p3)"></comp>
+<div id="app">
+	<button type="button" @click="showSearchPanel">test</button>
+	<div v-show="searchUserForm.display">
+		<div id="mask"></div>
+		<div id="searchUserPanel">
+			<el-input v-model="searchUserForm.searchField" placeholder="Please input user name" style="margin-left: 160px; margin-top: 50px; width: 400px;"></el-input>
+			<el-button icon="el-icon-search" type="primary" @click="searchUsers(searchField)"></el-button>
+			<div id="searchResults">
+				<label>Search results are as follows:</label>
+				<single-user-info @chat="chatwith(userdata.username)" class="single-user-info" v-for="userdata in searchUserForm.usersdata" :username="userdata.username" :email="userdata.email" :isloggedin="userdata.isLoggedIn"></single-user-info>
+			</div>
+			<el-button style="margin-left: 350px; margin-top: 10px;" @click="closeSearchPanel">Cancel</button>
+		</div>
+	</div>
 </div>
 </body>
 <script>
-    Vue.component('comp', {
-        data: function () {
-            return {
-                p1: 1,
-                p2: 2
-            }
-        },
-        template: '<div @click="$emit(\'test-click\', [1,2])"><button>Click Me!!!!!!!!!!!!!</button></div>',
-        methods: {
-        }
-    }),
-
+	Vue.component('single-user-info', {
+	    props: ['username','email','isloggedin'],
+	    data: function () {
+	        return {
+				
+	        }
+	    },
+	    template: '<div @click="$emit(\'chat\')">'
+				+ '<el-row>'
+					+ '<el-col :span="8"><label>{{username}}</label></el-col>'
+					+ '<el-col :span="8"><label>{{email}}</label></el-col>'
+					+ '<el-col :span="8" v-if="isloggedin"><label>on line</label></el-col>'
+					+ '<el-col :span="8" v-else><label>off line</label></el-col>'
+				+ '</el-row>'
+				+ '</div>',
+	    methods: {
+	    }
+	}),
     new Vue ({
-        el: "#WebSocket",
+        el: "#app",
         data: function () {
             return {
-                text: '',
-                data: '',
-                websocket: null,
-                test: {
-                    a: "111"
-                }
-            }
-        },
-        beforeDestroy() {
-            this.onbeforeunload();
-        },
-        mounted() {
-            if ('WebSocket' in window) {
-                this.websocket = new WebSocket('ws://localhost:1234');
-                this.initWebSocket();
-            } else {
-                alert('Websocket is not supported by this browser!');
+				searchUserForm: {
+					display: false,
+					searchField: "",
+					usersdata:[{
+						username: 'lotuny',
+						email: 'lee.lotuny@gmail.com',
+						isLoggedIn: true
+					},{
+						username: 'lotuny',
+						email: 'lee.lotuny@gmail.com',
+						isLoggedIn: false
+					},{
+						username: 'lotuny',
+						email: 'lee.lotuny@gmail.com',
+						isLoggedIn: false
+					},{
+						username: 'lotuny',
+						email: 'lee.lotuny@gmail.com',
+						isLoggedIn: true
+					}],
+				}
             }
         },
         methods: {
-            initWebSocket() {
-                //连接错误
-                this.websocket.onerror = this.setErrorMessage;
-
-                // //连接成功
-                this.websocket.onopen = this.setOnopenMessage;
-
-                //收到消息的回调
-                this.websocket.onmessage = this.setOnmessageMessage;
-
-                //连接关闭的回调
-                this.websocket.onclose = this.setOncloseMessage;
-
-                //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
-                window.onbeforeunload = this.onbeforeunload
-            },
-            setErrorMessage() {
-                this.data = "WebSocket连接发生错误" + '   状态码：' + this.websocket.readyState;
-            },
-            setOnopenMessage() {
-                this.data = "WebSocket连接成功" + '   状态码：' + this.websocket.readyState;
-            },
-            setOnmessageMessage(event) {
-                this.data = '服务端返回：' + event.data;
-            },
-            setOncloseMessage() {
-                this.data = "WebSocket连接关闭" + '   状态码：' + this.websocket.readyState;
-            },
-            onbeforeunload() {
-                this.closeWebSocket();
-            },
-
-            //websocket发送消息
-            send() {
-                this.websocket.send(this.text);
-                this.text = '';
-            },
-            closeWebSocket() {
-                this.websocket.close();
-            },
-            initPost() {
-                let url = location.protocol + "/chat/main";
-
-                let o={
-                    id:2
-                };
-                axios.post(url,Qs.stringify(o)).then(res=>{
-                    console.log(res);
-                }).catch(err=>{
-                    console.log(err);
-                })
-            },
-            addText(p3) {
-                Vue.set(this.test, 'p1', p3[0]);
-                Vue.set(this.test, 'p2', p3[1]);
-            }
-        }
-    })
+			showSearchPanel : function () {
+				this.searchUserForm.display = true;
+			},
+			closeSearchPanel : function () {
+				this.searchUserForm.display = false;
+			},
+			chatwith : function (username) {
+				<!--Todo: create a new chat panel-->
+			},
+		},
+	})
 </script>
+
+<style type="text/css">
+	#mask {
+		position: absolute;
+		    top: 0px;
+		    left: 0px;
+			width: 100%;
+			height: 100%;
+		    background-color: #000000;
+		    opacity: 0.5;
+	}
+	
+	#searchUserPanel {
+		border-radius: 10px;
+		position: absolute; 
+		left: 50%; 
+		top: 50%; 
+		transform: translate(-50%, -50%); 
+		width: 800px; 
+		height: 500px; 
+		background-color: #FFFFFF;
+	}
+	
+	#searchResults {
+		border-radius: 5px; 
+		overflow: auto; 
+		margin-top: 20px; 
+		margin-left: 50px; 
+		padding: 10px 10px;
+		width: 700px; 
+		height: 300px; 
+		background-color: #F2F8FE;
+	}
+	
+	.single-user-info {
+		border-radius: 10px;
+		margin-top: 5px;
+		height: 60px;
+		padding-top: 30px;
+		text-align: center;
+	}
+	
+	.single-user-info:hover {
+		background: #D5F3EF;
+		cursor: pointer;
+	}
+</style>
 </html>
