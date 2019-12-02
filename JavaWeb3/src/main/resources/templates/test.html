@@ -12,7 +12,7 @@
 </head>
 <body>
 <div id="app">
-	<button type="button" @click="showSearchPanel">test</button>
+	<button type="button" @click="wait">test</button>
 	<div v-show="searchUserForm.display">
 		<div id="mask"></div>
 		<div id="searchUserPanel">
@@ -83,6 +83,13 @@
 			chatwith : function (username) {
 				<!--Todo: create a new chat panel-->
 			},
+			wait : function () {
+				setTimeout(function() {alert('666')}, 10);
+				alert('888');
+			},
+			getAllContacts : function() {
+				
+			}
 		},
 	})
 </script>

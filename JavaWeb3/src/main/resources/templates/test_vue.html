@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Main</title>
+    <link rel="stylesheet" type="text/css" href="../static/style/theme/index.css"/>
+    <script type="text/javascript" src="../static/js/vue.js"></script>
+	<script type="text/javascript" src="../static/js/md5.js"></script>
+    <!-- import JavaScript -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="app">
+<button @click="getAllContacts">Test</button>
+</div>
+</body>
+
+<script>
+        new Vue({
+            el: '#app',
+            data: function() {
+                return {
+                    websocket: null,
+                    request: '',
+                    response: '',
+                    parsed_response: ''
+				}
+            },
+            mounted() {
+                if ('WebSocket' in window) {
+                    this.websocket = new WebSocket('ws://localhost:1234');
+                    this.initWebSocket();
+                } else {
+                    alert('Websocket is not supported by this browser!');
+                    return null;
+                }
+            },
+            beforeDestroy() {
+                this.websocket.close();
+            },
+            methods: {
+                initWebSocket() {
+                    //connection occurs error
+                    this.websocket.onerror = this.setErrorMessage;
+                    //connection succeeds
+                    this.websocket.onopen = this.setOnopenMessage;
+                    //get response from Server
+                    this.websocket.onmessage = this.setOnmessageMessage;
+                    //connection closes
+                    this.websocket.onclose = this.setOncloseMessage;
+                    //connection closes automatically after leaving websites
+                    window.onbeforeunload = this.onBeforeUnload;
+                },
+                setErrorMessage() {
+                    this.response = "WebSocket occurs error." + '   Status：' + this.websocket.readyState;
+                },
+                setOnopenMessage() {
+                    this.response = "WebSocket succeeds." + '   status：' + this.websocket.readyState;
+                },
+                setOnmessageMessage(event) {
+                    this.response = event.data;
+					this.onmessage_flag = true;
+                },
+                setOncloseMessage() {
+                    this.response = "WebSocket closes." + '   status：' + this.websocket.readyState;
+                },
+                onBeforeUnload() {
+                    this.websocket.close();
+                },
+                //send message (JSON) to Server
+                send() {
+                    this.websocket.send(this.request);
+                },
+				getAllContacts() {
+					this.request = "{\n" +
+										"type: \"GETALLCONTACTS\",\n" +
+									"}";
+					console.log(this.request);
+					this.send();
+					console.log(this.response);
+					this.parsed_response = JSON.parse(this.response);
+					
+					console.log(this.parsed_response);
+				}
+            }
+        })
+</script>
+</html>
