@@ -37,10 +37,10 @@
 		<div id="mask"></div>
 		<div id="searchUserPanel">
 			<el-input v-model="searchUserForm.searchField" placeholder="Please input user name" style="margin-left: 160px; margin-top: 50px; width: 400px;"></el-input>
-			<el-button icon="el-icon-search" type="primary" @click="searchUsers(searchField)"></el-button>
+			<el-button icon="el-icon-search" type="primary" @click="searchUsers()"></el-button>
 			<div id="searchResults">
 				<label>Search results are as follows:</label>
-				<single-user-info @chat="chatwith(userdata.username)" class="single-user-info" v-for="userdata in searchUserForm.usersdata" :username="userdata.username" :email="userdata.email" :isloggedin="userdata.isLoggedIn"></single-user-info>
+				<single-user-info @chat="chatwith(userdata.username)" class="single-user-info" v-for="userdata in searchUserForm.usersdata" :username="userdata.username" :email="userdata.email" :isloggedin="userdata.IsLoggedIn"></single-user-info>
 			</div>
 			<el-button style="margin-left: 350px; margin-top: 10px;" @click="closeSearchPanel">Cancel</button>
 		</div>
@@ -121,7 +121,7 @@
 						usersdata:[{
 							username: 'lotuny',
 							email: 'lee.lotuny@gmail.com',
-							isLoggedIn: true
+							IsLoggedIn: true
 						}],
 					},
                     websocket: null,
@@ -235,7 +235,7 @@
                     this.updateChat(this.self.name, recipient, message, time);
                 },
                 updateChat : function (sender, recipient, message, time) {
-					hour = 8;//time.getHours();
+					hour = time.getHours();
 					padding = hour>9?"":"0";
 					time = padding + hour + ":" + time.getMinutes();
                     if (sender===this.self.name) { //message out
@@ -276,7 +276,17 @@
                 	this.searchUserForm.display = false;
                 },
                 chatwith : function (username) {
-                    Vue.set(this.chatlist, this.chat_num, {
+					if (username === this.self.name) return; //Todo: chat with oneself
+                    for (chat_key in this.chatlist) {
+						if (this.chatlist[chat_key].name === username) {
+							//check if chat is already existed
+							//Todo: to correct: chat panel dispears for a while
+							this.closeSearchPanel();
+							this.showchat(++chat_key);
+							return;
+						}
+					}
+					Vue.set(this.chatlist, this.chat_num, {
                         'id': ++this.chat_num,
                         'avatar': "/img/avatar.jpg",
                         'name': username,
@@ -286,16 +296,23 @@
                         'messages': [],
                     });
 					this.closeSearchPanel();
+					console.log(this.chat_num);
 					this.showchat(this.chat_num);
                 },
-                searchUsers : function (searchField) {
+                searchUsers : function () {
                     this.request = "{\n" +
                         "type: \"SEARCHCONTACTS\",\n" +
-                        "search:\"" + searchField + "\",\n" +
+                        "search:\"" + this.searchUserForm.searchField + "\",\n" +
                         "}";
                     this.send();
 					this.parsed_response = JSON.parse(this.response);
-					
+					if (this.parsed_response.REPLY === "SEARCHCONTACTS: SUCCESS" && this.parsed_response.contacts != null) {
+						if (this.parsed_response.contacts.length > 1)
+							this.searchUserForm.usersdata = this.parsed_response.contacts;
+						else
+							this.searchUserForm.usersdata = [this.parsed_response.contacts];
+					}
+					//Todo: fail to search					
                 },
 				//below test should be deleted in the future
 				onLogin : function(username) {
