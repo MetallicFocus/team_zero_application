@@ -173,6 +173,22 @@
             beforeDestroy() {
                 this.websocket.close();
             },
+			watch:{
+				response(newR, oldR) {
+					console.log("Watched newR: " + newR);
+					this.parsed_response = JSON.parse(newR);
+					console.log(this.parsed_response.type);
+					if (this.parsed_response.type === 'TEXT') {
+						if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message						
+						sender = this.parsed_response.sender;
+						message = this.parsed_response.message;
+						this.chatwith(sender);
+						//Todo: retrieve time instead of creating
+						time = new Date();
+						this.updateChat(sender, this.self.name, message, time);
+					}
+				}
+			},
             methods: {
                 initWebSocket() {
                     //connection occurs error
@@ -296,7 +312,6 @@
                         'messages': [],
                     });
 					this.closeSearchPanel();
-					console.log(this.chat_num);
 					this.showchat(this.chat_num);
                 },
                 searchUsers : function () {
@@ -336,7 +351,7 @@
 						}
 					}
 					else
-                        alert(this.parsed_response);
+                        alert(this.response);
 				},
 				initPost : function(username) {
 					this.self = {'avatar': "/img/avatar.jpg", 'name': username};
