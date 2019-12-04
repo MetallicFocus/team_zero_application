@@ -61,8 +61,16 @@ public class WebSocket {
                     if(responseJSON.get("type").toString().equalsIgnoreCase("TEXT")) {
                         // TODO: Add message to local database to retrieve the latest N messages from chat X
                         UserDetails.messageContent = responseJSON.get("message").toString();
-                        System.out.println(UserDetails.chatWith + ": "+ UserDetails.messageContent);
+                        System.out.println(responseJSON.get("sender").toString() + ": "+ UserDetails.messageContent);
                         receivedResponse = false;
+                    }
+                    if(responseJSON.get("type").toString().equalsIgnoreCase("REPLY")) {
+                        if(responseJSON.get("REPLY").toString().startsWith("TEXT")) {
+                            // TODO: If the user is offline, show the message with 1 check sign, else with 2 check signs
+                            // View status of the sent message of the client
+                            System.out.println(responseJSON.get("message").toString());
+                            receivedResponse = false;
+                        }
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
