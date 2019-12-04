@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <title>Main</title>
     <link rel="stylesheet" type="text/css" href="../static/style/theme/index.css"/>
+	<link rel="stylesheet" type="text/css" href="../static/style/main.css"/>
     <script type="text/javascript" src="../static/js/vue.js"></script>
 	<script type="text/javascript" src="../static/js/md5.js"></script>
-    <!-- import JavaScript -->
-    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script type="text/javascript" src="../static/js/element-ui.js"></script>
+	<script type="text/javascript" src="../static/js/vue-components.js"></script>
 </head>
 <body>
 <div id="app">
@@ -49,67 +50,6 @@
 </body>
 
 <script>
-	Vue.component('single-user-info', {
-	    props: ['username','email','isloggedin'],
-	    data: function () {
-	        return {
-				
-	        }
-	    },
-	    template: '<div @click="$emit(\'chat\')">'
-				+ '<el-row>'
-					+ '<el-col :span="8"><label>{{username}}</label></el-col>'
-					+ '<el-col :span="8"><label>{{email}}</label></el-col>'
-					+ '<el-col :span="8" v-if="isloggedin"><label>on line</label></el-col>'
-					+ '<el-col :span="8" v-else><label>off line</label></el-col>'
-				+ '</el-row>'
-				+ '</div>',
-	    methods: {
-	    }
-	}),
-    Vue.component('single-chat', {
-        props: ['id', 'avatar', 'name', 'time', 'content'],
-        data: function () {
-            return {
-            }
-        },
-        template: '<div class="chat" @click="$emit(\'click-id\')"><el-row><el-col :span="6"><el-avatar class="avatar" :src="avatar"></el-avatar></el-col><el-col :span="18"><el-row style="margin-top: 3px;"><el-col :span="18"><label class="name">{{name}}</label></el-col><el-col :span="6"><label class="last-chat-time">{{time}}</label></el-col></el-row><el-row><el-col :span="24"><label class="last-chat-content">{{content}}</label></el-col></el-row></el-col></el-row></div>',
-        methods: {
-        }
-    }),
-    Vue.component('single-chat-panel', {
-            props: ['chat'],
-            data: function () {
-                return {
-                    textfield: "",
-                }
-            },
-            template: '<el-container class="right-panel"><el-header id="object-info"><el-avatar class="avatar" :src="chat.avatar" style="margin-top: 5px;"></el-avatar><label style="font-size: 30px">{{chat.name}}</label></el-header><el-main id="chatting-panel"><div v-for="message in chat.messages"><single-message-from-object v-if="message.objectflag" :avatar="message.avatar" :time="message.time" :content="message.content"></single-message-from-object><single-message-from-self v-else :avatar="message.avatar" :time="message.time" :content="message.content"></single-message-from-self></div></el-main><el-footer id="text-panel"><el-row><el-col :span="22"><el-input v-model="textfield" style="margin-left: 5px;"></el-input></el-col><el-col :span="1"><el-button type="primary" icon="el-icon-check" @click="send" style="margin-left: 15px;"></el-button></el-col></el-row></el-footer></el-container>',
-            methods: {
-                send : function() {
-                    temp = this.textfield;
-                    this.textfield = '';
-                    this.$emit('send-message', [this.chat.name, temp]);
-                }
-            }
-        }),
-    Vue.component('single-message-from-object', {
-            props: ['avatar', 'time', 'content'],
-            data: function () {
-                return {
-                }
-            },
-            template: '<div class="message-from-object"><el-row style="margin-top: 20px;"><el-col :span="1" style="margin-right: 10px; margin-top: 2px;"><el-avatar :src="avatar"></el-avatar></el-col><el-col :span="10"><el-card shadow="always"><label>{{content}}</label><label style="font-size: 12px; float: right; margin-top: 10px;">{{time}}</label></el-card></el-col></el-row></div>'
-        }),
-    Vue.component('single-message-from-self', {
-            props: ['avatar', 'time', 'content'],
-            data: function () {
-                return {
-                }
-            },
-            template: '<div class="message-from-self"><el-row style="margin-top: 20px;"><el-col :span="10" :offset="12"><el-card shadow="always"><label style="width: 50px;">{{content}}</label><label style="font-size: 12px; float: right; margin-top: 10px;">{{time}}</label></el-card></el-col><el-col :span="1" style="margin-left: 10px; margin-top: 2px;"><el-avatar :src="avatar"></el-avatar></el-col></el-row></div>'
-        }),
-
         new Vue({
             el: '#app',
             data: function() {
@@ -118,11 +58,7 @@
 					searchUserForm: {
 						display: false,
 						searchField: "",
-						usersdata:[{
-							username: 'lotuny',
-							email: 'lee.lotuny@gmail.com',
-							IsLoggedIn: true
-						}],
+						usersdata:[],
 					},
                     websocket: null,
                     request: '',
@@ -177,15 +113,38 @@
 				response(newR, oldR) {
 					console.log("Watched newR: " + newR);
 					this.parsed_response = JSON.parse(newR);
-					console.log(this.parsed_response.type);
-					if (this.parsed_response.type === 'TEXT') {
-						if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message						
-						sender = this.parsed_response.sender;
-						message = this.parsed_response.message;
-						this.chatwith(sender);
-						//Todo: retrieve time instead of creating
-						time = new Date();
-						this.updateChat(sender, this.self.name, message, time);
+					console.log(this.parsed_response);
+					switch (this.parsed_response.type) {
+						case 'TEXT': 
+							if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message						
+							sender = this.parsed_response.sender;
+							message = this.parsed_response.message;
+							this.chatwith(sender);
+							//Todo: retrieve time instead of creating
+							time = new Date();
+							this.updateChat(sender, this.self.name, message, time);
+							break;
+						case 'REPLY':
+							switch (this.parsed_response.REPLY) {
+								case 'LOGIN: SUCCESS':
+									console.log("LOGIN: SUCCESS");
+									this.initPost(this.self.name);
+									break;
+								case 'GETALLCONTACTS: SUCCESS':
+									contacts = this.parsed_response.contacts;
+									for (i in contacts) {
+										if (contacts[i].username !== this.self.name)
+											this.chatwith(contacts[i].username);
+									}
+									break;
+								case 'SEARCHCONTACTS: SUCCESS':
+									if (this.parsed_response.contacts.length > 1)
+										this.searchUserForm.usersdata = this.parsed_response.contacts;
+									else
+										this.searchUserForm.usersdata = [this.parsed_response.contacts];
+									break;
+							}
+							break;
 					}
 				}
 			},
@@ -241,7 +200,6 @@
                         "\", \"recipient\":\"" + recipient +
                         "\", \"message\":\""+ message + "\"}";
                     this.send();
-                    this.parsed_response = JSON.parse(this.response);
                     //Todo: determine text successful
 					// if (this.parsed_response.REPLY === 'TEXT: SUCCESS'){
                     //     this.updateChat(recipient, message);
@@ -252,8 +210,10 @@
                 },
                 updateChat : function (sender, recipient, message, time) {
 					hour = time.getHours();
-					padding = hour>9?"":"0";
-					time = padding + hour + ":" + time.getMinutes();
+					paddingHour = hour>9?"":"0";
+					minute = time.getMinutes();
+					paddingMinute = minute>9?"":"0";
+					time = paddingHour + hour + ":" + paddingMinute + minute;
                     if (sender===this.self.name) { //message out
 						for (chat_key in this.chatlist) {
 						    if (this.chatlist[chat_key].name === recipient) {
@@ -320,38 +280,20 @@
                         "search:\"" + this.searchUserForm.searchField + "\",\n" +
                         "}";
                     this.send();
-					this.parsed_response = JSON.parse(this.response);
-					if (this.parsed_response.REPLY === "SEARCHCONTACTS: SUCCESS" && this.parsed_response.contacts != null) {
-						if (this.parsed_response.contacts.length > 1)
-							this.searchUserForm.usersdata = this.parsed_response.contacts;
-						else
-							this.searchUserForm.usersdata = [this.parsed_response.contacts];
-					}
+					
 					//Todo: fail to search					
                 },
 				//below test should be deleted in the future
-				onLogin : function(username) {
+				onLogin : function(username, password) {
+					this.self.name = '271119';
 					username = '271119';
+					password = hex_md5('271119');
 					this.request = "{\n" +
                             "type: \"LOGIN\",\n" +
                             "username:\""+ username +"\",\n" +
-                            "password:\"" + hex_md5('271119') + "\"\n" +
+                            "password:\"" + password + "\"\n" +
                             "}";
                     this.send();				
-					
-					this.parsed_response = JSON.parse(this.response);
-                    if (this.parsed_response.REPLY === 'LOGIN: SUCCESS')
-                        // window.location.href="/chat/main"; //Todo: post user information to initialize chat
-                        this.initPost(username);
-                    else if (this.parsed_response.REPLY === 'GETALLCONTACTS: SUCCESS') {
-						contacts = this.parsed_response.contacts;
-						for (i in contacts) {
-							if (contacts[i].username !== this.self.name)
-								this.chatwith(contacts[i].username);
-						}
-					}
-					else
-                        alert(this.response);
 				},
 				initPost : function(username) {
 					this.self = {'avatar': "/img/avatar.jpg", 'name': username};
@@ -359,162 +301,9 @@
 										"type: \"GETALLCONTACTS\",\n" +
 									"}";
 					this.send();
-					this.parsed_response = JSON.parse(this.response);
 				}
             }
         })
 </script>
 
-<style>
-	#main-panel {
-		 position: absolute;
-		 left: 50%; 
-		 top: 50%; 
-		 transform: translate(-50%, -50%);
-	}
-	
-    #self-info {
-
-    }
-
-    #search-bar {
-        background-color: #EEFAF9;		
-    }
-
-    #chat-list-panel {
-        height: 480px;
-        overflow: auto;
-    }
-
-    #object-info {
-
-    }
-
-    #chatting-panel {
-        background-color: #F5F7FA;
-    }
-
-    #text-panel {
-        background-color: #FBFDFF;
-        margin-top: 20px;
-    }
-
-	#add {
-		margin-top: 10px;
-		text-align: center; 
-		font-size: 40px;
-		color: #F0F0F0;
-	}
-
-	#add:hover {
-		color: #FFFFFF;
-		cursor: pointer;
-	}
-
-    .chat {
-        height: 50px;
-        background-color: #ABE8E0;
-        margin-top: 2px;
-        padding-top: 10px;
-        padding-bottom: 10px;
-    }
-
-    .chat:hover {
-        background-color: #97E2D8;
-    }
-
-    .chat .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 20px;
-        margin: 5px 12px;
-    }
-
-    .chat .name {
-        font-weight: 600;
-    }
-
-    .chat .last-chat-time {
-        text-align: right;
-    }
-
-    .chat .last-chat-content {
-        line-height: 30px;
-    }
-
-    .avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 25px;
-    }
-
-    .el-header {
-        background-color: #2EC5B1;
-        text-align: left;
-        line-height: 60px;
-    }
-
-    .el-footer {
-        background-color: #F4F4F5;
-    }
-
-    .el-aside {
-        background-color: #ABE8E0;
-    }
-
-    .el-main {
-        background-color: #EEFAF9;
-    }
-
-    .el-container {
-        height: 600px;
-        width: 1300px;
-        margin-bottom: 40px;
-    }
-	
-	#mask {
-		position: absolute;
-		    top: 0px;
-		    left: 0px;
-			width: 100%;
-			height: 100%;
-		    background-color: #000000;
-		    opacity: 0.5;
-	}
-	
-	#searchUserPanel {
-		border-radius: 10px;
-		position: absolute; 
-		left: 50%; 
-		top: 50%; 
-		transform: translate(-50%, -50%); 
-		width: 800px; 
-		height: 500px; 
-		background-color: #FFFFFF;
-	}
-	
-	#searchResults {
-		border-radius: 5px; 
-		overflow: auto; 
-		margin-top: 20px; 
-		margin-left: 50px; 
-		padding: 10px 10px;
-		width: 700px; 
-		height: 300px; 
-		background-color: #F2F8FE;
-	}
-	
-	.single-user-info {
-		border-radius: 10px;
-		margin-top: 5px;
-		height: 60px;
-		padding-top: 30px;
-		text-align: center;
-	}
-	
-	.single-user-info:hover {
-		background: #D5F3EF;
-		cursor: pointer;
-	}
-</style>
 </html>
