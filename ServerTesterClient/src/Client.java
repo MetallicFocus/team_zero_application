@@ -72,7 +72,7 @@ public class Client extends WebSocketClient {
 		}
 		
 		
-		//c2.login();
+		c2.login();
 
 		try {
 			Thread.sleep(1000);
@@ -80,7 +80,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 	
-		//c1.text();
+		c1.text();
 
 		try {
 			Thread.sleep(1000);
