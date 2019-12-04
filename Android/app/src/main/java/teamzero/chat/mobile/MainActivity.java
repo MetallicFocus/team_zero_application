@@ -17,6 +17,13 @@ import org.json.JSONObject;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import tools.JSONConstructor;
 import tools.RegistrationValidator;
@@ -69,10 +76,9 @@ public class MainActivity extends AppCompatActivity {
                     try {
 
                         // Send login JSON request to server
-                        WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructLoginJSON(username, password));
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password), true);
 
-                        // TODO: Make use of ExecutorService
-                        Thread.sleep(500);
+                        //Thread.sleep(2000);
 
                         JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
 
@@ -86,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         else Toast.makeText(getApplicationContext(), R.string.login_failed_text, Toast.LENGTH_SHORT).show();
 
-                    } catch (JSONException | InterruptedException e) {
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
 

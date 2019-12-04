@@ -3,6 +3,7 @@ package teamzero.chat.mobile;
 import android.graphics.Color;
 import android.os.Bundle;
 
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 
 import android.view.Gravity;
@@ -26,6 +27,19 @@ public class Chat extends AppCompatActivity {
     ScrollView scrollView;
     EditText messageToSend;
     Button sendMsgButton;
+
+    // Use the handler with a runnable in order to recognize fetched messages from the onMessage event of the WS
+    // Once the messages are recognized, display them onto the chat screen using addMessageBox
+    private Handler handler = new Handler();
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            getMsg();
+            // Run a check every 1 second
+            handler.postDelayed(this, 1000);
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,23 +67,28 @@ public class Chat extends AppCompatActivity {
 
                 try {
                     // Send TEXT JSON request to server to send to the other user
-                    // TODO: Change second argument into UserDetails.chatWith
-                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.username, messageToSend.getText().toString()));
+                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, messageToSend.getText().toString()));
                     addMessageBox(messageToSend.getText().toString(), 1);
 
-                    // TODO: Make use of ExecutorService
-                    Thread.sleep(2000);
+                    //Thread.sleep(2000);
 
-                    // TODO: Get responses and show them async
-                    JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
-                    System.out.println(UserDetails.username + ": "+ responseJSON.get("message").toString());
-                    addMessageBox(responseJSON.get("message").toString(), 2);
-                } catch (JSONException | InterruptedException e) {
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
         });
 
+        // Start the handler and run it every 1 second
+        handler.postDelayed(runnable, 1000);
+    }
+
+    public void getMsg() {
+        System.out.println("Inside getMsg");
+        // If there is a new message, display it
+        if(!UserDetails.messageContent.equalsIgnoreCase("")) {
+            addMessageBox(UserDetails.messageContent, 2);
+            UserDetails.messageContent = "";
+        }
     }
 
     public void addMessageBox(String message, int type) {
@@ -104,6 +123,8 @@ public class Chat extends AppCompatActivity {
     // The method is called when the user clicks on the back button on the upper-left hand side
     @Override
     public boolean onSupportNavigateUp() {
+        // Close the handler with the runnable action when you go to other activities
+        handler.removeCallbacks(runnable);
         finish();
         return true;
     }

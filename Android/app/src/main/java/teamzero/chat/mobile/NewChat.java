@@ -65,10 +65,9 @@ public class NewChat extends AppCompatActivity {
 
                     try {
                         System.out.println(new JSONConstructor().constructGetAllContactsJSON());
-                        WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructGetAllContactsJSON());
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetAllContactsJSON(), false);
 
-                        // TODO: Use ExecutorService to wait until response is received or timeout
-                        Thread.sleep(500);
+                        //Thread.sleep(500);
 
                         // Get response from server and parse it
                         JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
@@ -83,7 +82,7 @@ public class NewChat extends AppCompatActivity {
                         }
                         else Toast.makeText(getApplicationContext(), R.string.fetching_from_server_error_text, Toast.LENGTH_SHORT).show();
 
-                    } catch (JSONException | InterruptedException e) {
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
@@ -91,10 +90,9 @@ public class NewChat extends AppCompatActivity {
                     // If the user gives text input, send SEARCHCONTACTS request JSON
                     try {
                         System.out.println(new JSONConstructor().constructSearchContactsJSON(searchForUser));
-                        WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructSearchContactsJSON(searchForUser));
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(searchForUser), false);
 
-                        // TODO: Use ExecutorService to wait until response is received or timeout
-                        Thread.sleep(500);
+                        //Thread.sleep(500);
 
                         // Get response from server and parse it
                         JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
@@ -108,7 +106,7 @@ public class NewChat extends AppCompatActivity {
                         }
                         else Toast.makeText(getApplicationContext(), R.string.fetching_from_server_error_text, Toast.LENGTH_SHORT).show();
 
-                    } catch (JSONException | InterruptedException e) {
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }

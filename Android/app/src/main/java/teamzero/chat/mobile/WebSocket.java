@@ -5,6 +5,9 @@ import android.util.Log;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -20,6 +23,7 @@ public class WebSocket {
 
     private WebSocketClient mWebSocketClient;
     private String response;
+    private Boolean receivedResponse = false;
 
     public WebSocket() {
         connectWebSocket();
@@ -31,7 +35,7 @@ public class WebSocket {
         try {
             // Used the following URI for testing purposes only
             // TODO: Change URI to Heroku server
-            uri = new URI("ws://10.200.195.12:1234");
+            uri = new URI("ws://10.200.199.132:1234");
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -48,6 +52,21 @@ public class WebSocket {
             public void onMessage(String message) {
                 Log.i("Websocket", "Received message = " + message);
                 response = message;
+                receivedResponse = true;
+
+                try {
+                    JSONObject responseJSON = new JSONObject(message);
+
+                    // When the user receives a message from another user
+                    if(responseJSON.get("type").toString().equalsIgnoreCase("TEXT")) {
+                        // TODO: Add message to local database to retrieve the latest N messages from chat X
+                        UserDetails.messageContent = responseJSON.get("message").toString();
+                        System.out.println(UserDetails.chatWith + ": "+ UserDetails.messageContent);
+                        receivedResponse = false;
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -90,10 +109,61 @@ public class WebSocket {
         return response;
     }
 
+    // Debugging purposes only
+    public Boolean getReceivedResponse() { return receivedResponse; }
+
+    public Boolean waitForResponse() {
+        if(receivedResponse) {
+            receivedResponse = false;
+            return true;
+        }
+        return false;
+    }
+
     public void closeConnection() {
         if(!mWebSocketClient.getConnection().isClosed())
             mWebSocketClient.close();
     }
+
+    // There are 2 different sendMessage methods -
+    // 1) Send message to server with waiting period for a response
+    // 2) Send message to other user without any waiting
+    public void sendMessageAndWait(String message, final Boolean isLogin) {
+        if(mWebSocketClient.getConnection().isOpen())
+            mWebSocketClient.send(message);
+
+        System.out.println("BEFORE=" + getReceivedResponse());
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<String> future = executor.submit(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+
+                while(!WebSocketHandler.getSocket().waitForResponse()) {
+                    // Wait for 1st response OR timeout to pass
+                }
+                if(isLogin)
+                    while(!WebSocketHandler.getSocket().waitForResponse()) {
+                        // Wait for 2nd response OR timeout to pass
+                    }
+                return "Ready!";
+            }
+        });
+
+        try {
+            // Timeout of 10 seconds to try the action
+            System.out.println(future.get(10, TimeUnit.SECONDS));
+        } catch (TimeoutException | ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            future.cancel(true);
+            System.out.println("Timeout!");
+        }
+
+        System.out.println("AFTER=" + getReceivedResponse());
+
+        executor.shutdown();
+    }
+
 
     public void sendMessage(String message) {
         if(mWebSocketClient.getConnection().isOpen())

@@ -71,10 +71,9 @@ public class Registration extends AppCompatActivity {
         try {
 
             // Send register JSON request to server
-            WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructRegisterJSON(username, password, email, picture));
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture), false);
 
-            // TODO: Use ExecutorService to wait until response is received or timeout
-            Thread.sleep(500);
+            //Thread.sleep(500);
 
             // Get response from server and parse it. If registration is successful, try to login
             JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
@@ -82,10 +81,9 @@ public class Registration extends AppCompatActivity {
             if (responseJSON.get("REPLY").toString().equalsIgnoreCase("REGISTER: SUCCESS")) {
 
                 // Then LOGIN
-                WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructLoginJSON(username, password));
+                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password), true);
 
-                // TODO: Use ExecutorService to wait until response is received or timeout
-                Thread.sleep(500);
+                //Thread.sleep(500);
 
                 responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
 
@@ -102,7 +100,7 @@ public class Registration extends AppCompatActivity {
             }
             else Toast.makeText(getApplicationContext(), R.string.registration_unsuccessful_text, Toast.LENGTH_LONG).show();
 
-        } catch (JSONException | InterruptedException e) {
+        } catch (JSONException  e) {
             e.printStackTrace();
         }
     }
