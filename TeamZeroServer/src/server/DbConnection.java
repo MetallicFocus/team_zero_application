@@ -192,7 +192,7 @@ public class DbConnection {
 		try {
 			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE lower(username) LIKE ?;");
 			
-			ps.setString(1, "%" + query + "%");
+			ps.setString(1, "%" + query.toLowerCase() + "%");
 			ResultSet rs = ps.executeQuery();
 			LOGGER.log(Level.INFO, "getSearchedUsers prepared statement is:  {0}", ps); //debug
 			
