@@ -229,9 +229,10 @@ public class ServerMain extends WebSocketServer {
 						String sender = json.getString(JSON_KEY_SENDER);	
 						String recipient = json.getString(JSON_KEY_RECIPIENT);
 						String textMessage = json.getString(JSON_KEY_MESSAGE);
-						dbConnection.addMessage(sender, recipient, textMessage);
 						
-						json.put(JSON_KEY_TIMESTAMP, DATE_FORMAT.format(new Date()));
+						String ts = DATE_FORMAT.format(new Date());
+						dbConnection.addMessage(sender, recipient, textMessage, ts);
+						json.put(JSON_KEY_TIMESTAMP, ts);
 						sendClientText(websocket, json);
 					}
 					else {

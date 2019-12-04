@@ -54,12 +54,15 @@ public class Client extends WebSocketClient {
 		}
 		
 		c1.login();
+		
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
+
+		c1.text();
         c1.getAllContacts();
         c1.searchSomeContacts("a");
 
