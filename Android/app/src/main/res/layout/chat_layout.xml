@@ -17,18 +17,38 @@
         app:layout_constraintRight_toRightOf="parent">
     </android.support.v7.widget.RecyclerView>
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_weight="20"
+        android:layout_height="0dp"
+        android:id="@+id/scrollView"
+        app:layout_constraintTop_toBottomOf="@id/recyclerViewMessageList"
+        app:layout_constraintBottom_toTopOf="@id/MsgBoxLayout">
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/relativeLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:id="@+id/linearLayoutSV">
+            </LinearLayout>
+        </RelativeLayout>
+    </ScrollView>
+
     <!-- Delimiter between RecyclerView (chat history) and Msg Box -->
     <View
         android:layout_width="0dp"
         android:layout_height="2dp"
         android:background="#dfdfdf"
         android:layout_marginBottom="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/MsgBox"
+        app:layout_constraintBottom_toTopOf="@+id/MsgBoxLayout"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
 
     <LinearLayout
-        android:id="@+id/MsgBox"
+        android:id="@+id/MsgBoxLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -39,7 +59,7 @@
         app:layout_constraintLeft_toLeftOf="parent">
 
         <EditText
-            android:id="@+id/MsgBoxHint"
+            android:id="@+id/MsgBox"
             android:hint="@string/message_box_hint_text"
             android:background="@android:color/transparent"
             android:layout_gravity="center"

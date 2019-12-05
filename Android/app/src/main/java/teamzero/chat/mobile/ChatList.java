@@ -24,7 +24,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +33,8 @@ import java.util.List;
 import database.AppDatabaseClient;
 import database.StoredChatList;
 
-/*
-    TODO:   1) Make mock login with welcome message to test out UserDetails population  [X]
-            2) Display more info inside simple_list_item_2			                    [X]
-            3) Create new chat feature                                                  [X]
-            4) Make search fully functional                                             []
- */
+import tools.JSONConstructor;
+
 
 public class ChatList extends AppCompatActivity {
 
@@ -200,19 +197,24 @@ public class ChatList extends AppCompatActivity {
                 // User clicked Sign Out OR Unregister
 
                 if(choice.equalsIgnoreCase("Sign Out")) {
-                    // TODO: Build and send JSON to server stating that the user signed out
+                    // Do nothing and just close the socket
                 }
 
                 if(choice.equalsIgnoreCase("Unregister")) {
-                    // TODO: Build and send JSON to server stating that the user wants to unregister
+
+                    // Send unregister JSON request to server
+                    try {
+                        WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructUnregisterJSON(UserDetails.username, UserDetails.password));
+
+                        // TODO: Deal with the case when unregistering is unsuccessful
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                 }
 
-                // TODO: Delete this -- Testing WebSocket closed connection
-                System.out.println("Response test from ChatList activity: " + WebSocketHandler.getSocket().getResponse());
-                WebSocketHandler.getSocket().sendMessage("Test Message 3");
-                System.out.println("Response test from ChatList activity: " + WebSocketHandler.getSocket().getResponse());
                 WebSocketHandler.getSocket().closeConnection();
-                // End of testing
 
                 // Go back to home login/register screen
                 startActivity(new Intent(ChatList.this, MainActivity.class));
