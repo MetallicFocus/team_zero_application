@@ -192,7 +192,7 @@ public class DbConnection {
 		try {
 			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE lower(username) LIKE ?;");
 			
-			ps.setString(1, "%" + query + "%");
+			ps.setString(1, "%" + query.toLowerCase() + "%");
 			ResultSet rs = ps.executeQuery();
 			LOGGER.log(Level.INFO, "getSearchedUsers prepared statement is:  {0}", ps); //debug
 			
@@ -215,7 +215,7 @@ public class DbConnection {
 	} 
 	
 
-	public void addMessage(String sender, String recipient, String textMessage) {
+	public void addMessage(String sender, String recipient, String textMessage, String timestamp) {
 		Connection conn = connect();
 		int chatId = 0;
 		try {
@@ -236,6 +236,7 @@ public class DbConnection {
 				ps.setInt(2, getUserIDFromUsername(sender));
 				ps.setInt(3, getUserIDFromUsername(recipient));
 				ps.setString(4, textMessage);
+				ps.setTimestamp(5, Timestamp.valueOf(timestamp));
 				Date date = new Date();
 				Timestamp ts = new Timestamp(date.getTime());
 				ps.setTimestamp(5, ts);

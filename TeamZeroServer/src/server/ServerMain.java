@@ -3,7 +3,9 @@ package server;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -71,6 +73,10 @@ public class ServerMain extends WebSocketServer {
 	private static final String JSON_KEY_EMAIL = "email";
 	
 	private static final String JSON_KEY_SEARCH = "search";
+	
+	private static final String JSON_KEY_TIMESTAMP = "timestamp";
+	
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	/**
 	 * A map of Connections to the client IDs of the clients they connect to
@@ -223,7 +229,10 @@ public class ServerMain extends WebSocketServer {
 						String sender = json.getString(JSON_KEY_SENDER);	
 						String recipient = json.getString(JSON_KEY_RECIPIENT);
 						String textMessage = json.getString(JSON_KEY_MESSAGE);
-						dbConnection.addMessage(sender, recipient, textMessage);
+						
+						String ts = DATE_FORMAT.format(new Date());
+						dbConnection.addMessage(sender, recipient, textMessage, ts);
+						json.put(JSON_KEY_TIMESTAMP, ts);
 						sendClientText(websocket, json);
 					}
 					else {
@@ -342,6 +351,7 @@ public class ServerMain extends WebSocketServer {
 				sender: fromUsername
 				recipient: toUsername
 				message: message
+				timestamp: datetime
 			}
 		*/
 		String recipientUsername = message.getString(JSON_KEY_RECIPIENT);
@@ -355,6 +365,12 @@ public class ServerMain extends WebSocketServer {
 		if (recipientSocket != null) {
 			// if recipient is connected, send message right away
 				recipientSocket.send(message.toString());
+			// send reply to sender
+				websocket.send(
+						generateReplyToClient(
+								CASE_TEXT_MESSAGE,
+							MESSAGE_REPLY_SUCCESS, 	
+								"Message sent to recipient."));
 		}
 		else {
 			// if recipient is not currently connected
@@ -377,6 +393,11 @@ public class ServerMain extends WebSocketServer {
 				recipientUnsentMessages.put(recipientUsername, unsentMessages);	
 			}
 			
+			websocket.send(
+					generateReplyToClient(
+							CASE_TEXT_MESSAGE,
+						MESSAGE_REPLY_SUCCESS, 	
+							"Sending message to recipient when online."));
 		}		
 	}
 	
