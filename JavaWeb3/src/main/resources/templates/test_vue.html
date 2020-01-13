@@ -6,12 +6,13 @@
     <link rel="stylesheet" type="text/css" href="../static/style/theme/index.css"/>
     <script type="text/javascript" src="../static/js/vue.js"></script>
 	<script type="text/javascript" src="../static/js/md5.js"></script>
-    <!-- import JavaScript -->
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+	<script src="../static/js/node_modules/vue-cookies/vue-cookies.js"></script>
 </head>
 <body>
 <div id="app">
-<button @click="getAllContacts">Test</button>
+	<h1>Test!</h1>
+	<button @click="getCookie">Test: {{result}}</button>
 </div>
 </body>
 
@@ -23,7 +24,8 @@
                     websocket: null,
                     request: '',
                     response: '',
-                    parsed_response: ''
+                    parsed_response: '',
+					result: '{}'
 				}
             },
             mounted() {
@@ -81,6 +83,11 @@
 					this.parsed_response = JSON.parse(this.response);
 					
 					console.log(this.parsed_response);
+				},
+				getCookie() {
+					this.$cookies.set('test', 'Hello world!', 1);
+					this.result = this.$cookies.get('test');
+					this.result = typeof this.websocket.readyState;
 				}
             }
         })

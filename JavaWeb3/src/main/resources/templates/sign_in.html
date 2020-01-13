@@ -10,6 +10,7 @@
 		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
         <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
         <script src="https://cdn.bootcss.com/qs/6.5.1/qs.min.js"></script>
+        <script src="/js/node_modules/vue-cookies/vue-cookies.js"></script>
 	</head>
 	<body>
 		<div id="app">
@@ -60,6 +61,17 @@
             beforeDestroy() {
                 this.websocket.close();
             },
+            watch:{
+                response(newR, oldR) {
+                    this.parsed_response = JSON.parse(newR);
+                    if (this.parsed_response.REPLY === 'LOGIN: SUCCESS') {
+                        this.setCookies();
+                        window.location.href="/chat/getmain";
+                    }
+                    else
+                        alert(this.parsed_response.message);
+                }
+            },
             methods: {
                 initWebSocket() {
                     //connection occurs error
@@ -100,12 +112,6 @@
                             "password:\"" + hex_md5(this.ruleForm.pwd) + "\"\n" +
                             "}";
                         this.send();
-                        this.parsed_response = JSON.parse(this.response);
-                        if (this.parsed_response.REPLY === 'LOGIN: SUCCESS')
-                            // window.location.href="/chat/main"; //Todo: post user information to initialize chat
-                            this.initPost();
-                        else
-                            alert(this.parsed_response.message);
                     } else {
                         alert("Error: " + this.response);
                     }
@@ -113,17 +119,9 @@
                 onSignUp : function () {
                     window.location.href="/sign_up";
                 },
-                initPost : function () {
-                    let url = location.protocol + "/chat/sign_in";
-
-                    let o={
-                        id:2
-                    };
-                    axios.post(url,Qs.stringify(o)).then(res=>{
-                        console.log(res);
-                    }).catch(err=>{
-                        console.log(err);
-                    })
+                setCookies : function () {
+                    this.$cookies.set('username', this.ruleForm.name, 1);
+                    this.$cookies.set('password', hex_md5(this.ruleForm.pwd), 1);
                 }
             }
         })
