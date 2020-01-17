@@ -84,11 +84,16 @@ public class Chat extends AppCompatActivity {
 
     public void getMsg() {
         System.out.println("Inside getMsg");
-        // If there is a new message, display it
+        // If there are new messages for this chat, display them
+
         // TODO: Gather the last N messages from the local database for this chat
-        if(!UserDetails.messageContent.equalsIgnoreCase("")) {
-            addMessageBox(UserDetails.messageContent, 2);
-            UserDetails.messageContent = "";
+
+        if(UserDetails.messages.containsKey(UserDetails.chatWith)) {
+            System.out.println(UserDetails.messages);
+            for(int i = 0; i < UserDetails.messages.get(UserDetails.chatWith).size(); i++) {
+                addMessageBox(UserDetails.messages.get(UserDetails.chatWith).get(i), 2);
+            }
+            UserDetails.messages.remove(UserDetails.chatWith);
         }
     }
 
