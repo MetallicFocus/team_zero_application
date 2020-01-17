@@ -223,18 +223,22 @@ public class DbConnection {
 					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
 			
 			// TODO do this within same statement to avoid making multiple DB calls
-			ps.setInt(1, getUserIDFromUsername(sender));
-			ps.setInt(2, getUserIDFromUsername(recipient));
-			ps.setInt(3, getUserIDFromUsername(recipient));
-			ps.setInt(4, getUserIDFromUsername(sender));
+
+			int senderId = getUserIDFromUsername(sender);
+			int recipientId = getUserIDFromUsername(recipient);
+			
+			ps.setInt(1, senderId);
+			ps.setInt(2, recipientId);
+			ps.setInt(3, recipientId);
+			ps.setInt(4, senderId);
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				chatId = rs.getInt(COLUMN_CHAT_ID);
 				ps = conn.prepareStatement(
 						"INSERT INTO chat_message (chat_id,sender_id,recipient_id,message_content,timesent) VALUES (?, ?, ?, ?, ?)");
 				ps.setInt(1, chatId);
-				ps.setInt(2, getUserIDFromUsername(sender));
-				ps.setInt(3, getUserIDFromUsername(recipient));
+				ps.setInt(2, senderId);
+				ps.setInt(3, recipientId);
 				ps.setString(4, textMessage);
 				ps.setTimestamp(5, Timestamp.valueOf(timestamp));
 				Date date = new Date();
@@ -245,8 +249,8 @@ public class DbConnection {
 			} else {
 				PreparedStatement ps1 = conn
 						.prepareStatement("INSERT INTO chats (user1,user2) VALUES (?, ?) RETURNING chat_id");
-				ps1.setInt(1, getUserIDFromUsername(sender));
-				ps1.setInt(2, getUserIDFromUsername(recipient));
+				ps1.setInt(1, senderId);
+				ps1.setInt(2, recipientId);
 				ResultSet result = ps1.executeQuery();
 				if (result.next()) {
 					chatId = result.getInt(1);
@@ -254,8 +258,8 @@ public class DbConnection {
 					ps1 = conn.prepareStatement(
 							"INSERT INTO chat_message (chat_id,sender_id,recipient_id,message_content,timesent) VALUES (?, ?, ?, ?, ?)");
 					ps1.setInt(1, chatId);
-					ps1.setInt(2, getUserIDFromUsername(sender));
-					ps1.setInt(3, getUserIDFromUsername(recipient));
+					ps1.setInt(2, senderId);
+					ps1.setInt(3, recipientId);
 					ps1.setString(4, textMessage);
 					Date date = new Date();
 					Timestamp ts = new Timestamp(date.getTime());
