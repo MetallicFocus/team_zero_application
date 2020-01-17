@@ -21,7 +21,7 @@
 		  <el-form-item label="Password" prop="pwd">
 		    <el-input v-model="ruleForm.pwd" show-password></el-input>
 		  </el-form-item>
-		  <el-form-item>
+		  <el-form-item style="margin-top: 50px;">
               <el-button type="primary" @click="submitForm()">Sign Up</el-button>
               <el-button @click="resetForm('ruleForm')">Reset</el-button>
               <el-button @click="onSignIn">Sign In</el-button>
@@ -37,6 +37,50 @@
 	    new Vue({
             el: '#app',
             data: function() {
+				var validateEmail = (rule, value, callback) => {
+					var reg = /^[A-Za-z0-9_\-\.]+\@[A-Za-z0-9_\-\.]+\.([A-Za-z]{2,6})$/; 
+								//E-mail contains only one '@' character
+								//E-mail contains at least a dot ('.')
+								//E-mail contains between 2 and 6 characters after a dot ('.')
+					if (value === '') {
+						callback();
+					} else if (!reg.exec(value)) {
+						callback(new Error('Please input a valid email address.'));
+					}
+				};
+				var validateUsername = (rule, value, callback) => {
+					var reg1 = /[^a-zA-Z0-9_\-.]/; //Username can only contain number, character and ., -, _
+					var reg2 = /^[0-9]/; //Username cannot start with numbers.
+					var reg3 = /.{3,30}/;					
+					if (value === '') {
+						callback();
+					} else if (reg2.exec(value)) {
+						callback(new Error('Username cannot start with numbers.'));
+					} else if (reg1.exec(value)) {
+						callback(new Error('Username can only contain numbers, characters and ., -, _'));
+					} else if (!reg3.exec(value)) {
+						callback(new Error('The number of characters must be in between 3 and 30.'));
+					}  
+				};
+				var validatePwd = (rule, value, callback) => {
+					var reg1 = /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#!?$%^&+])/;
+								// Password contains at least 1 uppercase character
+								// Password contains at least 1 lowercase character
+								// Password contains at least 1 digit
+								// Password contains at least 1 special character
+					var reg2 = /\s/; // Password must not contain white spaces
+					var reg3 = /.{6,30}/; // Password is between 6 and 30 characters
+                    var reg4 = /[^a-zA-Z0-9@#!?$%^&+]/;
+					if (value === '') {
+						callback();
+					} else if (!reg1.exec(value)) {
+						callback(new Error('Password must contain uppercase and lowercase character, number, special character [@#!?$%^&+]'));
+					} else if (reg2.exec(value)) {
+						callback(new Error('Password cannot contain white space'));
+					} else if (!reg3.exec(value)) {
+						callback(new Error('The number of characters must be in between 6 and 30.'));
+					}
+				};
 	            return {
 	                websocket: null,
                     request: "",
@@ -51,15 +95,17 @@
                     },
                     rules: {
                         email: [
-                          { required: true, message: 'Please enter your email address.', trigger: 'blur' }
-                        ],
+                    		{ validator: validateEmail, trigger: 'blur' },
+                    		{ required: true, message: 'Please input email address.', trigger: 'blur'}
+                    	],
                         name: [
-                          { required: true, message: 'Please enter your user name.', trigger: 'blur' },
-                          { max: 12, message: 'No more than 12 characters.', trigger: 'blur' }
-                        ],
+                    		{ validator: validateUsername, trigger: 'blur' },
+                    		{ required: true, message: 'Please input user name.', trigger: 'blur'}
+                    	],
                         pwd: [
-                          { required: true, message: 'Please enter your password.', trigger: 'blur' }
-                        ]
+                    		{ validator: validatePwd, trigger: 'blur' },
+                    		{ required: true, message: 'Please input password.', trigger: 'blur'}
+                    	],
                     }
 	            };
             },
@@ -134,7 +180,7 @@
 					}
 				},
                 onSignIn() {
-                    window.location.href = "/sign_in";
+                    window.location.href = "/chat";
                 },
                 resetForm(formName) {
                     this.$refs[formName].resetFields();

@@ -14,12 +14,4 @@ public class SignUpController {
     public String showSignUp(){
         return "sign_up";
     }
-
-    // Todo: register in server
-    @RequestMapping(value = "processing", method = RequestMethod.POST)
-    public String signUp(HttpSession session,
-                         @RequestBody UserInfoVo userInfoVo) {
-
-        return "/sign_in";
-    }
 }
