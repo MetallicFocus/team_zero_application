@@ -49,7 +49,7 @@
 					}
 				};
 				var validateUsername = (rule, value, callback) => {
-					var reg1 = /[^a-zA-Z0-9_\-\.]/; //Username can only contain number, character and ., -, _
+					var reg1 = /[^a-zA-Z0-9_\-.]/; //Username can only contain number, character and ., -, _
 					var reg2 = /^[0-9]/; //Username cannot start with numbers.
 					var reg3 = /.{3,30}/;					
 					if (value === '') {
@@ -70,6 +70,7 @@
 								// Password contains at least 1 special character
 					var reg2 = /\s/; // Password must not contain white spaces
 					var reg3 = /.{6,30}/; // Password is between 6 and 30 characters
+                    var reg4 = /[^a-zA-Z0-9@#!?$%^&+]/;
 					if (value === '') {
 						callback();
 					} else if (!reg1.exec(value)) {
