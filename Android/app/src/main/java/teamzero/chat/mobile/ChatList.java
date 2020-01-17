@@ -10,8 +10,11 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 
+import android.os.Handler;
 import android.os.Bundle;
 import android.os.AsyncTask;
+
+import android.graphics.Color;
 
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -45,6 +48,26 @@ public class ChatList extends AppCompatActivity {
     List<StoredChatList> storedChatList = new ArrayList<>();
     ProgressDialog pd;
 
+    private Handler handlerForChats = new Handler();
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            getStoredChatList();
+            // Run a check every 1 second
+            handlerForChats.postDelayed(this, 1000);
+        }
+    };
+
+    public void startHandlerShowChats() {
+        // Start the handler and run it every 1 second
+        handlerForChats.postDelayed(runnable, 1000);
+    }
+
+    public void stopHandlerShowChats() {
+        // Close the handler with the runnable action when you go to other activities
+        handlerForChats.removeCallbacks(runnable);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,7 +84,8 @@ public class ChatList extends AppCompatActivity {
         Snackbar.make(findViewById(R.id.usersList), "Welcome back " + UserDetails.username, Snackbar.LENGTH_SHORT)
                 .setAction("Action", null).show();
 
-        getStoredChatList();
+        //OLD --> Used directly to show the chats onCreate: getStoredChatList();
+        startHandlerShowChats();
 
         // When the user clicks on a specific chat from his history, go to that conversation
         usersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -85,6 +109,9 @@ public class ChatList extends AppCompatActivity {
     }
 
     private void getStoredChatList() {
+
+        System.out.println("Inside getStoredChatList");
+
         class GetStoredChatList extends AsyncTask<Void, Void, List<StoredChatList>> {
 
             @Override
@@ -131,7 +158,17 @@ public class ChatList extends AppCompatActivity {
                     TextView text2 = (TextView) view.findViewById(android.R.id.text2);
 
                     text1.setText(storedChatList.get(position).getUsername());
-                    text2.setText(storedChatList.get(position).getLastMessageContent());
+                    if(UserDetails.messages.containsKey(storedChatList.get(position).getUsername())) {
+                        text2.setTextColor(Color.RED);
+                        text2.setText("New messages found");
+                    }
+                    else {
+                        text2.setTextColor(Color.BLACK);
+                        text2.setText("No new messages");
+                    }
+
+                    //text2.setText(storedChatList.get(position).getLastMessageContent());
+
                     return view;
                 }
             };
@@ -215,6 +252,9 @@ public class ChatList extends AppCompatActivity {
                 }
 
                 WebSocketHandler.getSocket().closeConnection();
+
+                // Stops the handler that refreshes the chat list display when the user signs out
+                stopHandlerShowChats();
 
                 // Go back to home login/register screen
                 startActivity(new Intent(ChatList.this, MainActivity.class));

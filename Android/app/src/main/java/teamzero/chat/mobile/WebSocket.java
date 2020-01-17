@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -35,7 +36,7 @@ public class WebSocket {
         try {
             // Used the following URI for testing purposes only
             // TODO: Change URI to Heroku server
-            uri = new URI("ws://10.200.199.132:1234");
+            uri = new URI("ws://10.200.198.140:1234");
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -61,7 +62,21 @@ public class WebSocket {
                     if(responseJSON.get("type").toString().equalsIgnoreCase("TEXT")) {
                         // TODO: Add message to local database to retrieve the latest N messages from chat X
                         UserDetails.messageContent = responseJSON.get("message").toString();
-                        System.out.println(responseJSON.get("sender").toString() + ": "+ UserDetails.messageContent);
+                        UserDetails.messageFrom = responseJSON.get("sender").toString();
+
+                        if(!UserDetails.messages.containsKey(UserDetails.messageFrom)) {
+                            ArrayList<String> x = new ArrayList<>();
+                            x.add(UserDetails.messageContent);
+                            UserDetails.messages.put(UserDetails.messageFrom, x);
+                        }
+                        else {
+                            ArrayList<String> x = UserDetails.messages.get(UserDetails.messageFrom);
+                            x.add(UserDetails.messageContent);
+                            UserDetails.messages.put(UserDetails.messageFrom, x);
+                        }
+
+                        System.out.println(UserDetails.messageFrom + ": "+ UserDetails.messageContent);
+
                         receivedResponse = false;
                     }
                     if(responseJSON.get("type").toString().equalsIgnoreCase("REPLY")) {
