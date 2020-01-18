@@ -3,7 +3,9 @@ package server;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -39,8 +41,12 @@ public class ServerMain extends WebSocketServer {
 	private static final String CASE_TEXT_MESSAGE = "TEXT"; // send text to another client 
 	
 	private static final String CASE_UNREGISTER = "UNREGISTER"; // delete client from system
-	
+
 	private static final String CASE_LOGIN = "LOGIN"; //login with user name and password
+
+	private static final String CASE_GETALLCONTACTS = "GETALLCONTACTS"; // get all contactable user information
+
+	private static final String CASE_SEARCHCONTACTS = "SEARCHCONTACTS"; // search contactable user information
 
 	private static final String CASE_EDIT_PROFILE = "EDIT"; //edit profile details
 
@@ -63,8 +69,14 @@ public class ServerMain extends WebSocketServer {
 	private static final String JSON_KEY_SENDER = "sender";
 	
 	private static final String JSON_KEY_RECIPIENT = "recipient";
-	
+
 	private static final String JSON_KEY_EMAIL = "email";
+	
+	private static final String JSON_KEY_SEARCH = "search";
+	
+	private static final String JSON_KEY_TIMESTAMP = "timestamp";
+	
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	/**
 	 * A map of Connections to the client IDs of the clients they connect to
@@ -163,96 +175,139 @@ public class ServerMain extends WebSocketServer {
 		try {
 			JSONObject json = new JSONObject(message);
 			String msgType = json.getString(JSON_KEY_MESSAGE_TYPE);
-			if (msgType.equals(CASE_LOGIN)) {
-				String userName = json.getString(JSON_KEY_USERNAME);
-				String password = json.getString(JSON_KEY_PASSWORD);
-
-				DbConnection dbConnection = new DbConnection();
-				Client authenticatedClient = dbConnection.authenticateUser(userName, password);
-				websocket.send(userName + "Logged in.");
-				// if the client is authenticated, get their info and add to connected clients
-				if (authenticatedClient != null) {
-					//tell user login was successful
-					websocket.send(generateReplyToClient(CASE_LOGIN, MESSAGE_REPLY_SUCCESS, ""));
-					
-					authenticatedClient.setLoggedIn(true); // setloggedInflag
-					ClientManager.getInstance().addClient(authenticatedClient);
-					int id = authenticatedClient.getId();
-					clientWebSockets.put(websocket, id);
-					// check if there are any unsent messages to send & send them
-					sendUnsentMessages(websocket, userName);
-				}
-				else {
-					LOGGER.log( Level.FINE, 
-							"Cannot authenticate username ({0}) and password ({1})", 
-							new String[] {userName,password});
-					websocket.send((generateReplyToClient(
-										CASE_LOGIN,
-										MESSAGE_REPLY_FAILED, 
-										"Cannot authenticate user. Check login details.")));
-				}
-								
-			}
-			else if (msgType.equals(CASE_REGISTER)) {
-				// TODO save pictures
-				String userName = json.getString(JSON_KEY_USERNAME);
-				String password = json.getString(JSON_KEY_PASSWORD);
-				String email = json.getString(JSON_KEY_EMAIL);
-				DbConnection dbConnection = new DbConnection();
-				boolean successful = dbConnection.addUser(userName, password, email);
-				if (successful) {
-					websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_SUCCESS, ""));
-				}
-				else {
-					// TODO need to get message from DB
-					websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_FAILED, ""));
-				}
-			}
-			else if (msgType.equals(CASE_TEXT_MESSAGE)) {
-				// check if user is logged in first
-				if (isAuthenticated(websocket)) {
-					String sender = json.getString(JSON_KEY_SENDER);	
-					String recipient = json.getString(JSON_KEY_RECIPIENT);
-					String textMessage = json.getString(JSON_KEY_MESSAGE);
-					DbConnection dbConnection = new DbConnection();
-					dbConnection.addMessage(sender, recipient, textMessage);
-					sendClientText(websocket, json);
-				}
-				else {
-					LOGGER.log( Level.FINE, 
-							"Cannot send client message - sender is not logged in. {0}", websocket.toString());
-					websocket.send(
-							generateReplyToClient(
-									CASE_TEXT_MESSAGE,
-									MESSAGE_REPLY_FAILED, 
-									"Sender is not logged in"));
-				}
-			}
-			else if (msgType.equals(CASE_UNREGISTER)) {
-				// TODO check if logged in first
-				String userName = json.getString(JSON_KEY_USERNAME);
-				String password = json.getString(JSON_KEY_PASSWORD);
-				DbConnection dbConnection = new DbConnection();
-				boolean success = dbConnection.deleteUser(userName, password);
-				if (success) {
-					websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_SUCCESS, ""));		
-					// remove user from connected lists
-					int clientId = clientWebSockets.get(websocket);
-					ClientManager.getInstance().removeClient(clientId);
-					clientWebSockets.remove(websocket);
-				}
-				else {
-					websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_FAILED, ""));
-				}
-			}
-			else if (msgType.equals(CASE_EDIT_PROFILE)) {
-				// TODO edit profile
-				// check if logged in first
-			}
-			else {
+			if (msgType == null || msgType.isEmpty()) {
 				websocket.send(generateReplyToClient(msgType, MESSAGE_REPLY_FAILED, "unrecognised type"));
 			}
-		} catch (JSONException e) {
+			else {
+				DbConnection dbConnection = new DbConnection();
+				
+				switch(msgType) {
+				case CASE_LOGIN:
+					String userName = json.getString(JSON_KEY_USERNAME);
+					String password = json.getString(JSON_KEY_PASSWORD);
+					Client authenticatedClient = dbConnection.authenticateUser(userName, password);
+					websocket.send(userName + "Logged in.");
+					// if the client is authenticated, get their info and add to connected clients
+					if (authenticatedClient != null) {
+						//tell user login was successful
+						websocket.send(generateReplyToClient(CASE_LOGIN, MESSAGE_REPLY_SUCCESS, ""));
+					
+						authenticatedClient.setLoggedIn(true); // setloggedInflag
+						ClientManager.getInstance().addClient(authenticatedClient);
+						int id = authenticatedClient.getId();
+						clientWebSockets.put(websocket, id);
+						// check if there are any unsent messages to send & send them
+						sendUnsentMessages(websocket, userName);
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot authenticate username ({0}) and password ({1})", 
+								new String[] {userName,password});
+						websocket.send((generateReplyToClient(
+								CASE_LOGIN,
+								MESSAGE_REPLY_FAILED, 
+								"Cannot authenticate user. Check login details.")));
+					}
+					break;
+				case CASE_REGISTER:
+					// TODO save pictures
+					userName = json.getString(JSON_KEY_USERNAME);
+					password = json.getString(JSON_KEY_PASSWORD);
+					String email = json.getString(JSON_KEY_EMAIL);
+					boolean successful = dbConnection.addUser(userName, password, email);
+					if (successful) {
+						websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_SUCCESS, ""));
+					}
+					else {
+						// TODO need to get message from DB
+						websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_FAILED, ""));
+					}
+					break;
+				case CASE_TEXT_MESSAGE:
+					// check if user is logged in first	
+					if (isAuthenticated(websocket)) {
+						String sender = json.getString(JSON_KEY_SENDER);	
+						String recipient = json.getString(JSON_KEY_RECIPIENT);
+						String textMessage = json.getString(JSON_KEY_MESSAGE);
+						
+						String ts = DATE_FORMAT.format(new Date());
+						dbConnection.addMessage(sender, recipient, textMessage, ts);
+						json.put(JSON_KEY_TIMESTAMP, ts);
+						sendClientText(websocket, json);
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot send client message - sender is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_TEXT_MESSAGE,
+									MESSAGE_REPLY_FAILED, 	
+										"Sender is not logged in"));
+					}
+					break;
+				case CASE_UNREGISTER: 
+					userName = json.getString(JSON_KEY_USERNAME);
+					password = json.getString(JSON_KEY_PASSWORD);
+					dbConnection = new DbConnection();
+					boolean success = dbConnection.deleteUser(userName, password);
+					if (success) {
+						websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_SUCCESS, ""));		
+						// remove user from connected lists
+						int clientId = clientWebSockets.get(websocket);	
+						ClientManager.getInstance().removeClient(clientId);
+						clientWebSockets.remove(websocket);
+					}
+					else {	
+						websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_FAILED, ""));	
+					}
+					break;
+				case CASE_EDIT_PROFILE:
+				// TODO edit profile
+				// check if logged in first
+					break;
+				case CASE_GETALLCONTACTS:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						ArrayList<Client> allclients = dbConnection.getAllUserInfo();
+						JSONObject allClientsReply = new JSONObject();
+						allClientsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						allClientsReply.put(MESSAGE_REPLY, CASE_GETALLCONTACTS + ": SUCCESS");
+						for(Client c : allclients) {
+							JSONObject client = new JSONObject();
+							client.put("IsLoggedIn", c.isLoggedIn());
+							client.put(JSON_KEY_EMAIL, c.getEmail());
+							client.put(JSON_KEY_USERNAME, c.getUsername());
+							allClientsReply.accumulate("contacts", client);
+						}
+						// send the list of clients 
+						websocket.send(allClientsReply.toString());
+					}		
+					break;
+				case CASE_SEARCHCONTACTS:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						String search = json.getString(JSON_KEY_SEARCH);
+						ArrayList<Client> searchedClients = dbConnection.getSearchedUsers(search);
+						JSONObject searchedClientsReply = new JSONObject();
+						searchedClientsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						searchedClientsReply.put(MESSAGE_REPLY, CASE_SEARCHCONTACTS + ": SUCCESS");
+						for(Client c : searchedClients) {
+							JSONObject client = new JSONObject();
+							client.put("IsLoggedIn", c.isLoggedIn());
+							client.put(JSON_KEY_EMAIL, c.getEmail());
+							client.put(JSON_KEY_USERNAME, c.getUsername());
+							searchedClientsReply.accumulate("contacts", client);
+						}
+						// send the list of clients 
+						websocket.send(searchedClientsReply.toString());
+					}		
+					break;
+				default:
+				websocket.send(generateReplyToClient(msgType, MESSAGE_REPLY_FAILED, "unrecognised type"));
+			}
+			}
+		}
+		 catch (JSONException e) {
 			websocket.send(generateReplyToClient("", MESSAGE_REPLY_FAILED, "Bad JSON Format: " + e.getMessage()));
 			e.printStackTrace();
 		}
@@ -296,6 +351,7 @@ public class ServerMain extends WebSocketServer {
 				sender: fromUsername
 				recipient: toUsername
 				message: message
+				timestamp: datetime
 			}
 		*/
 		String recipientUsername = message.getString(JSON_KEY_RECIPIENT);
@@ -309,6 +365,12 @@ public class ServerMain extends WebSocketServer {
 		if (recipientSocket != null) {
 			// if recipient is connected, send message right away
 				recipientSocket.send(message.toString());
+			// send reply to sender
+				websocket.send(
+						generateReplyToClient(
+								CASE_TEXT_MESSAGE,
+							MESSAGE_REPLY_SUCCESS, 	
+								"Message sent to recipient."));
 		}
 		else {
 			// if recipient is not currently connected
@@ -331,6 +393,11 @@ public class ServerMain extends WebSocketServer {
 				recipientUnsentMessages.put(recipientUsername, unsentMessages);	
 			}
 			
+			websocket.send(
+					generateReplyToClient(
+							CASE_TEXT_MESSAGE,
+						MESSAGE_REPLY_SUCCESS, 	
+							"Sending message to recipient when online."));
 		}		
 	}
 	

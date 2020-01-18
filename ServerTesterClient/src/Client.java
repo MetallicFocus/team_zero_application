@@ -36,8 +36,8 @@ public class Client extends WebSocketClient {
 		}
 
 		// set up just in case for tests
-		c1.unregister();
-		c2.unregister();
+		//c1.unregister();
+		//c2.unregister();
 		
 		try {
 			Thread.sleep(1000);
@@ -54,12 +54,17 @@ public class Client extends WebSocketClient {
 		}
 		
 		c1.login();
+		
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-        
+
+
+		c1.text();
+        c1.getAllContacts();
+        c1.searchSomeContacts("a");
 
 		c2.register();
 		
@@ -87,8 +92,8 @@ public class Client extends WebSocketClient {
 		}
 		
 
-		c1.unregister();
-		c2.unregister();
+	   //c1.unregister();
+	   //c2.unregister();
 		
 		
 
@@ -101,12 +106,12 @@ public class Client extends WebSocketClient {
 		// scenario 2
 		// client 1 sends 2 a message when 2 is not logged in
 		
-		System.out.println("\nScenario 2 - client 1 and 2 register, "
-				+ "client 1 logs in and sends client 2 a message, "
-				+ "then client 1 logs in and receives message.\n");
+		//System.out.println("\nScenario 2 - client 1 and 2 register, "
+		//		+ "client 1 logs in and sends client 2 a message, "
+		//		+ "then client 1 logs in and receives message.\n");
 		
 
-		c1.register();
+		//c1.register();
 		
 		try {
 			Thread.sleep(1000);
@@ -114,9 +119,9 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		c1.login();
+		//c1.login();
 		
-		c2.register();
+		//c2.register();
 
 		try {
 			Thread.sleep(1000);
@@ -124,7 +129,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		c1.text();
+		//c1.text();
 
 		try {
 			Thread.sleep(1000);
@@ -132,7 +137,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		c2.login();
+		//c2.login();
 		
 		try {
 			Thread.sleep(1000);
@@ -140,8 +145,8 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 
-		c1.unregister();
-		c2.unregister();
+		//c1.unregister();
+		//c2.unregister();
 		
 		
 
@@ -157,10 +162,10 @@ public class Client extends WebSocketClient {
 		
 
 		
-		System.out.println("\nScenario 3 - client 1 registers and then tries to"
-				+ "log in with bad password.\n");
+	//	System.out.println("\nScenario 3 - client 1 registers and then tries to"
+	//			+ "log in with bad password.\n");
 		
-		c1.register();
+		//c1.register();
 		
 		try {
 			Thread.sleep(1000);
@@ -168,9 +173,9 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		c1.badLogin();
+		//c1.badLogin();
 		
-		c1.unregister();
+		//c1.unregister();
 		
 	}
 
@@ -204,6 +209,18 @@ public class Client extends WebSocketClient {
 
 		System.out.println("Client onOpen:" + arg0);
 		
+	}
+
+	public void getAllContacts() {
+		System.out.println("Sending message to getAllContacts...");
+		String requestAllContacts = test.getGetAllContactsMessage();
+		this.send(requestAllContacts);
+	}
+
+	public void searchSomeContacts(String search) {
+		System.out.println("Sending message to searchContacts...");
+		String requestAllContacts = test.searchContactsMessage(search);
+		this.send(requestAllContacts);
 	}
 
 }

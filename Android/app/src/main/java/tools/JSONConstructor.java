@@ -66,4 +66,21 @@ public class JSONConstructor {
         return builtJSON;
     }
 
+    public String constructGetAllContactsJSON() throws JSONException {
+
+        jsonObject.put("type", "GETALLCONTACTS");
+
+        builtJSON = jsonObject.toString();
+        return builtJSON;
+    }
+
+    public String constructSearchContactsJSON(String searchForUsername) throws JSONException {
+
+        jsonObject.put("type", "SEARCHCONTACTS");
+        jsonObject.put("search", searchForUsername);
+
+        builtJSON = jsonObject.toString();
+        return builtJSON;
+    }
+
 }
