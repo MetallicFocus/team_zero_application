@@ -35,15 +35,6 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 
-		// set up just in case for tests
-		//c1.unregister();
-		//c2.unregister();
-		
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		
 		c1.register();
 		
@@ -129,7 +120,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		//c1.text();
+		c1.text();
 
 		try {
 			Thread.sleep(1000);
