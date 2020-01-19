@@ -143,6 +143,13 @@ public class NewChat extends AppCompatActivity {
                 oud.setUsername(x.get("username").toString());
                 oud.setStatus(x.get("IsLoggedIn").toString().equalsIgnoreCase("true") ? "online" : "offline");
 
+                // If the public key exists, set it explicitly. Else, default will be empty string
+                if(x.has("publicKey"))
+                    oud.setPublicKey(x.get("publicKey").toString());
+                else oud.setPublicKey("");
+
+                //System.out.println(oud.getUsername() + " = " + oud.getPublicKey());
+
                 usersFoundList.add(oud);
             }
         } catch(JSONException e) {
@@ -202,6 +209,7 @@ public class NewChat extends AppCompatActivity {
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
                 scl.setLastMessageDate(null);
+                // TODO: Add the public key of that specific user to the local database
 
                 // Add the user into the local chat list database
                 AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()

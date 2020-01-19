@@ -7,6 +7,7 @@ public class OtherUsersData {
     private String lastMessageContent = "";
     private String lastMessageTime = "";
     private String avatar = "";
+    private String publicKey = "";
 
     public String getUsername() {
         return username;
@@ -46,6 +47,12 @@ public class OtherUsersData {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public String getPublicKey() { return publicKey; }
+
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 
 }
