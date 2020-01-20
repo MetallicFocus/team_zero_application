@@ -72,6 +72,8 @@ public class ServerMain extends WebSocketServer {
 
 	private static final String JSON_KEY_EMAIL = "email";
 	
+	private static final String JSON_KEY_PUBLIC_KEY = "publicKey";
+	
 	private static final String JSON_KEY_SEARCH = "search";
 	
 	private static final String JSON_KEY_TIMESTAMP = "timestamp";
@@ -214,7 +216,8 @@ public class ServerMain extends WebSocketServer {
 					userName = json.getString(JSON_KEY_USERNAME);
 					password = json.getString(JSON_KEY_PASSWORD);
 					String email = json.getString(JSON_KEY_EMAIL);
-					boolean successful = dbConnection.addUser(userName, password, email);
+					String publicKey = json.getString(JSON_KEY_PUBLIC_KEY);
+					boolean successful = dbConnection.addUser(userName, password, email, publicKey);
 					if (successful) {
 						websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_SUCCESS, ""));
 					}
@@ -277,6 +280,7 @@ public class ServerMain extends WebSocketServer {
 							client.put("IsLoggedIn", c.isLoggedIn());
 							client.put(JSON_KEY_EMAIL, c.getEmail());
 							client.put(JSON_KEY_USERNAME, c.getUsername());
+							client.put(JSON_KEY_PUBLIC_KEY, c.getPublicKey());
 							allClientsReply.accumulate("contacts", client);
 						}
 						// send the list of clients 
@@ -296,6 +300,7 @@ public class ServerMain extends WebSocketServer {
 							client.put("IsLoggedIn", c.isLoggedIn());
 							client.put(JSON_KEY_EMAIL, c.getEmail());
 							client.put(JSON_KEY_USERNAME, c.getUsername());
+							client.put(JSON_KEY_PUBLIC_KEY, c.getPublicKey());
 							searchedClientsReply.accumulate("contacts", client);
 						}
 						// send the list of clients 
@@ -476,6 +481,6 @@ public class ServerMain extends WebSocketServer {
 
 	
 	private void editClientProfile (WebSocket websocket, JSONObject message) {
-		// TODO edit client profile (picture?)
+		// TODO edit client profile (picture and/or public key?)
 	}
 }

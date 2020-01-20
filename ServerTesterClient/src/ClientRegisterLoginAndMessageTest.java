@@ -2,17 +2,21 @@
 
 public class ClientRegisterLoginAndMessageTest {
 
-	private String email1 = "testclient01@testclient.com";
+	private String email1 = "t01@testclient.com";
 	
-	private String username1 = "ClientRegisterLoginAndMessageTest01";
-	
+	private String username1 = "t01";
+
 	private String password1 = "testpassword";
 	
-	private String email2 = "testclient02@testclient.com";
+	private String publicKey1 = "testpublickey1";
 	
-	private String username2 = "ClientRegisterLoginAndMessageTest02";
+	private String email2 = "t02@testclient.com";
+	
+	private String username2 = "t02";
 	
 	private String password2 = "testpassword2";
+	
+	private String publicKey2 = "testpublickey2";
 	
 	public String getClient1RegisterMessage() {
 		String jsonMsg =
@@ -20,6 +24,7 @@ public class ClientRegisterLoginAndMessageTest {
 				", \"username\":\"" + username1 + 
 				"\", \"password\":\"" + password1 + 
 				"\", \"email\":\"" + email1 +
+				"\", \"publicKey\":\"" + publicKey1 +
 				"\", \"picture\":null}";
 		return jsonMsg;	
 		}	
@@ -48,6 +53,7 @@ public class ClientRegisterLoginAndMessageTest {
 				", \"username\":\"" + username2 + 
 				"\", \"password\":\"" + password2 + 
 				"\", \"email\":\"" + email2 +
+				"\", \"publicKey\":\"" + publicKey2 +
 				"\", \"picture\":null}";
 		return jsonMsg;
 		

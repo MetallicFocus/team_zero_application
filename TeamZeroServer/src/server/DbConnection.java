@@ -30,6 +30,7 @@ public class DbConnection {
 	private static final String COLUMN_EMAIL = "email";
 	private static final String COLUMN_ID = "user_id";
 	private static final String COLUMN_CHAT_ID = "chat_id";
+	private static final String COLUMN_PUBLIC_KEY = "public_key";
 
 	/**
 	 * Connect to the PostgreSQL database
@@ -48,7 +49,7 @@ public class DbConnection {
 		return conn;
 	}
 
-	public boolean addUser(String userName, String password, String email) {
+	public boolean addUser(String userName, String password, String email, String publicKey) {
 		boolean success = true;
 		Connection conn = connect();
 		PreparedStatement ps = null;
@@ -72,10 +73,11 @@ public class DbConnection {
 					success = false;
 				}
 			} else {
-				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password) VALUES (?, ?, ?)");
+				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password, public_key) VALUES (?, ?, ?, ?)");
 				ps.setString(1, userName);
 				ps.setString(2, email);
 				ps.setString(3, getMd5(password));
+				ps.setString(4, publicKey);
 				ps.executeUpdate();
 
 				LOGGER.log(Level.FINE, "Added user {0}", userName);
@@ -91,7 +93,6 @@ public class DbConnection {
 	}
 
 	/**
-	 * TODO note currently this will not work if there are any chat messages where this user is referenced.
 	 * @param userName
 	 * @param password
 	 * @return
@@ -167,10 +168,11 @@ public class DbConnection {
 				int clientId = rs.getInt(COLUMN_ID);
 				String clientEmail = rs.getString(COLUMN_EMAIL);
 				String clientUsername = rs.getString(COLUMN_USERNAME);
+				String clientPublicKey = rs.getString(COLUMN_PUBLIC_KEY);
 
 				// if the user is also in the client manager, set them to logged in
 				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
-				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				Client client = new Client(clientUsername, clientEmail, clientId, clientPublicKey, isLoggedIn);
 				allClients.add(client);
 			}
 			ps.close();
@@ -200,10 +202,11 @@ public class DbConnection {
 				int clientId = rs.getInt(COLUMN_ID);
 				String clientEmail = rs.getString(COLUMN_EMAIL);
 				String clientUsername = rs.getString(COLUMN_USERNAME);
+				String clientPublicKey = rs.getString(COLUMN_PUBLIC_KEY);
 
 				// if the user is also in the client manager, set them to logged in
 				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
-				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				Client client = new Client(clientUsername, clientEmail, clientId, clientPublicKey, isLoggedIn);
 				searchedClients.add(client);
 			}
 			ps.close();
