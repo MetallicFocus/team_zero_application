@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import tools.JSONConstructor;
 import tools.RegistrationValidator;
@@ -24,6 +25,11 @@ public class Registration extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registration_layout);
+
+        // Check if the SupportActionBar is instantiated
+        assert getSupportActionBar() != null;
+        // If it is, display a back button on the action bar
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
     public void checkFields(View view) {
@@ -63,20 +69,52 @@ public class Registration extends AppCompatActivity {
     public void sendRegistrationRequestToServer(String username, String password, String email, Object picture) {
 
         try {
-            System.out.println("JSON = " + new JSONConstructor().constructRegisterJSON(username, password, email, picture));
 
-            // Send JSON to server
-            WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructRegisterJSON(username, password, email, picture));
+            // TODO: Create tool method that generates public key according to the encryption algorithm
+            // TODO: Create tool method that generates private key according to the encryption algorithm
+            String publicKey = "testPublicKey", privateKey = "testPrivateKey";
 
-            // TODO: Get response from server and parse it. If SUCCESS, login. Else, refresh this screen
-            //if(parseResponse(WebSocketHandler.getSocket().getResponse()).equalsIgnoreCase("success")) {
-            startActivity(new Intent(Registration.this, ChatList.class));
-            // }
-            // else
-            // Get error, display it in a toast and refresh this screen
+            // Send register JSON request to server
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, publicKey), false);
 
-        } catch (JSONException e) {
+            //Thread.sleep(500);
+
+            // Get response from server and parse it. If registration is successful, try to login
+            JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+
+            if (responseJSON.get("REPLY").toString().equalsIgnoreCase("REGISTER: SUCCESS")) {
+
+                // Then LOGIN
+                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password), true);
+
+                //Thread.sleep(500);
+
+                responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+
+                if(responseJSON.get("REPLY").toString().equalsIgnoreCase("LOGIN: SUCCESS")) {
+
+                    // Assign username and password to UserDetails only after a success response from server
+                    UserDetails.username = username;
+                    UserDetails.password = password;
+
+                    startActivity(new Intent(Registration.this, ChatList.class));
+                }
+                else Toast.makeText(getApplicationContext(), R.string.registration_success_login_fail_text, Toast.LENGTH_LONG).show();
+
+            }
+            else Toast.makeText(getApplicationContext(), R.string.registration_unsuccessful_text, Toast.LENGTH_LONG).show();
+
+        } catch (JSONException  e) {
             e.printStackTrace();
         }
     }
+
+    // Finishes current activity (dismisses dialogs, closes search) and goes to the parent activity
+    // The method is called when the user clicks on the back button on the upper-left hand side
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
+    }
+
 }

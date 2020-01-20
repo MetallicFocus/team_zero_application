@@ -10,8 +10,11 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 
+import android.os.Handler;
 import android.os.Bundle;
 import android.os.AsyncTask;
+
+import android.graphics.Color;
 
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,7 +27,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +36,8 @@ import java.util.List;
 import database.AppDatabaseClient;
 import database.StoredChatList;
 
-/*
-    TODO:   1) Make mock login with welcome message to test out UserDetails population  [X]
-            2) Display more info inside simple_list_item_2			                    [X]
-            3) Create new chat feature                                                  [X]
-            4) Make search fully functional                                             []
- */
+import tools.JSONConstructor;
+
 
 public class ChatList extends AppCompatActivity {
 
@@ -47,6 +47,26 @@ public class ChatList extends AppCompatActivity {
 
     List<StoredChatList> storedChatList = new ArrayList<>();
     ProgressDialog pd;
+
+    private Handler handlerForChats = new Handler();
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            getStoredChatList();
+            // Run a check every 1 second
+            handlerForChats.postDelayed(this, 1000);
+        }
+    };
+
+    public void startHandlerShowChats() {
+        // Start the handler and run it every 1 second
+        handlerForChats.postDelayed(runnable, 1000);
+    }
+
+    public void stopHandlerShowChats() {
+        // Close the handler with the runnable action when you go to other activities
+        handlerForChats.removeCallbacks(runnable);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +84,8 @@ public class ChatList extends AppCompatActivity {
         Snackbar.make(findViewById(R.id.usersList), "Welcome back " + UserDetails.username, Snackbar.LENGTH_SHORT)
                 .setAction("Action", null).show();
 
-        getStoredChatList();
+        //OLD --> Used directly to show the chats onCreate: getStoredChatList();
+        startHandlerShowChats();
 
         // When the user clicks on a specific chat from his history, go to that conversation
         usersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -73,7 +94,8 @@ public class ChatList extends AppCompatActivity {
 
                 UserDetails.chatWith = storedChatList.get(position).getUsername();
 
-                // TODO: Start Activity --> Goto chat page with X person
+                System.out.println(UserDetails.chatWith + " 's Public Key = " + storedChatList.get(position).getPublicKey());
+
                 startActivity(new Intent(ChatList.this, Chat.class));
             }
         });
@@ -88,6 +110,9 @@ public class ChatList extends AppCompatActivity {
     }
 
     private void getStoredChatList() {
+
+        System.out.println("Inside getStoredChatList");
+
         class GetStoredChatList extends AsyncTask<Void, Void, List<StoredChatList>> {
 
             @Override
@@ -134,7 +159,17 @@ public class ChatList extends AppCompatActivity {
                     TextView text2 = (TextView) view.findViewById(android.R.id.text2);
 
                     text1.setText(storedChatList.get(position).getUsername());
-                    text2.setText(storedChatList.get(position).getLastMessageContent());
+                    if(UserDetails.messages.containsKey(storedChatList.get(position).getUsername())) {
+                        text2.setTextColor(Color.RED);
+                        text2.setText("New messages found");
+                    }
+                    else {
+                        text2.setTextColor(Color.BLACK);
+                        text2.setText("No new messages");
+                    }
+
+                    //text2.setText(storedChatList.get(position).getLastMessageContent());
+
                     return view;
                 }
             };
@@ -200,19 +235,27 @@ public class ChatList extends AppCompatActivity {
                 // User clicked Sign Out OR Unregister
 
                 if(choice.equalsIgnoreCase("Sign Out")) {
-                    // TODO: Build and send JSON to server stating that the user signed out
+                    // Do nothing and just close the socket
                 }
 
                 if(choice.equalsIgnoreCase("Unregister")) {
-                    // TODO: Build and send JSON to server stating that the user wants to unregister
+
+                    // Send unregister JSON request to server
+                    try {
+                        WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructUnregisterJSON(UserDetails.username, UserDetails.password));
+
+                        // TODO: Deal with the case when unregistering is unsuccessful
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                 }
 
-                // TODO: Delete this -- Testing WebSocket closed connection
-                System.out.println("Response test from ChatList activity: " + WebSocketHandler.getSocket().getResponse());
-                WebSocketHandler.getSocket().sendMessage("Test Message 3");
-                System.out.println("Response test from ChatList activity: " + WebSocketHandler.getSocket().getResponse());
                 WebSocketHandler.getSocket().closeConnection();
-                // End of testing
+
+                // Stops the handler that refreshes the chat list display when the user signs out
+                stopHandlerShowChats();
 
                 // Go back to home login/register screen
                 startActivity(new Intent(ChatList.this, MainActivity.class));
@@ -261,6 +304,7 @@ public class ChatList extends AppCompatActivity {
             @Override
             protected List<StoredChatList> doInBackground(Void... voids) {
                 // DELETE FROM storedchatlist
+                System.out.println("Deleting all chats (doInBackground)");
                 AppDatabaseClient
                         .getInstance(getApplicationContext())
                         .getAppDatabase()
@@ -273,7 +317,7 @@ public class ChatList extends AppCompatActivity {
             protected void onPostExecute(List<StoredChatList> scl) {
                 super.onPostExecute(scl);
                 // Refresh
-                startActivity(new Intent(ChatList.this, ChatList.class));
+                System.out.println("Deleting all chats (onPostExecute)");
             }
         }
 
