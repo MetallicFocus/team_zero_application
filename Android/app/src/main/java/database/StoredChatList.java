@@ -18,8 +18,8 @@ public class StoredChatList implements Serializable {
     @ColumnInfo(name = "last_message_content")
     private String lastMessageContent;
 
-    @ColumnInfo(name = "last_message_date")
-    private String lastMessageDate;
+    @ColumnInfo(name = "public_key")
+    private String publicKey;
 
     /* *
      *
@@ -51,12 +51,12 @@ public class StoredChatList implements Serializable {
         this.lastMessageContent = lastMessageContent;
     }
 
-    public String getLastMessageDate() {
-        return lastMessageDate;
+    public String getPublicKey() {
+        return publicKey;
     }
 
-    public void setLastMessageDate(String messageDate) {
-        this.lastMessageDate = lastMessageDate;
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 
 }

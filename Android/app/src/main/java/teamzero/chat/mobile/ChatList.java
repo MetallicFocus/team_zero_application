@@ -94,7 +94,8 @@ public class ChatList extends AppCompatActivity {
 
                 UserDetails.chatWith = storedChatList.get(position).getUsername();
 
-                // TODO: Start Activity --> Goto chat page with X person
+                System.out.println(UserDetails.chatWith + " 's Public Key = " + storedChatList.get(position).getPublicKey());
+
                 startActivity(new Intent(ChatList.this, Chat.class));
             }
         });
@@ -303,6 +304,7 @@ public class ChatList extends AppCompatActivity {
             @Override
             protected List<StoredChatList> doInBackground(Void... voids) {
                 // DELETE FROM storedchatlist
+                System.out.println("Deleting all chats (doInBackground)");
                 AppDatabaseClient
                         .getInstance(getApplicationContext())
                         .getAppDatabase()
@@ -315,7 +317,7 @@ public class ChatList extends AppCompatActivity {
             protected void onPostExecute(List<StoredChatList> scl) {
                 super.onPostExecute(scl);
                 // Refresh
-                startActivity(new Intent(ChatList.this, ChatList.class));
+                System.out.println("Deleting all chats (onPostExecute)");
             }
         }
 

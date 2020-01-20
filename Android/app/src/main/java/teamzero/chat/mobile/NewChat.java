@@ -118,9 +118,9 @@ public class NewChat extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                addUserToStoredChatList(usersFoundList.get(position).getUsername());
-
-                startActivity(new Intent(NewChat.this, ChatList.class));
+                addUserToStoredChatList(usersFoundList.get(position).getUsername(),
+                                        usersFoundList.get(position).getPublicKey());
+                finish();
             }
         });
     }
@@ -196,7 +196,7 @@ public class NewChat extends AppCompatActivity {
 
     }
 
-    private void addUserToStoredChatList(final String searchUsersEditTextString) {
+    private void addUserToStoredChatList(final String searchUsersEditTextString, final String publicKeyOfUser) {
 
         // TODO: Add the user only if it does not exist already in local database
 
@@ -208,8 +208,7 @@ public class NewChat extends AppCompatActivity {
                 StoredChatList scl = new StoredChatList();
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
-                scl.setLastMessageDate(null);
-                // TODO: Add the public key of that specific user to the local database
+                scl.setPublicKey(publicKeyOfUser);
 
                 // Add the user into the local chat list database
                 AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
@@ -222,7 +221,7 @@ public class NewChat extends AppCompatActivity {
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 finish();
-                startActivity(new Intent(getApplicationContext(), ChatList.class));
+                //startActivity(new Intent(getApplicationContext(), ChatList.class));
                 Toast.makeText(getApplicationContext(), "Chat created", Toast.LENGTH_LONG).show();
             }
         }
