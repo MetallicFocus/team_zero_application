@@ -10,79 +10,81 @@
 		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
 	</head>
 	<body>
-		<div id="app" :style='divStyle'>
+	<div id="app" :style='divStyle'>
 		<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="150px" class="demo-ruleForm">
-		  <el-form-item label="Email Address" prop="email">
-		    <el-input v-model="ruleForm.email"></el-input>
-		  </el-form-item>
-		  <el-form-item label="User Name" prop="name">
-		    <el-input v-model="ruleForm.name"></el-input>
-		  </el-form-item>
-		  <el-form-item label="Password" prop="pwd">
-		    <el-input v-model="ruleForm.pwd" show-password></el-input>
-		  </el-form-item>
-		  <el-form-item style="margin-top: 50px;">
-              <el-button type="primary" @click="submitForm()">Sign Up</el-button>
-              <el-button @click="resetForm('ruleForm')">Reset</el-button>
-              <el-button @click="onSignIn">Sign In</el-button>
-		  </el-form-item>
+			<el-form-item label="Email Address" prop="email">
+				<el-input v-model="ruleForm.email"></el-input>
+			</el-form-item>
+			<el-form-item label="User Name" prop="name">
+				<el-input v-model="ruleForm.name"></el-input>
+			</el-form-item>
+			<el-form-item label="Password" prop="pwd">
+				<el-input v-model="ruleForm.pwd" show-password></el-input>
+			</el-form-item>
+			<el-form-item style="margin-top: 50px;">
+				<el-button type="primary" @click="submitForm('ruleForm')">Sign Up</el-button>
+				<el-button @click="resetForm('ruleForm')">Reset</el-button>
+				<el-button @click="onSignIn">Sign In</el-button>
+			</el-form-item>
 		</el-form>
-            <div>{{request}}</div>
-            <div>{{response}}</div>
-            <div>{{parsed_response}}</div>
-		</div>
+		<div>{{request}}</div>
+		<div>{{response}}</div>
+		<div>{{parsed_response}}</div>
+	</div>
 	</body>
-	
+
 	<script>
-	    new Vue({
+        var vue = new Vue({
             el: '#app',
             data: function() {
-				var validateEmail = (rule, value, callback) => {
-					var reg = /^[A-Za-z0-9_\-\.]+\@[A-Za-z0-9_\-\.]+\.([A-Za-z]{2,6})$/; 
-								//E-mail contains only one '@' character
-								//E-mail contains at least a dot ('.')
-								//E-mail contains between 2 and 6 characters after a dot ('.')
-					if (value === '') {
-						callback();
-					} else if (!reg.exec(value)) {
-						callback(new Error('Please input a valid email address.'));
-					}
-				};
-				var validateUsername = (rule, value, callback) => {
-					var reg1 = /[^a-zA-Z0-9_\-.]/; //Username can only contain number, character and ., -, _
-					var reg2 = /^[0-9]/; //Username cannot start with numbers.
-					var reg3 = /.{3,30}/;					
-					if (value === '') {
-						callback();
-					} else if (reg2.exec(value)) {
-						callback(new Error('Username cannot start with numbers.'));
-					} else if (reg1.exec(value)) {
-						callback(new Error('Username can only contain numbers, characters and ., -, _'));
-					} else if (!reg3.exec(value)) {
-						callback(new Error('The number of characters must be in between 3 and 30.'));
-					}  
-				};
-				var validatePwd = (rule, value, callback) => {
-					var reg1 = /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#!?$%^&+])/;
-								// Password contains at least 1 uppercase character
-								// Password contains at least 1 lowercase character
-								// Password contains at least 1 digit
-								// Password contains at least 1 special character
-					var reg2 = /\s/; // Password must not contain white spaces
-					var reg3 = /.{6,30}/; // Password is between 6 and 30 characters
-                    var reg4 = /[^a-zA-Z0-9@#!?$%^&+]/;
-					if (value === '') {
-						callback();
-					} else if (!reg1.exec(value)) {
-						callback(new Error('Password must contain uppercase and lowercase character, number, special character [@#!?$%^&+]'));
-					} else if (reg2.exec(value)) {
-						callback(new Error('Password cannot contain white space'));
-					} else if (!reg3.exec(value)) {
-						callback(new Error('The number of characters must be in between 6 and 30.'));
-					}
-				};
-	            return {
-	                websocket: null,
+                var validateEmail = (rule, value, callback) => {
+                    var reg = /^[A-Za-z0-9_\-\.+]+\@[A-Za-z0-9_\-\.]+\.([A-Za-z]{2,6})$/;
+                    //E-mail contains only one '@' character
+                    //E-mail contains at least a dot ('.')
+                    //E-mail contains between 2 and 6 characters after a dot ('.')
+                    if (value === '') {
+                        callback();
+                    } else if (!reg.exec(value)) {
+                        callback(new Error('Please input a valid email address.'));
+                    }
+                    callback();
+                };
+                var validateUsername = (rule, value, callback) => {
+                    var reg1 = /[^a-zA-Z0-9_\-.]/; //Username can only contain number, character and ., -, _
+                    var reg2 = /^[0-9]/; //Username cannot start with numbers.
+                    var reg3 = /.{3,30}/; //The number of characters must be in between 3 and 30.
+                    if (value === '') {
+                        callback();
+                    } else if (reg2.exec(value)) {
+                        callback(new Error('Username cannot start with numbers.'));
+                    } else if (reg1.exec(value)) {
+                        callback(new Error('Username can only contain numbers, characters and ., -, _'));
+                    } else if (!reg3.exec(value)) {
+                        callback(new Error('The number of characters must be in between 3 and 30.'));
+                    }
+                    callback();
+                };
+                var validatePwd = (rule, value, callback) => {
+                    var reg1 = /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#!?$%^&+])/;
+                    // Password contains at least 1 uppercase character
+                    // Password contains at least 1 lowercase character
+                    // Password contains at least 1 digit
+                    // Password contains at least 1 special character
+                    var reg2 = /\s/; // Password must not contain white spaces
+                    var reg3 = /.{6,30}/; // Password is between 6 and 30 characters
+                    if (value === '') {
+                        callback();
+                    } else if (!reg1.exec(value)) {
+                        callback(new Error('Password must contain uppercase and lowercase character, number, special character (only character in [@#!?$%^&+])'));
+                    } else if (reg2.exec(value)) {
+                        callback(new Error('Password cannot contain white space'));
+                    } else if (!reg3.exec(value)) {
+                        callback(new Error('The number of characters must be in between 6 and 30.'));
+                    }
+                    callback();
+                };
+                return {
+                    websocket: null,
                     request: "",
                     response: "",
                     parsed_response: "",
@@ -91,23 +93,25 @@
                         email: '',
                         name: '',
                         pwd: '',
-                        picture: ''
+                        picture: '',
+                        publicKey: '',
+                        privateKey: ''
                     },
                     rules: {
                         email: [
-                    		{ validator: validateEmail, trigger: 'blur' },
-                    		{ required: true, message: 'Please input email address.', trigger: 'blur'}
-                    	],
+                            { validator: validateEmail, trigger: 'blur' },
+                            { required: true, message: 'Please input email address.', trigger: 'blur'}
+                        ],
                         name: [
-                    		{ validator: validateUsername, trigger: 'blur' },
-                    		{ required: true, message: 'Please input user name.', trigger: 'blur'}
-                    	],
+                            { validator: validateUsername, trigger: 'blur' },
+                            { required: true, message: 'Please input user name.', trigger: 'blur'}
+                        ],
                         pwd: [
-                    		{ validator: validatePwd, trigger: 'blur' },
-                    		{ required: true, message: 'Please input password.', trigger: 'blur'}
-                    	],
+                            { validator: validatePwd, trigger: 'blur' },
+                            { required: true, message: 'Please input password.', trigger: 'blur'}
+                        ],
                     }
-	            };
+                };
             },
             mounted() {
                 if ('WebSocket' in window) {
@@ -128,7 +132,7 @@
                         alert("Register successfully!");
                         this.onSignIn();
                     } else {
-                        alert("Register failed!")
+                        console.log("Register failed!")
                     }
                 }
             },
@@ -146,7 +150,7 @@
                     window.onbeforeunload = this.onBeforeUnload;
                 },
                 setErrorMessage() {
-                    this.response = "WebSocket occurs error." + '   Status：' + this.websocket.readyState;
+                    this.response = "WebSocket occurs error." + '   status：' + this.websocket.readyState;
                 },
                 setOnopenMessage() {
                     this.response = "WebSocket succeeds." + '   status：' + this.websocket.readyState;
@@ -164,21 +168,26 @@
                 send() {
                     this.websocket.send(this.request);
                 },
-
-				submitForm: function () {
-					if (true) {//Todo: determine if connection is successful
-						this.request = "{\n" +
-								"type: \"REGISTER\",\n" +
-								"username:\"" + this.ruleForm.name + "\",\n" +
-								"password:\"" + hex_md5(this.ruleForm.pwd) + "\",\n" +
-								"email:\"" + this.ruleForm.email + "\",\n" +
-								"picture:\"" + this.ruleForm.picture + "\"\n" +
-								"}";
-						this.send();
-					} else {
-						alert("Error: " + this.response);
-					}
-				},
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid && (this.websocket.readyState === 1)) {
+                        //Todo: (RSA) generate pub-pri key pairs and store somewhere
+                        this.ruleForm.publicKey = '';
+                        this.ruleForm.privateKey = '';
+                        this.request = "{\n" +
+                            "type: \"REGISTER\",\n" +
+                            "username:\"" + this.ruleForm.name + "\",\n" +
+                            "password:\"" + hex_md5(this.ruleForm.pwd) + "\",\n" +
+                            "email:\"" + this.ruleForm.email + "\",\n" +
+                            "picture:\"" + this.ruleForm.picture + "\",\n" +
+                            "publicKey:\"" + this.ruleForm.publicKey + "\"\n" +
+                            "}";
+                        this.send();
+                    } else {
+                        console.log('Please follow rules!');
+                    }
+                });
+                },
                 onSignIn() {
                     window.location.href = "/chat";
                 },
@@ -186,6 +195,6 @@
                     this.$refs[formName].resetFields();
                 }
             }
-	    })
+        })
 	</script>
 </html>
