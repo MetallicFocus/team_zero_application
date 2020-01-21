@@ -118,9 +118,9 @@ public class NewChat extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                addUserToStoredChatList(usersFoundList.get(position).getUsername());
-
-                startActivity(new Intent(NewChat.this, ChatList.class));
+                addUserToStoredChatList(usersFoundList.get(position).getUsername(),
+                                        usersFoundList.get(position).getPublicKey());
+                finish();
             }
         });
     }
@@ -142,6 +142,13 @@ public class NewChat extends AppCompatActivity {
                 OtherUsersData oud = new OtherUsersData();
                 oud.setUsername(x.get("username").toString());
                 oud.setStatus(x.get("IsLoggedIn").toString().equalsIgnoreCase("true") ? "online" : "offline");
+
+                // If the public key exists, set it explicitly. Else, default will be empty string
+                if(x.has("publicKey"))
+                    oud.setPublicKey(x.get("publicKey").toString());
+                else oud.setPublicKey("");
+
+                //System.out.println(oud.getUsername() + " = " + oud.getPublicKey());
 
                 usersFoundList.add(oud);
             }
@@ -189,7 +196,7 @@ public class NewChat extends AppCompatActivity {
 
     }
 
-    private void addUserToStoredChatList(final String searchUsersEditTextString) {
+    private void addUserToStoredChatList(final String searchUsersEditTextString, final String publicKeyOfUser) {
 
         // TODO: Add the user only if it does not exist already in local database
 
@@ -201,7 +208,10 @@ public class NewChat extends AppCompatActivity {
                 StoredChatList scl = new StoredChatList();
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
-                scl.setLastMessageDate(null);
+                scl.setPublicKey(publicKeyOfUser);
+                // TODO: Compute shared secret key
+                scl.setSharedSecretKey(null);
+                scl.setChatBelongsTo(UserDetails.username);
 
                 // Add the user into the local chat list database
                 AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
@@ -214,7 +224,7 @@ public class NewChat extends AppCompatActivity {
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 finish();
-                startActivity(new Intent(getApplicationContext(), ChatList.class));
+                //startActivity(new Intent(getApplicationContext(), ChatList.class));
                 Toast.makeText(getApplicationContext(), "Chat created", Toast.LENGTH_LONG).show();
             }
         }

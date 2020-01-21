@@ -22,8 +22,8 @@ public class JSONConstructorInstrumentedTests {
     public void registrationJSONisValid() {
         JSONConstructor jsonConstructor = new JSONConstructor();
         try {
-            assertEquals(null, "{\"type\":\"REGISTER\",\"username\":\"UsernameTest\",\"password\":\"PwdTest\",\"email\":\"testEmail@gmail.com\",\"picture\":\"null\"}", jsonConstructor.constructRegisterJSON("UsernameTest", "PwdTest", "testEmail@gmail.com", "null"));
-            assertEquals(null, "{\"type\":\"REGISTER\",\"username\":\"UsernameTest\",\"password\":\"PwdTest\",\"email\":\"testEmail@gmail.com\"}", jsonConstructor.constructRegisterJSON("UsernameTest", "PwdTest", "testEmail@gmail.com", null));
+            assertEquals(null, "{\"type\":\"REGISTER\",\"username\":\"UsernameTest\",\"password\":\"PwdTest\",\"email\":\"testEmail@gmail.com\",\"picture\":\"null\",\"publicKey\":\"testPublicKey\"}", jsonConstructor.constructRegisterJSON("UsernameTest", "PwdTest", "testEmail@gmail.com", "null", "testPublicKey"));
+            assertEquals(null, "{\"type\":\"REGISTER\",\"username\":\"UsernameTest\",\"password\":\"PwdTest\",\"email\":\"testEmail@gmail.com\"}", jsonConstructor.constructRegisterJSON("UsernameTest", "PwdTest", "testEmail@gmail.com", null, null));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -63,8 +63,8 @@ public class JSONConstructorInstrumentedTests {
     public void editProfileJSONisValid() {
         JSONConstructor jsonConstructor = new JSONConstructor();
         try {
-            assertEquals(null, "{\"type\":\"EDIT\",\"username\":\"UsernameTest\",\"newPicture\":\"null\"}", jsonConstructor.constructEditProfileJSON("UsernameTest", "null"));
-            assertEquals(null, "{\"type\":\"EDIT\",\"username\":\"UsernameTest\"}", jsonConstructor.constructEditProfileJSON("UsernameTest", null));
+            assertEquals(null, "{\"type\":\"EDIT\",\"username\":\"UsernameTest\",\"newPicture\":\"null\",\"publicKey\":\"testPublicKey\"}", jsonConstructor.constructEditProfileJSON("UsernameTest", "null", "testPublicKey"));
+            assertEquals(null, "{\"type\":\"EDIT\",\"username\":\"UsernameTest\"}", jsonConstructor.constructEditProfileJSON("UsernameTest", null, null));
         } catch (JSONException e) {
             e.printStackTrace();
         }

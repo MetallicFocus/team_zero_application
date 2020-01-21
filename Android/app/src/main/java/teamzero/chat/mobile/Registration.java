@@ -70,8 +70,12 @@ public class Registration extends AppCompatActivity {
 
         try {
 
+            // TODO: Create tool method that generates public key according to the encryption algorithm
+            // TODO: Create tool method that generates private key according to the encryption algorithm
+            String publicKey = "testPublicKey", privateKey = "testPrivateKey";
+
             // Send register JSON request to server
-            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture), false);
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, publicKey), false);
 
             //Thread.sleep(500);
 

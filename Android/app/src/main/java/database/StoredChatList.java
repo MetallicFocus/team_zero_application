@@ -18,8 +18,14 @@ public class StoredChatList implements Serializable {
     @ColumnInfo(name = "last_message_content")
     private String lastMessageContent;
 
-    @ColumnInfo(name = "last_message_date")
-    private String lastMessageDate;
+    @ColumnInfo(name = "public_key")
+    private String publicKey;
+
+    @ColumnInfo(name = "shared_secret_key")
+    private String sharedSecretKey;
+
+    @ColumnInfo(name = "chat_belongs_to")
+    private String chatBelongsTo;
 
     /* *
      *
@@ -51,12 +57,23 @@ public class StoredChatList implements Serializable {
         this.lastMessageContent = lastMessageContent;
     }
 
-    public String getLastMessageDate() {
-        return lastMessageDate;
+    public String getPublicKey() {
+        return publicKey;
     }
 
-    public void setLastMessageDate(String messageDate) {
-        this.lastMessageDate = lastMessageDate;
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
     }
 
+    public String getSharedSecretKey() { return sharedSecretKey; }
+
+    public void setSharedSecretKey(String sharedSecretKey) {
+        this.sharedSecretKey = sharedSecretKey;
+    }
+
+    public String getChatBelongsTo() { return chatBelongsTo; }
+
+    public void setChatBelongsTo(String chatBelongsTo) {
+        this.chatBelongsTo = chatBelongsTo;
+    }
 }
