@@ -209,6 +209,9 @@ public class NewChat extends AppCompatActivity {
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
                 scl.setPublicKey(publicKeyOfUser);
+                // TODO: Compute shared secret key
+                scl.setSharedSecretKey(null);
+                scl.setChatBelongsTo(UserDetails.username);
 
                 // Add the user into the local chat list database
                 AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()

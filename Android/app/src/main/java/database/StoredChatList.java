@@ -21,6 +21,12 @@ public class StoredChatList implements Serializable {
     @ColumnInfo(name = "public_key")
     private String publicKey;
 
+    @ColumnInfo(name = "shared_secret_key")
+    private String sharedSecretKey;
+
+    @ColumnInfo(name = "chat_belongs_to")
+    private String chatBelongsTo;
+
     /* *
      *
      * Getters and Setters
@@ -59,4 +65,15 @@ public class StoredChatList implements Serializable {
         this.publicKey = publicKey;
     }
 
+    public String getSharedSecretKey() { return sharedSecretKey; }
+
+    public void setSharedSecretKey(String sharedSecretKey) {
+        this.sharedSecretKey = sharedSecretKey;
+    }
+
+    public String getChatBelongsTo() { return chatBelongsTo; }
+
+    public void setChatBelongsTo(String chatBelongsTo) {
+        this.chatBelongsTo = chatBelongsTo;
+    }
 }
