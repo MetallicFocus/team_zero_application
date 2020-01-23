@@ -14,7 +14,12 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import org.bouncycastle.util.encoders.Base64;
+
 import tools.JSONConstructor;
+import tools.RSAUtilities;
 import tools.RegistrationValidator;
 
 public class Registration extends AppCompatActivity {
@@ -70,12 +75,16 @@ public class Registration extends AppCompatActivity {
 
         try {
 
-            // TODO: Create tool method that generates public key according to the encryption algorithm
-            // TODO: Create tool method that generates private key according to the encryption algorithm
-            String publicKey = "testPublicKey", privateKey = "testPrivateKey";
+            // TODO: Store the private key on database
+            KeyPair publicPrivateKeys = RSAUtilities.generateKeyPair();
+
+            System.out.println("-- PRE-ENCODING --");
+            System.out.println(publicPrivateKeys.getPublic());
+            System.out.println(publicPrivateKeys.getPublic().getEncoded());
+            System.out.println(Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded()));
 
             // Send register JSON request to server
-            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, publicKey), false);
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded())), false);
 
             //Thread.sleep(500);
 
@@ -104,7 +113,7 @@ public class Registration extends AppCompatActivity {
             }
             else Toast.makeText(getApplicationContext(), R.string.registration_unsuccessful_text, Toast.LENGTH_LONG).show();
 
-        } catch (JSONException  e) {
+        } catch (JSONException | GeneralSecurityException e) {
             e.printStackTrace();
         }
     }

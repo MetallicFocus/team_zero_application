@@ -19,10 +19,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,8 +122,24 @@ public class NewChat extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+                System.out.println("-- POST-ENCODING --");
+
+                System.out.println(usersFoundList.get(position).getUsername());
+                System.out.println(usersFoundList.get(position).getPublicKey());
+
+                String getPublicKey = usersFoundList.get(position).getPublicKey();
+                System.out.println(getPublicKey);
+
+                byte[] base64Key = Base64.decode(getPublicKey.getBytes());
+                String s = new String(base64Key);
+                System.out.println("s = " + s);
+
+                //System.out.println(ByteUtils.toHexString(base64Key));
+                //System.out.println(Hex.toHexString(getPublicKey.getBytes()));
+
+
                 addUserToStoredChatList(usersFoundList.get(position).getUsername(),
-                                        usersFoundList.get(position).getPublicKey());
+                                        new String(Base64.decode(getPublicKey.getBytes())));
                 finish();
             }
         });
@@ -164,6 +184,10 @@ public class NewChat extends AppCompatActivity {
             OtherUsersData oud = new OtherUsersData();
             oud.setUsername(x.get("username").toString());
             oud.setStatus(x.get("IsLoggedIn").toString().equalsIgnoreCase("true") ? "online" : "offline");
+
+            if(x.has("publicKey"))
+                oud.setPublicKey(x.get("publicKey").toString());
+            else oud.setPublicKey("");
 
             usersFoundList.add(oud);
         }
