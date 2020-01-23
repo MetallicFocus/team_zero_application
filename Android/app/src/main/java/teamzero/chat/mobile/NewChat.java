@@ -27,6 +27,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -124,22 +129,16 @@ public class NewChat extends AppCompatActivity {
 
                 System.out.println("-- POST-ENCODING --");
 
+                // print for testing purposes
                 System.out.println(usersFoundList.get(position).getUsername());
                 System.out.println(usersFoundList.get(position).getPublicKey());
 
-                String getPublicKey = usersFoundList.get(position).getPublicKey();
-                System.out.println(getPublicKey);
+                String getPublicKeyB64String = usersFoundList.get(position).getPublicKey();
 
-                byte[] base64Key = Base64.decode(getPublicKey.getBytes());
-                String s = new String(base64Key);
-                System.out.println("s = " + s);
-
-                //System.out.println(ByteUtils.toHexString(base64Key));
-                //System.out.println(Hex.toHexString(getPublicKey.getBytes()));
+                System.out.println("public key in base64 = " + getPublicKeyB64String);
 
 
-                addUserToStoredChatList(usersFoundList.get(position).getUsername(),
-                                        new String(Base64.decode(getPublicKey.getBytes())));
+                addUserToStoredChatList(usersFoundList.get(position).getUsername(), getPublicKeyB64String);
                 finish();
             }
         });
@@ -220,7 +219,7 @@ public class NewChat extends AppCompatActivity {
 
     }
 
-    private void addUserToStoredChatList(final String searchUsersEditTextString, final String publicKeyOfUser) {
+    private void addUserToStoredChatList(final String searchUsersEditTextString, final String publicKeyb64OfUser) {
 
         // TODO: Add the user only if it does not exist already in local database
 
@@ -232,8 +231,24 @@ public class NewChat extends AppCompatActivity {
                 StoredChatList scl = new StoredChatList();
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
-                scl.setPublicKey(publicKeyOfUser);
+                scl.setPublicKey(publicKeyb64OfUser);
+
                 // TODO: Compute shared secret key
+                /* Start shared secret key computation */
+
+                //Step 1: PublicKey publicKeyOfUser = RSAUtilities.computePublicKeyfromBase64String(publicKeyb64OfUser)
+
+                //Step 2: Retrieve myPrivateKey
+
+                //Step 3: determine if initiating chat myself, or chat was started by the other user.
+
+                // if initiating chat myself, byte[] sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser)
+
+                // if chat was started by other user, byte[] sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser)
+
+
+                /*end shared secret key compute */
+
                 scl.setSharedSecretKey(null);
                 scl.setChatBelongsTo(UserDetails.username);
 
