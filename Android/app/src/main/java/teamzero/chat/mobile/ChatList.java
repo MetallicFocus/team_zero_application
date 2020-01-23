@@ -117,12 +117,12 @@ public class ChatList extends AppCompatActivity {
 
             @Override
             protected List<StoredChatList> doInBackground(Void... voids) {
-                // SELECT * FROM storedchatlist
+                // SELECT * FROM storedchatlist WHERE chat_belongs_to LIKE UserDetails.username
                 List<StoredChatList> scl = AppDatabaseClient
                         .getInstance(getApplicationContext())
                         .getAppDatabase()
                         .storedChatListDao()
-                        .getAll();
+                        .getChatsForClient(UserDetails.username);
                 return scl;
             }
 
@@ -309,7 +309,7 @@ public class ChatList extends AppCompatActivity {
                         .getInstance(getApplicationContext())
                         .getAppDatabase()
                         .storedChatListDao()
-                        .deleteAll();
+                        .deleteAllChatsForClient(UserDetails.username);
                 return null;
             }
 
