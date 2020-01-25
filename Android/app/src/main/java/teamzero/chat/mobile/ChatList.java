@@ -27,8 +27,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,7 +121,60 @@ public class ChatList extends AppCompatActivity {
             @Override
             protected List<StoredChatList> doInBackground(Void... voids) {
 
-                // TODO: If received a message from a user that does not belong to the chat list, insert it
+                // If received a message from a user that does not belong to the chat list, insert it
+
+                if(!UserDetails.messages.isEmpty()) {
+                    for (String userThatSentNewMessage : UserDetails.messages.keySet()) {
+                        List<StoredChatList> getUserFromChatList = AppDatabaseClient
+                                .getInstance(getApplicationContext())
+                                .getAppDatabase()
+                                .storedChatListDao()
+                                .getUserFromChatList(userThatSentNewMessage, UserDetails.username);
+
+                        // If the user that sent the new message is not in the clients database, insert it
+                        if(getUserFromChatList.isEmpty()) {
+
+                            StoredChatList scl = new StoredChatList();
+                            scl.setUsername(userThatSentNewMessage);
+                            scl.setLastMessageContent("Last message here");
+                            // Retrieve the public key of the sender
+                            String publicKey = "";
+                            // TODO: Find a less computationally-heavy solution to retrieve the public key
+                            try {
+                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(userThatSentNewMessage), false);
+
+                                // Get response from server and parse it
+                                JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+                                if (responseJSON.get("REPLY").toString().equalsIgnoreCase("SEARCHCONTACTS: SUCCESS")) {
+
+                                    if(responseJSON.has("contacts")) {
+                                        JSONObject x = responseJSON.getJSONObject("contacts");
+                                        publicKey = x.get("publicKey").toString();
+                                    }
+
+                                }
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            scl.setPublicKey(publicKey);
+
+                            // Case here: if chat was started by other user, byte[] sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser)
+
+                            // TODO: Compute the shared secret key
+                            scl.setSharedSecretKey(null);
+                            scl.setChatBelongsTo(UserDetails.username);
+
+                            // Add the user into the local chat list database
+                            AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
+                                    .storedChatListDao()
+                                    .insert(scl);
+                        }
+                    }
+                }
+
+                // Get all the chats for this user and use them to refresh the list of chats
 
                 // SELECT * FROM storedchatlist WHERE chat_belongs_to LIKE UserDetails.username
                 List<StoredChatList> scl = AppDatabaseClient

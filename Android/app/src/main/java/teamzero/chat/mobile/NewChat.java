@@ -240,12 +240,7 @@ public class NewChat extends AppCompatActivity {
 
                 //Step 2: Retrieve myPrivateKey
 
-                //Step 3: determine if initiating chat myself, or chat was started by the other user.
-
-                // if initiating chat myself, byte[] sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser)
-
-                // if chat was started by other user, byte[] sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser)
-
+                // Case here: if initiating chat myself, byte[] sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser)
 
                 /*end shared secret key compute */
 
