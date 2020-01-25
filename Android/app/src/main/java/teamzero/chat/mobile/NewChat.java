@@ -234,8 +234,6 @@ public class NewChat extends AppCompatActivity {
                 scl.setLastMessageContent("Last message here");
                 scl.setPublicKey(publicKeyOfUser);
                 // TODO: Compute shared secret key
-
-                // test comment 
                 scl.setSharedSecretKey(null);
                 scl.setChatBelongsTo(UserDetails.username);
 
