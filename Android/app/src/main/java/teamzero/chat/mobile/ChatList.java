@@ -35,6 +35,7 @@ import java.util.List;
 
 import database.AppDatabaseClient;
 import database.StoredChatList;
+import database.UsersOnDevice;
 
 import tools.JSONConstructor;
 
@@ -117,6 +118,9 @@ public class ChatList extends AppCompatActivity {
 
             @Override
             protected List<StoredChatList> doInBackground(Void... voids) {
+
+                // TODO: If received a message from a user that does not belong to the chat list, insert it
+
                 // SELECT * FROM storedchatlist WHERE chat_belongs_to LIKE UserDetails.username
                 List<StoredChatList> scl = AppDatabaseClient
                         .getInstance(getApplicationContext())
@@ -234,6 +238,9 @@ public class ChatList extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked Sign Out OR Unregister
 
+                // Stops the handler that refreshes the chat list display
+                stopHandlerShowChats();
+
                 if(choice.equalsIgnoreCase("Sign Out")) {
                     // Do nothing and just close the socket
                 }
@@ -250,12 +257,12 @@ public class ChatList extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
+                    // Remove the user from the local database and delete all of its content, including chats
+                    removeUserFromDatabase();
+
                 }
 
                 WebSocketHandler.getSocket().closeConnection();
-
-                // Stops the handler that refreshes the chat list display when the user signs out
-                stopHandlerShowChats();
 
                 // Go back to home login/register screen
                 startActivity(new Intent(ChatList.this, MainActivity.class));
@@ -323,6 +330,32 @@ public class ChatList extends AppCompatActivity {
 
         DeleteAllChats gt = new DeleteAllChats();
         gt.execute();
+    }
+
+    private void removeUserFromDatabase() {
+        class RemoveUserFromDevice extends AsyncTask<Void, Void, Void> {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+
+                System.out.println("Deleting user from device (doInBackground)");
+                AppDatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .usersOnDeviceDao()
+                        .deleteUserFromDevice(UserDetails.username);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                System.out.println("Deleting user from device (onPostExecute)");
+            }
+        }
+
+        RemoveUserFromDevice RUFD = new RemoveUserFromDevice();
+        RUFD.execute();
     }
 
 }
