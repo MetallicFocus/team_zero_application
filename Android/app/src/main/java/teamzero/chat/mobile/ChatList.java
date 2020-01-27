@@ -27,14 +27,17 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import database.AppDatabaseClient;
 import database.StoredChatList;
+import database.UsersOnDevice;
 
 import tools.JSONConstructor;
 
@@ -117,6 +120,62 @@ public class ChatList extends AppCompatActivity {
 
             @Override
             protected List<StoredChatList> doInBackground(Void... voids) {
+
+                // If received a message from a user that does not belong to the chat list, insert it
+
+                if(!UserDetails.messages.isEmpty()) {
+                    for (String userThatSentNewMessage : UserDetails.messages.keySet()) {
+                        List<StoredChatList> getUserFromChatList = AppDatabaseClient
+                                .getInstance(getApplicationContext())
+                                .getAppDatabase()
+                                .storedChatListDao()
+                                .getUserFromChatList(userThatSentNewMessage, UserDetails.username);
+
+                        // If the user that sent the new message is not in the clients database, insert it
+                        if(getUserFromChatList.isEmpty()) {
+
+                            StoredChatList scl = new StoredChatList();
+                            scl.setUsername(userThatSentNewMessage);
+                            scl.setLastMessageContent("Last message here");
+                            // Retrieve the public key of the sender
+                            String publicKey = "";
+                            // TODO: Find a less computationally-heavy solution to retrieve the public key
+                            try {
+                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(userThatSentNewMessage), false);
+
+                                // Get response from server and parse it
+                                JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+                                if (responseJSON.get("REPLY").toString().equalsIgnoreCase("SEARCHCONTACTS: SUCCESS")) {
+
+                                    if(responseJSON.has("contacts")) {
+                                        JSONObject x = responseJSON.getJSONObject("contacts");
+                                        publicKey = x.get("publicKey").toString();
+                                    }
+
+                                }
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            scl.setPublicKey(publicKey);
+
+                            // Case here: if chat was started by other user, byte[] sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser)
+
+                            // TODO: Compute the shared secret key
+                            scl.setSharedSecretKey(null);
+                            scl.setChatBelongsTo(UserDetails.username);
+
+                            // Add the user into the local chat list database
+                            AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
+                                    .storedChatListDao()
+                                    .insert(scl);
+                        }
+                    }
+                }
+
+                // Get all the chats for this user and use them to refresh the list of chats
+
                 // SELECT * FROM storedchatlist WHERE chat_belongs_to LIKE UserDetails.username
                 List<StoredChatList> scl = AppDatabaseClient
                         .getInstance(getApplicationContext())
@@ -234,6 +293,9 @@ public class ChatList extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked Sign Out OR Unregister
 
+                // Stops the handler that refreshes the chat list display
+                stopHandlerShowChats();
+
                 if(choice.equalsIgnoreCase("Sign Out")) {
                     // Do nothing and just close the socket
                 }
@@ -250,12 +312,12 @@ public class ChatList extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
+                    // Remove the user from the local database and delete all of its content, including chats
+                    removeUserFromDatabase();
+
                 }
 
                 WebSocketHandler.getSocket().closeConnection();
-
-                // Stops the handler that refreshes the chat list display when the user signs out
-                stopHandlerShowChats();
 
                 // Go back to home login/register screen
                 startActivity(new Intent(ChatList.this, MainActivity.class));
@@ -323,6 +385,32 @@ public class ChatList extends AppCompatActivity {
 
         DeleteAllChats gt = new DeleteAllChats();
         gt.execute();
+    }
+
+    private void removeUserFromDatabase() {
+        class RemoveUserFromDevice extends AsyncTask<Void, Void, Void> {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+
+                System.out.println("Deleting user from device (doInBackground)");
+                AppDatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .usersOnDeviceDao()
+                        .deleteUserFromDevice(UserDetails.username);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                System.out.println("Deleting user from device (onPostExecute)");
+            }
+        }
+
+        RemoveUserFromDevice RUFD = new RemoveUserFromDevice();
+        RUFD.execute();
     }
 
 }

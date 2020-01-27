@@ -2,11 +2,15 @@ package database;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.PrimaryKey;
 
 import java.io.Serializable;
 
-@Entity
+@Entity(foreignKeys = @ForeignKey(entity = UsersOnDevice.class,
+        parentColumns = "username",
+        childColumns = "chat_belongs_to",
+        onDelete = ForeignKey.CASCADE))
 public class StoredChatList implements Serializable {
 
     @PrimaryKey(autoGenerate = true)
