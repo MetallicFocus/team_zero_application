@@ -188,7 +188,6 @@ public class ServerMain extends WebSocketServer {
 					String userName = json.getString(JSON_KEY_USERNAME);
 					String password = json.getString(JSON_KEY_PASSWORD);
 					Client authenticatedClient = dbConnection.authenticateUser(userName, password);
-					websocket.send(userName + "Logged in.");
 					// if the client is authenticated, get their info and add to connected clients
 					if (authenticatedClient != null) {
 						//tell user login was successful
