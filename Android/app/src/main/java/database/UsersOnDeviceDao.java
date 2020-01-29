@@ -28,4 +28,9 @@ public interface UsersOnDeviceDao {
     @Update
     void update(UsersOnDevice usersOnDevice);
 
+
+    @Query("SELECT private_key FROM usersondevice WHERE username LIKE :username")
+    String getUserPrivateKey(String username);
+
+
 }
