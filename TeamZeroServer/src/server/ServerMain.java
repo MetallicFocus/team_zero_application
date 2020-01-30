@@ -44,6 +44,8 @@ public class ServerMain extends WebSocketServer {
 
 	private static final String CASE_LOGIN = "LOGIN"; //login with user name and password
 
+	private static final String CASE_GET_MESSAGE_HISTORY = "GETMESSAGEHISTORY"; // get message history 
+	
 	private static final String CASE_GETALLCONTACTS = "GETALLCONTACTS"; // get all contactable user information
 
 	private static final String CASE_SEARCHCONTACTS = "SEARCHCONTACTS"; // search contactable user information
@@ -62,6 +64,10 @@ public class ServerMain extends WebSocketServer {
 
 	private static final String JSON_KEY_USERNAME = "username";
 
+	private static final String JSON_KEY_MY_USERNAME = "myUsername";
+	
+	private static final String JSON_KEY_THEIR_USERNAME = "theirUsername";
+
 	private static final String JSON_KEY_PASSWORD = "password";
 	
 	private static final String JSON_KEY_MESSAGE  = "message";
@@ -78,7 +84,9 @@ public class ServerMain extends WebSocketServer {
 	
 	private static final String JSON_KEY_TIMESTAMP = "timestamp";
 	
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private static final String JSON_KEY_HISTORY_DAYS = "historyDays"; // determine how many days of message history to retrieve
+	
+	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	/**
 	 * A map of Connections to the client IDs of the clients they connect to
@@ -266,6 +274,37 @@ public class ServerMain extends WebSocketServer {
 				case CASE_EDIT_PROFILE:
 				// TODO edit profile
 				// check if logged in first
+					break;
+				case CASE_GET_MESSAGE_HISTORY:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						String myUserName = json.getString(JSON_KEY_MY_USERNAME);
+						String theirUserName = json.getString(JSON_KEY_THEIR_USERNAME);
+						int historyDays = json.getInt(JSON_KEY_HISTORY_DAYS);
+						
+						// prepare the reply message
+						JSONObject messageHistoryReply = new JSONObject();
+						messageHistoryReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						try {
+							ArrayList<ChatMessage> messages = dbConnection.getMessageHistory(myUserName, theirUserName, historyDays);			
+							messageHistoryReply.put(MESSAGE_REPLY, CASE_GET_MESSAGE_HISTORY + ": SUCCESS");
+							for(ChatMessage m : messages) {
+								JSONObject messageData = new JSONObject();
+								messageData.put(JSON_KEY_SENDER, m.getSenderUsername());
+								messageData.put(JSON_KEY_RECIPIENT, m.getRecipientUsername());
+								messageData.put(JSON_KEY_MESSAGE, m.getMessage());
+								messageData.put(JSON_KEY_TIMESTAMP, m.getTimestamp());
+								messageHistoryReply.accumulate("messages", messageData);
+							}
+						}
+						catch(Exception e) {
+							// if getting the message history fails, reply with feedback.
+							messageHistoryReply.put(MESSAGE_REPLY, CASE_GET_MESSAGE_HISTORY + ": FAILURE. " + e.getMessage());
+						}
+					
+						// send the list of clients 
+						websocket.send(messageHistoryReply.toString());
+					}		
 					break;
 				case CASE_GETALLCONTACTS:
 					// check if user is authenticated

@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Date;
@@ -31,6 +32,10 @@ public class DbConnection {
 	private static final String COLUMN_ID = "user_id";
 	private static final String COLUMN_CHAT_ID = "chat_id";
 	private static final String COLUMN_PUBLIC_KEY = "public_key";
+
+	private static final String COLUMN_TIMESENT = "timesent";
+
+	private static final String COLUMN_MESSAGE_CONTENT = "message_content";
 
 	/**
 	 * Connect to the PostgreSQL database
@@ -218,6 +223,64 @@ public class DbConnection {
 	} 
 	
 
+	/**
+	 * 
+	 * @param thisUserName username of the client requesting the chat history
+	 * @param otherUserName username of the other user in the chat
+	 * @param daysOfHistory how many days of chat history to retrieve
+	 * @return an array list of chatMessage objects
+	 * @throws SQLException 
+	 */
+	public ArrayList<ChatMessage> getMessageHistory(String thisUserName, String otherUserName, int daysOfHistory) throws SQLException {
+		ArrayList<ChatMessage> chatHistory = new ArrayList<ChatMessage>();
+		int thisUserId = getUserIDFromUsername(thisUserName);
+		int otherUserId = getUserIDFromUsername(otherUserName);
+		Connection conn = this.connect();
+		int chatId = 0;
+		try {
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
+			ps.setInt(1, thisUserId);
+			ps.setInt(2, otherUserId);
+			ps.setInt(3, otherUserId);
+			ps.setInt(4, thisUserId);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				chatId = rs.getInt(COLUMN_CHAT_ID);
+				
+				// determine history date constraints	
+			    Date now = Calendar.getInstance().getTime();
+			    Calendar historyLimit = Calendar.getInstance();
+			    historyLimit.setTime(now);
+			    historyLimit.add(Calendar.DAY_OF_YEAR, -(daysOfHistory));
+			    String nowStr = ServerMain.DATE_FORMAT.format(now);
+			    String limitStr = ServerMain.DATE_FORMAT.format(historyLimit.getTime());
+			    
+				ps = conn.prepareStatement(
+						"SELECT * FROM chat_message WHERE chat_id = ? and timesent between ? and ?");
+				ps.setInt(1, chatId);
+				ps.setTimestamp(2, Timestamp.valueOf(limitStr));
+				ps.setTimestamp(3, Timestamp.valueOf(nowStr));
+				rs = ps.executeQuery();
+
+				while (rs.next()) {
+					String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
+					String message = rs.getString(COLUMN_MESSAGE_CONTENT);
+					ChatMessage chatMessage = new ChatMessage(thisUserName, otherUserName, message, timestamp);
+					chatHistory.add(chatMessage);
+				}
+				ps.close();
+				conn.close();
+			} 
+		}
+		catch (SQLException e) {
+			LOGGER.log(Level.SEVERE, "Could not retrieve messagesm got error: {0}", e.getMessage()); //debug
+				throw e;
+		}
+		return chatHistory;
+	}
+	
+
 	public void addMessage(String sender, String recipient, String textMessage, String timestamp) {
 		Connection conn = connect();
 		int chatId = 0;
@@ -316,4 +379,5 @@ public class DbConnection {
 			throw new RuntimeException(e);
 		}
 	}
+
 }
