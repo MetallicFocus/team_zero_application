@@ -3,6 +3,7 @@ package server;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -180,11 +181,12 @@ public class ServerMain extends WebSocketServer {
 	@Override
 	public void onMessage(WebSocket websocket, String message) {
 		LOGGER.log( Level.FINE, "Message received from　client: {0}", message);
+		String msgType = "";
 		
 		//parse JSON and get first element to check type
 		try {
 			JSONObject json = new JSONObject(message);
-			String msgType = json.getString(JSON_KEY_MESSAGE_TYPE);
+			msgType = json.getString(JSON_KEY_MESSAGE_TYPE);
 			if (msgType == null || msgType.isEmpty()) {
 				websocket.send(generateReplyToClient(msgType, MESSAGE_REPLY_FAILED, "unrecognised type"));
 			}
@@ -225,13 +227,10 @@ public class ServerMain extends WebSocketServer {
 					String email = json.getString(JSON_KEY_EMAIL);
 					String publicKey = json.getString(JSON_KEY_PUBLIC_KEY);
 					boolean successful = dbConnection.addUser(userName, password, email, publicKey);
-					if (successful) {
+					if (successful) { 
 						websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_SUCCESS, ""));
 					}
-					else {
-						// TODO need to get message from DB
-						websocket.send(generateReplyToClient(CASE_REGISTER, MESSAGE_REPLY_FAILED, ""));
-					}
+					// if its not successful, it should throw an exception and send feedback to client from there
 					break;
 				case CASE_TEXT_MESSAGE:
 					// check if user is logged in first	
@@ -267,9 +266,7 @@ public class ServerMain extends WebSocketServer {
 						ClientManager.getInstance().removeClient(clientId);
 						clientWebSockets.remove(websocket);
 					}
-					else {	
-						websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_FAILED, ""));	
-					}
+					// exception handler will handle feedback in case of unsuccessful event
 					break;
 				case CASE_EDIT_PROFILE:
 				// TODO edit profile
@@ -285,23 +282,16 @@ public class ServerMain extends WebSocketServer {
 						// prepare the reply message
 						JSONObject messageHistoryReply = new JSONObject();
 						messageHistoryReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
-						try {
-							ArrayList<ChatMessage> messages = dbConnection.getMessageHistory(myUserName, theirUserName, historyDays);			
-							messageHistoryReply.put(MESSAGE_REPLY, CASE_GET_MESSAGE_HISTORY + ": SUCCESS");
-							for(ChatMessage m : messages) {
-								JSONObject messageData = new JSONObject();
-								messageData.put(JSON_KEY_SENDER, m.getSenderUsername());
-								messageData.put(JSON_KEY_RECIPIENT, m.getRecipientUsername());
-								messageData.put(JSON_KEY_MESSAGE, m.getMessage());
-								messageData.put(JSON_KEY_TIMESTAMP, m.getTimestamp());
-								messageHistoryReply.accumulate("messages", messageData);
-							}
+						ArrayList<ChatMessage> messages = dbConnection.getMessageHistory(myUserName, theirUserName, historyDays);			
+						messageHistoryReply.put(MESSAGE_REPLY, CASE_GET_MESSAGE_HISTORY + ": SUCCESS");
+						for(ChatMessage m : messages) {
+							JSONObject messageData = new JSONObject();
+							messageData.put(JSON_KEY_SENDER, m.getSenderUsername());
+							messageData.put(JSON_KEY_RECIPIENT, m.getRecipientUsername());
+							messageData.put(JSON_KEY_MESSAGE, m.getMessage());
+							messageData.put(JSON_KEY_TIMESTAMP, m.getTimestamp());
+							messageHistoryReply.accumulate("messages", messageData);
 						}
-						catch(Exception e) {
-							// if getting the message history fails, reply with feedback.
-							messageHistoryReply.put(MESSAGE_REPLY, CASE_GET_MESSAGE_HISTORY + ": FAILURE. " + e.getMessage());
-						}
-					
 						// send the list of clients 
 						websocket.send(messageHistoryReply.toString());
 					}		
@@ -354,6 +344,10 @@ public class ServerMain extends WebSocketServer {
 			websocket.send(generateReplyToClient("", MESSAGE_REPLY_FAILED, "Bad JSON Format: " + e.getMessage()));
 			e.printStackTrace();
 		}
+		catch (SQLException e) {
+			websocket.send(generateReplyToClient(msgType, MESSAGE_REPLY_FAILED,  e.getMessage()));
+		}
+		
 	}
 
 	/**

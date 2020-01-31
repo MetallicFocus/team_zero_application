@@ -54,7 +54,7 @@ public class DbConnection {
 		return conn;
 	}
 
-	public boolean addUser(String userName, String password, String email, String publicKey) {
+	public boolean addUser(String userName, String password, String email, String publicKey) throws SQLException {
 		boolean success = true;
 		Connection conn = connect();
 		PreparedStatement ps = null;
@@ -71,11 +71,12 @@ public class DbConnection {
 
 					LOGGER.log(Level.WARNING, "Username already exists");
 					success = false;
+					throw new SQLException("Username already exists");
 				} else if (existingEmail.equals(email)) {
 
 					LOGGER.log(Level.WARNING, "Email already exists");
-
 					success = false;
+					throw new SQLException("Username already exists");
 				}
 			} else {
 				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password, public_key) VALUES (?, ?, ?, ?)");
@@ -92,7 +93,8 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			success = false;
+			success = false; // probably never gets returned due to throw
+			throw e;
 		}
 		return success;
 	}
@@ -101,8 +103,9 @@ public class DbConnection {
 	 * @param userName
 	 * @param password
 	 * @return
+	 * @throws SQLException 
 	 */
-	public boolean deleteUser(String userName, String password) {
+	public boolean deleteUser(String userName, String password) throws SQLException {
 		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
@@ -117,8 +120,8 @@ public class DbConnection {
 			return true;
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
-		return false;
 	}
 
 	/**
@@ -162,8 +165,9 @@ public class DbConnection {
 	 * contact lists.
 	 * 
 	 * @return an arraylist of Client objects
+	 * @throws SQLException 
 	 */
-	public ArrayList<Client> getAllUserInfo() {
+	public ArrayList<Client> getAllUserInfo() throws SQLException {
 		ArrayList<Client> allClients = new ArrayList<Client>();
 		Connection conn = this.connect();
 		try {
@@ -184,6 +188,7 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 		return allClients;
 	} 
@@ -281,7 +286,7 @@ public class DbConnection {
 	}
 	
 
-	public void addMessage(String sender, String recipient, String textMessage, String timestamp) {
+	public void addMessage(String sender, String recipient, String textMessage, String timestamp) throws SQLException {
 		Connection conn = connect();
 		int chatId = 0;
 		try {
@@ -341,10 +346,11 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 	}
 
-	public int getUserIDFromUsername(String userName) {
+	public int getUserIDFromUsername(String userName) throws SQLException {
 		Connection conn = this.connect();
 		PreparedStatement ps = null;
 		try {
@@ -361,6 +367,7 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 		return 0;
 	}
