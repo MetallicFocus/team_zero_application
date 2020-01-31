@@ -139,9 +139,9 @@ public class ChatList extends AppCompatActivity {
                             scl.setLastMessageContent("Last message here");
                             // Retrieve the public key of the sender
                             String publicKey = "";
-                            // TODO: Find a less computationally-heavy solution to retrieve the public key
+                            // TODO: OTHER SOLUTION -- Will use GETPUBLICKEY instead of SEARCHCONTACTS
                             try {
-                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(userThatSentNewMessage), false);
+                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(userThatSentNewMessage));
 
                                 // Get response from server and parse it
                                 JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
@@ -411,6 +411,18 @@ public class ChatList extends AppCompatActivity {
 
         RemoveUserFromDevice RUFD = new RemoveUserFromDevice();
         RUFD.execute();
+    }
+
+    @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
+        /*
+         *  Disable the back button in the current screen by not calling super
+         *
+         *  This is important in order to not allow the user to see sensitive information
+         *  from other users that we're previously logged into this device
+         */
+        // TODO: Give the user feedback regarding the default back button
     }
 
 }

@@ -36,7 +36,7 @@ public class WebSocket {
         try {
             // Used the following URI for testing purposes only
             // TODO: Change URI to Heroku server
-            uri = new URI("ws://10.200.197.46:1234");
+            uri = new URI("ws://10.200.200.224:1234");
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -151,7 +151,7 @@ public class WebSocket {
     // There are 2 different sendMessage methods -
     // 1) Send message to server with waiting period for a response
     // 2) Send message to other user without any waiting
-    public void sendMessageAndWait(String message, final Boolean isLogin) {
+    public void sendMessageAndWait(String message) {
         if(mWebSocketClient.getConnection().isOpen())
             mWebSocketClient.send(message);
 
@@ -165,10 +165,7 @@ public class WebSocket {
                 while(!WebSocketHandler.getSocket().waitForResponse()) {
                     // Wait for 1st response OR timeout to pass
                 }
-                if(isLogin)
-                    while(!WebSocketHandler.getSocket().waitForResponse()) {
-                        // Wait for 2nd response OR timeout to pass
-                    }
+
                 return "Ready!";
             }
         });
@@ -200,3 +197,4 @@ public class WebSocket {
         }
     }
 }
+

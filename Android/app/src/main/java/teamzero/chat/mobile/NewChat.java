@@ -74,7 +74,7 @@ public class NewChat extends AppCompatActivity {
 
                     try {
                         System.out.println(new JSONConstructor().constructGetAllContactsJSON());
-                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetAllContactsJSON(), false);
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetAllContactsJSON());
 
                         //Thread.sleep(500);
 
@@ -99,7 +99,7 @@ public class NewChat extends AppCompatActivity {
                     // If the user gives text input, send SEARCHCONTACTS request JSON
                     try {
                         System.out.println(new JSONConstructor().constructSearchContactsJSON(searchForUser));
-                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(searchForUser), false);
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(searchForUser));
 
                         //Thread.sleep(500);
 
