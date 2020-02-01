@@ -2,6 +2,7 @@ package teamzero.chat.mobile;
 
 import android.content.Intent;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,18 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.util.List;
+
+import org.bouncycastle.util.encoders.Base64;
+
+import database.AppDatabaseClient;
+import database.StoredChatList;
+import database.UsersOnDevice;
+import database.UsersOnDeviceDao;
 import tools.JSONConstructor;
+import tools.RSAUtilities;
 import tools.RegistrationValidator;
 
 public class Registration extends AppCompatActivity {
@@ -70,8 +82,20 @@ public class Registration extends AppCompatActivity {
 
         try {
 
+            KeyPair publicPrivateKeys = RSAUtilities.generateKeyPair();
+
+            // TODO: Cleanup
+            System.out.println("-- PRE-ENCODING --");
+            System.out.println("public key = " + publicPrivateKeys.getPublic());
+            System.out.println(publicPrivateKeys.getPublic().getEncoded());
+            System.out.println(Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded()));
+
+            System.out.println("private key = " + publicPrivateKeys.getPrivate());
+            System.out.println(publicPrivateKeys.getPrivate().getEncoded());
+            System.out.println(Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
+
             // Send register JSON request to server
-            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture), false);
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded())));
 
             //Thread.sleep(500);
 
@@ -80,8 +104,19 @@ public class Registration extends AppCompatActivity {
 
             if (responseJSON.get("REPLY").toString().equalsIgnoreCase("REGISTER: SUCCESS")) {
 
+                // Store the user into device's local database
+
+                UsersOnDevice UOD = new UsersOnDevice();
+                UOD.setUsername(username);
+                UOD.setPrivateKey(Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
+
+                System.out.println("UOD.getUsername = " + UOD.getUsername());
+                System.out.println("UOD.getPrivateKey = " + UOD.getPrivateKey());
+
+                storeNewClientOnDevice(UOD);
+
                 // Then LOGIN
-                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password), true);
+                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password));
 
                 //Thread.sleep(500);
 
@@ -100,9 +135,33 @@ public class Registration extends AppCompatActivity {
             }
             else Toast.makeText(getApplicationContext(), R.string.registration_unsuccessful_text, Toast.LENGTH_LONG).show();
 
-        } catch (JSONException  e) {
+        } catch (JSONException | GeneralSecurityException e) {
             e.printStackTrace();
         }
+    }
+
+    private void storeNewClientOnDevice(final UsersOnDevice UOD) {
+        class StoreNewClientOnDevice extends AsyncTask<Void, Void, Void> {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+
+                AppDatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .usersOnDeviceDao()
+                        .insert(UOD);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+            }
+        }
+
+        StoreNewClientOnDevice store = new StoreNewClientOnDevice();
+        store.execute();
     }
 
     // Finishes current activity (dismisses dialogs, closes search) and goes to the parent activity

@@ -9,6 +9,7 @@ public class Client {
 	private String email;
 	private int id;
 	private boolean isLoggedIn;
+	private String publicKey;
 	
 
 	// TODO add an image object for profile pics 
@@ -17,6 +18,14 @@ public class Client {
 		this.email = email;
 		this.id = id;
 		this.isLoggedIn = isLoggedIn;
+	}
+	
+	public Client(String username, String email, int id, String publicKey, boolean isLoggedIn) {
+		this.username = username;
+		this.email = email;
+		this.id = id;
+		this.isLoggedIn = isLoggedIn;
+		this.setPublicKey(publicKey);
 	}
 	
 	
@@ -47,6 +56,14 @@ public class Client {
 
 	public void setLoggedIn(boolean isLoggedIn) {
 		this.isLoggedIn = isLoggedIn;
+	}
+
+	public String getPublicKey() {
+		return publicKey;
+	}
+
+	public void setPublicKey(String publicKey) {
+		this.publicKey = publicKey;
 	}
 
 }

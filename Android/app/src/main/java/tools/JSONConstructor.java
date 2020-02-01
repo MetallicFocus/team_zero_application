@@ -14,13 +14,14 @@ public class JSONConstructor {
     private String builtJSON;
     private JSONObject jsonObject = new JSONObject();
 
-    public String constructRegisterJSON(String username, String password, String email, Object picture) throws JSONException {
+    public String constructRegisterJSON(String username, String password, String email, Object picture, String publicKey) throws JSONException {
 
         jsonObject.put("type", "REGISTER");
         jsonObject.put("username", username);
         jsonObject.put("password", password);
         jsonObject.put("email", email);
         jsonObject.put("picture", picture);
+        jsonObject.put("publicKey", publicKey);
 
         builtJSON = jsonObject.toString();
         return builtJSON;
@@ -56,11 +57,12 @@ public class JSONConstructor {
         return builtJSON;
     }
 
-    public String constructEditProfileJSON(String username, Object newPicture) throws JSONException {
+    public String constructEditProfileJSON(String username, Object newPicture, String publicKey) throws JSONException {
 
         jsonObject.put("type", "EDIT");
         jsonObject.put("username", username);
         jsonObject.put("newPicture", newPicture);
+        jsonObject.put("publicKey", publicKey);
 
         builtJSON = jsonObject.toString();
         return builtJSON;

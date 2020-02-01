@@ -19,10 +19,19 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +74,7 @@ public class NewChat extends AppCompatActivity {
 
                     try {
                         System.out.println(new JSONConstructor().constructGetAllContactsJSON());
-                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetAllContactsJSON(), false);
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetAllContactsJSON());
 
                         //Thread.sleep(500);
 
@@ -90,7 +99,7 @@ public class NewChat extends AppCompatActivity {
                     // If the user gives text input, send SEARCHCONTACTS request JSON
                     try {
                         System.out.println(new JSONConstructor().constructSearchContactsJSON(searchForUser));
-                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(searchForUser), false);
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(searchForUser));
 
                         //Thread.sleep(500);
 
@@ -118,9 +127,19 @@ public class NewChat extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                addUserToStoredChatList(usersFoundList.get(position).getUsername());
+                System.out.println("-- POST-ENCODING --");
 
-                startActivity(new Intent(NewChat.this, ChatList.class));
+                // print for testing purposes
+                System.out.println(usersFoundList.get(position).getUsername());
+                System.out.println(usersFoundList.get(position).getPublicKey());
+
+                String getPublicKeyB64String = usersFoundList.get(position).getPublicKey();
+
+                System.out.println("public key in base64 = " + getPublicKeyB64String);
+
+
+                addUserToStoredChatList(usersFoundList.get(position).getUsername(), getPublicKeyB64String);
+                finish();
             }
         });
     }
@@ -143,6 +162,13 @@ public class NewChat extends AppCompatActivity {
                 oud.setUsername(x.get("username").toString());
                 oud.setStatus(x.get("IsLoggedIn").toString().equalsIgnoreCase("true") ? "online" : "offline");
 
+                // If the public key exists, set it explicitly. Else, default will be empty string
+                if(x.has("publicKey"))
+                    oud.setPublicKey(x.get("publicKey").toString());
+                else oud.setPublicKey("");
+
+                //System.out.println(oud.getUsername() + " = " + oud.getPublicKey());
+
                 usersFoundList.add(oud);
             }
         } catch(JSONException e) {
@@ -157,6 +183,10 @@ public class NewChat extends AppCompatActivity {
             OtherUsersData oud = new OtherUsersData();
             oud.setUsername(x.get("username").toString());
             oud.setStatus(x.get("IsLoggedIn").toString().equalsIgnoreCase("true") ? "online" : "offline");
+
+            if(x.has("publicKey"))
+                oud.setPublicKey(x.get("publicKey").toString());
+            else oud.setPublicKey("");
 
             usersFoundList.add(oud);
         }
@@ -189,7 +219,7 @@ public class NewChat extends AppCompatActivity {
 
     }
 
-    private void addUserToStoredChatList(final String searchUsersEditTextString) {
+    private void addUserToStoredChatList(final String searchUsersEditTextString, final String publicKeyb64OfUser) {
 
         // TODO: Add the user only if it does not exist already in local database
 
@@ -201,7 +231,21 @@ public class NewChat extends AppCompatActivity {
                 StoredChatList scl = new StoredChatList();
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
-                scl.setLastMessageDate(null);
+                scl.setPublicKey(publicKeyb64OfUser);
+
+                // TODO: Compute shared secret key
+                /* Start shared secret key computation */
+
+                //Step 1: PublicKey publicKeyOfUser = RSAUtilities.computePublicKeyfromBase64String(publicKeyb64OfUser)
+
+                //Step 2: Retrieve myPrivateKey
+
+                // Case here: if initiating chat myself, byte[] sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser)
+
+                /*end shared secret key compute */
+
+                scl.setSharedSecretKey(null);
+                scl.setChatBelongsTo(UserDetails.username);
 
                 // Add the user into the local chat list database
                 AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase()
@@ -214,7 +258,7 @@ public class NewChat extends AppCompatActivity {
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 finish();
-                startActivity(new Intent(getApplicationContext(), ChatList.class));
+                //startActivity(new Intent(getApplicationContext(), ChatList.class));
                 Toast.makeText(getApplicationContext(), "Chat created", Toast.LENGTH_LONG).show();
             }
         }

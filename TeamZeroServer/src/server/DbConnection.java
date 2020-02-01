@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Date;
@@ -30,6 +31,11 @@ public class DbConnection {
 	private static final String COLUMN_EMAIL = "email";
 	private static final String COLUMN_ID = "user_id";
 	private static final String COLUMN_CHAT_ID = "chat_id";
+	private static final String COLUMN_PUBLIC_KEY = "public_key";
+
+	private static final String COLUMN_TIMESENT = "timesent";
+
+	private static final String COLUMN_MESSAGE_CONTENT = "message_content";
 
 	/**
 	 * Connect to the PostgreSQL database
@@ -48,7 +54,7 @@ public class DbConnection {
 		return conn;
 	}
 
-	public boolean addUser(String userName, String password, String email) {
+	public boolean addUser(String userName, String password, String email, String publicKey) throws SQLException {
 		boolean success = true;
 		Connection conn = connect();
 		PreparedStatement ps = null;
@@ -65,17 +71,19 @@ public class DbConnection {
 
 					LOGGER.log(Level.WARNING, "Username already exists");
 					success = false;
+					throw new SQLException("Username already exists");
 				} else if (existingEmail.equals(email)) {
 
 					LOGGER.log(Level.WARNING, "Email already exists");
-
 					success = false;
+					throw new SQLException("Username already exists");
 				}
 			} else {
-				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password) VALUES (?, ?, ?)");
+				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password, public_key) VALUES (?, ?, ?, ?)");
 				ps.setString(1, userName);
 				ps.setString(2, email);
 				ps.setString(3, getMd5(password));
+				ps.setString(4, publicKey);
 				ps.executeUpdate();
 
 				LOGGER.log(Level.FINE, "Added user {0}", userName);
@@ -85,18 +93,19 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
-			success = false;
+			success = false; // probably never gets returned due to throw
+			throw e;
 		}
 		return success;
 	}
 
 	/**
-	 * TODO note currently this will not work if there are any chat messages where this user is referenced.
 	 * @param userName
 	 * @param password
 	 * @return
+	 * @throws SQLException 
 	 */
-	public boolean deleteUser(String userName, String password) {
+	public boolean deleteUser(String userName, String password) throws SQLException {
 		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
@@ -111,8 +120,8 @@ public class DbConnection {
 			return true;
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
-		return false;
 	}
 
 	/**
@@ -156,8 +165,9 @@ public class DbConnection {
 	 * contact lists.
 	 * 
 	 * @return an arraylist of Client objects
+	 * @throws SQLException 
 	 */
-	public ArrayList<Client> getAllUserInfo() {
+	public ArrayList<Client> getAllUserInfo() throws SQLException {
 		ArrayList<Client> allClients = new ArrayList<Client>();
 		Connection conn = this.connect();
 		try {
@@ -167,16 +177,18 @@ public class DbConnection {
 				int clientId = rs.getInt(COLUMN_ID);
 				String clientEmail = rs.getString(COLUMN_EMAIL);
 				String clientUsername = rs.getString(COLUMN_USERNAME);
+				String clientPublicKey = rs.getString(COLUMN_PUBLIC_KEY);
 
 				// if the user is also in the client manager, set them to logged in
 				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
-				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				Client client = new Client(clientUsername, clientEmail, clientId, clientPublicKey, isLoggedIn);
 				allClients.add(client);
 			}
 			ps.close();
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 		return allClients;
 	} 
@@ -200,10 +212,11 @@ public class DbConnection {
 				int clientId = rs.getInt(COLUMN_ID);
 				String clientEmail = rs.getString(COLUMN_EMAIL);
 				String clientUsername = rs.getString(COLUMN_USERNAME);
+				String clientPublicKey = rs.getString(COLUMN_PUBLIC_KEY);
 
 				// if the user is also in the client manager, set them to logged in
 				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
-				Client client = new Client(clientUsername, clientEmail, clientId, isLoggedIn);
+				Client client = new Client(clientUsername, clientEmail, clientId, clientPublicKey, isLoggedIn);
 				searchedClients.add(client);
 			}
 			ps.close();
@@ -215,7 +228,65 @@ public class DbConnection {
 	} 
 	
 
-	public void addMessage(String sender, String recipient, String textMessage, String timestamp) {
+	/**
+	 * 
+	 * @param thisUserName username of the client requesting the chat history
+	 * @param otherUserName username of the other user in the chat
+	 * @param daysOfHistory how many days of chat history to retrieve
+	 * @return an array list of chatMessage objects
+	 * @throws SQLException 
+	 */
+	public ArrayList<ChatMessage> getMessageHistory(String thisUserName, String otherUserName, int daysOfHistory) throws SQLException {
+		ArrayList<ChatMessage> chatHistory = new ArrayList<ChatMessage>();
+		int thisUserId = getUserIDFromUsername(thisUserName);
+		int otherUserId = getUserIDFromUsername(otherUserName);
+		Connection conn = this.connect();
+		int chatId = 0;
+		try {
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
+			ps.setInt(1, thisUserId);
+			ps.setInt(2, otherUserId);
+			ps.setInt(3, otherUserId);
+			ps.setInt(4, thisUserId);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				chatId = rs.getInt(COLUMN_CHAT_ID);
+				
+				// determine history date constraints	
+			    Date now = Calendar.getInstance().getTime();
+			    Calendar historyLimit = Calendar.getInstance();
+			    historyLimit.setTime(now);
+			    historyLimit.add(Calendar.DAY_OF_YEAR, -(daysOfHistory));
+			    String nowStr = ServerMain.DATE_FORMAT.format(now);
+			    String limitStr = ServerMain.DATE_FORMAT.format(historyLimit.getTime());
+			    
+				ps = conn.prepareStatement(
+						"SELECT * FROM chat_message WHERE chat_id = ? and timesent between ? and ?");
+				ps.setInt(1, chatId);
+				ps.setTimestamp(2, Timestamp.valueOf(limitStr));
+				ps.setTimestamp(3, Timestamp.valueOf(nowStr));
+				rs = ps.executeQuery();
+
+				while (rs.next()) {
+					String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
+					String message = rs.getString(COLUMN_MESSAGE_CONTENT);
+					ChatMessage chatMessage = new ChatMessage(thisUserName, otherUserName, message, timestamp);
+					chatHistory.add(chatMessage);
+				}
+				ps.close();
+				conn.close();
+			} 
+		}
+		catch (SQLException e) {
+			LOGGER.log(Level.SEVERE, "Could not retrieve messagesm got error: {0}", e.getMessage()); //debug
+				throw e;
+		}
+		return chatHistory;
+	}
+	
+
+	public void addMessage(String sender, String recipient, String textMessage, String timestamp) throws SQLException {
 		Connection conn = connect();
 		int chatId = 0;
 		try {
@@ -275,10 +346,11 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 	}
 
-	public int getUserIDFromUsername(String userName) {
+	public int getUserIDFromUsername(String userName) throws SQLException {
 		Connection conn = this.connect();
 		PreparedStatement ps = null;
 		try {
@@ -295,6 +367,7 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 		return 0;
 	}
@@ -313,4 +386,5 @@ public class DbConnection {
 			throw new RuntimeException(e);
 		}
 	}
+
 }

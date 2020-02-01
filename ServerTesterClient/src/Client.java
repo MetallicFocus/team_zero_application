@@ -35,15 +35,6 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 
-		// set up just in case for tests
-		//c1.unregister();
-		//c2.unregister();
-		
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		
 		c1.register();
 		
@@ -84,6 +75,8 @@ public class Client extends WebSocketClient {
 		}
 	
 		c1.text();
+		
+		c1.getTexts();
 
 		try {
 			Thread.sleep(1000);
@@ -129,7 +122,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		//c1.text();
+		c1.text();
 
 		try {
 			Thread.sleep(1000);
@@ -232,6 +225,13 @@ class Client1 extends Client{
 	}
 	
 	
+	public void getTexts() {
+		String message = test.getRequestTextsMessage();
+		this.send(message);
+		
+	}
+
+
 	public void register() {
 		System.out.println("Sending message to register client 1...");
 		String client1Registers = test.getClient1RegisterMessage();
