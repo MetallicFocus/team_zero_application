@@ -158,4 +158,13 @@ public class ClientRegisterLoginAndMessageTest {
 		return jsonMsg;
 	}
 
+	public String getRequestTextsMessage() {
+		String jsonMsg = "{\"type\": \"GETMESSAGEHISTORY\"" + 
+				", \"myUsername\":\"" + username1 + 
+				"\", \"theirUsername\":\"" + username2 +
+				"\", \"historyDays\":\"" + 80 
+				+ "\"}";
+		return jsonMsg;
+	}
+
 }

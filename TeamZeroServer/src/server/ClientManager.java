@@ -69,13 +69,30 @@ public class ClientManager {
 	}
 
 	/**
-	 * Adds a client to the client manager
-	 * 
+	 * Adds a client to the client manager (without a public key)
+	 * @param username
+	 * @param email
 	 * @param id
-	 * @param Client object to add
+	 * @param loggedIn
+	 * @return
 	 */
 	public Client addClient(String username, String email, int id, boolean loggedIn) {
 		Client client = new Client(username, email, id, loggedIn);
+		connectedClients.put(client.getId(), client);
+		return client;
+	}
+
+	/**
+	 * Adds a client to the client manager
+	 * @param username
+	 * @param email
+	 * @param id
+	 * @param publicKey
+	 * @param loggedIn
+	 * @return
+	 */
+	public Client addClient(String username, String email, int id, String publicKey, boolean loggedIn) {
+		Client client = new Client(username, email, id, publicKey, loggedIn);
 		connectedClients.put(client.getId(), client);
 		return client;
 	}
