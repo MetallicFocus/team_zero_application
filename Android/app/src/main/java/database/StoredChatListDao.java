@@ -19,6 +19,9 @@ public interface StoredChatListDao {
     @Query("SELECT * FROM storedchatlist WHERE chat_belongs_to LIKE :username")
     List<StoredChatList> getChatsForClient(String username);
 
+    @Query("SELECT * FROM storedchatlist WHERE username LIKE :userToSearchFor AND chat_belongs_to LIKE :myself")
+    List<StoredChatList> getUserFromChatList(String userToSearchFor, String myself);
+
     @Query("DELETE FROM storedchatlist")
     void deleteAll();
 
