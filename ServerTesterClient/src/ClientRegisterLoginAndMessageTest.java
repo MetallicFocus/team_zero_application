@@ -159,7 +159,7 @@ public class ClientRegisterLoginAndMessageTest {
 	}
 
 	public String getRequestTextsMessage() {
-		String jsonMsg = "{\"type\": \"GETMESSAGEHISTORY\"" + 
+		String jsonMsg = "{\"type\": \"GETCHATHISTORY\"" + 
 				", \"myUsername\":\"" + username1 + 
 				"\", \"theirUsername\":\"" + username2 +
 				"\", \"historyDays\":\"" + 80 

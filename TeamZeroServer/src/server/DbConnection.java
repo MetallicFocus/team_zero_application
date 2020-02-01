@@ -76,7 +76,7 @@ public class DbConnection {
 
 					LOGGER.log(Level.WARNING, "Email already exists");
 					success = false;
-					throw new SQLException("Username already exists");
+					throw new SQLException("Email already exists");
 				}
 			} else {
 				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password, public_key) VALUES (?, ?, ?, ?)");
@@ -197,8 +197,9 @@ public class DbConnection {
 	 * Gets a list of users from the database that match the query.
 	 * 
 	 * @return an arraylist of Client objects
+	 * @throws SQLException 
 	 */
-	public ArrayList<Client> getSearchedUsers(String query) {
+	public ArrayList<Client> getSearchedUsers(String query) throws SQLException {
 		ArrayList<Client> searchedClients = new ArrayList<Client>();
 		Connection conn = this.connect();
 		try {
@@ -223,9 +224,42 @@ public class DbConnection {
 			conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
+			throw e;
 		}
 		return searchedClients;
 	} 
+	
+
+	/**
+	 * returns the public encryption key of the client with the given username
+	 * @param userName
+	 * @return encoded string of public keyzsz
+	 */
+	public String getPublicKey(String userName) throws SQLException{
+		String publicKey = "";
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE username=?;");
+			
+			ps.setString(1, userName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				publicKey = rs.getString(COLUMN_PUBLIC_KEY);
+			}
+			else {
+				ps.close();
+				conn.close();
+				throw new SQLException("No user found with given username.");
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			conn.close();
+			e.printStackTrace();
+			throw e;
+		}
+		return publicKey;
+	}
 	
 
 	/**
@@ -279,7 +313,7 @@ public class DbConnection {
 			} 
 		}
 		catch (SQLException e) {
-			LOGGER.log(Level.SEVERE, "Could not retrieve messagesm got error: {0}", e.getMessage()); //debug
+			LOGGER.log(Level.SEVERE, "Could not retrieve messages got error: {0}", e.getMessage()); //debug
 				throw e;
 		}
 		return chatHistory;
@@ -386,5 +420,6 @@ public class DbConnection {
 			throw new RuntimeException(e);
 		}
 	}
+
 
 }
