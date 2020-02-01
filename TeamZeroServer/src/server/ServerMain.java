@@ -45,7 +45,9 @@ public class ServerMain extends WebSocketServer {
 
 	private static final String CASE_LOGIN = "LOGIN"; //login with user name and password
 
-	private static final String CASE_GET_MESSAGE_HISTORY = "GETMESSAGEHISTORY"; // get message history 
+	private static final String CASE_GET_MESSAGE_HISTORY = "GETCHATHISTORY"; // get message history
+	
+	private static final String CASE_GET_PUBLIC_KEY = "GETPUBLICKEY"; // get public key of a contact 
 	
 	private static final String CASE_GETALLCONTACTS = "GETALLCONTACTS"; // get all contactable user information
 
@@ -255,18 +257,28 @@ public class ServerMain extends WebSocketServer {
 					}
 					break;
 				case CASE_UNREGISTER: 
-					userName = json.getString(JSON_KEY_USERNAME);
-					password = json.getString(JSON_KEY_PASSWORD);
-					dbConnection = new DbConnection();
-					boolean success = dbConnection.deleteUser(userName, password);
-					if (success) {
-						websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_SUCCESS, ""));		
-						// remove user from connected lists
-						int clientId = clientWebSockets.get(websocket);	
-						ClientManager.getInstance().removeClient(clientId);
-						clientWebSockets.remove(websocket);
+					if (isAuthenticated(websocket)) {
+						userName = json.getString(JSON_KEY_USERNAME);
+						password = json.getString(JSON_KEY_PASSWORD);
+						dbConnection = new DbConnection();
+						boolean success = dbConnection.deleteUser(userName, password);
+						if (success) {
+							websocket.send(generateReplyToClient(CASE_UNREGISTER, MESSAGE_REPLY_SUCCESS, ""));		
+							// remove user from connected lists	
+							int clientId = clientWebSockets.get(websocket);	
+							ClientManager.getInstance().removeClient(clientId);
+							clientWebSockets.remove(websocket);
+						}// exception handler will handle feedback in case of unsuccessful event
 					}
-					// exception handler will handle feedback in case of unsuccessful event
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot unregister - user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_UNREGISTER,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}
 					break;
 				case CASE_EDIT_PROFILE:
 				// TODO edit profile
@@ -292,8 +304,44 @@ public class ServerMain extends WebSocketServer {
 							messageData.put(JSON_KEY_TIMESTAMP, m.getTimestamp());
 							messageHistoryReply.accumulate("messages", messageData);
 						}
-						// send the list of clients 
+						// send the list of messages 
 						websocket.send(messageHistoryReply.toString());
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot get message history - user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_GET_MESSAGE_HISTORY,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}
+					
+					break;
+				case CASE_GET_PUBLIC_KEY:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						userName = json.getString(JSON_KEY_USERNAME); 
+						
+						// prepare the reply message
+						JSONObject publicKeyReply = new JSONObject();
+						publicKeyReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						publicKeyReply.put(JSON_KEY_USERNAME, userName);
+						String requestedPublicKey =  dbConnection.getPublicKey(userName);			
+						publicKeyReply.put(MESSAGE_REPLY, CASE_GET_PUBLIC_KEY + ": SUCCESS");
+						publicKeyReply.put(JSON_KEY_PUBLIC_KEY, requestedPublicKey);
+						
+						// send the public key 
+						websocket.send(publicKeyReply.toString());
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot get public key - requesting user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_GET_PUBLIC_KEY,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
 					}		
 					break;
 				case CASE_GETALLCONTACTS:
@@ -313,7 +361,16 @@ public class ServerMain extends WebSocketServer {
 						}
 						// send the list of clients 
 						websocket.send(allClientsReply.toString());
-					}		
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot get all contacts - requesting user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_GETALLCONTACTS,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}			
 					break;
 				case CASE_SEARCHCONTACTS:
 					// check if user is authenticated
@@ -333,7 +390,16 @@ public class ServerMain extends WebSocketServer {
 						}
 						// send the list of clients 
 						websocket.send(searchedClientsReply.toString());
-					}		
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot search contacts - requesting user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_SEARCHCONTACTS,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}			
 					break;
 				default:
 				websocket.send(generateReplyToClient(msgType, MESSAGE_REPLY_FAILED, "unrecognised type"));

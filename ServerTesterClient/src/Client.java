@@ -166,7 +166,7 @@ public class Client extends WebSocketClient {
 			e.printStackTrace();
 		}
 		
-		//c1.badLogin();
+		c1.badLogin();
 		
 		//c1.unregister();
 		
