@@ -32,6 +32,9 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +42,9 @@ import database.AppDatabaseClient;
 import database.StoredChatList;
 import database.UsersOnDevice;
 
+import tools.DHUtilities;
 import tools.JSONConstructor;
+import tools.RSAUtilities;
 
 
 public class ChatList extends AppCompatActivity {
@@ -155,10 +160,36 @@ public class ChatList extends AppCompatActivity {
 
                             scl.setPublicKey(publicKey);
 
-                            // Case here: if chat was started by other user, byte[] sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser)
 
                             // TODO: Compute the shared secret key
-                            scl.setSharedSecretKey(null);
+                            /* Shared secret key computation start */
+
+                            //Step 1: compute DHPublicKey of other user
+
+                            PublicKey publicKeyOfUser = DHUtilities.computeDHPublicKeyfromBase64String(publicKey);
+
+
+                            //Step 2: Retrieve myPrivateKey & convert to DHPrivateKey
+                            String myPrivateKeyStr = AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase().usersOnDeviceDao().getUserPrivateKey(UserDetails.username);
+                            System.out.println("myPrivateKeyStr: " + myPrivateKeyStr);
+                            PrivateKey myPrivateKey = DHUtilities.computeDHPrivateKeyfromBase64String(myPrivateKeyStr);
+
+                            byte[] sharedKey = new byte[]{};
+                            try {
+                                sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser);
+                            } catch (GeneralSecurityException e) {
+                                System.out.println("Could not compute SharedKey");
+                                e.printStackTrace();
+                            }
+
+                            /*end shared secret key compute */
+
+
+                            //test
+                            System.out.println(new String(sharedKey));
+
+                            // set the shared key in stored chat list details as a String
+                            scl.setSharedSecretKey(new String(sharedKey));
                             scl.setChatBelongsTo(UserDetails.username);
 
                             // Add the user into the local chat list database
