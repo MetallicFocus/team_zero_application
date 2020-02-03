@@ -19,6 +19,9 @@ public interface UsersOnDeviceDao {
     @Query("DELETE FROM usersondevice WHERE username LIKE :username")
     void deleteUserFromDevice(String username);
 
+    @Query("SELECT private_key FROM usersondevice WHERE username LIKE :username")
+    String getUserPrivateKey(String username);
+
     @Insert
     void insert(UsersOnDevice usersOnDevice);
 
