@@ -69,4 +69,36 @@ public class JSONConstructorInstrumentedTests {
             e.printStackTrace();
         }
     }
+
+    @Test
+    public void getAllContactsJSONisValid() {
+        JSONConstructor jsonConstructor = new JSONConstructor();
+        try {
+            assertEquals(null, "{\"type\":\"GETALLCONTACTS\"}", jsonConstructor.constructGetAllContactsJSON());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void searchContactsJSONisValid() {
+        JSONConstructor jsonConstructor = new JSONConstructor();
+        try {
+            assertEquals(null, "{\"type\":\"SEARCHCONTACTS\",\"search\":\"UsernameTest\"}", jsonConstructor.constructSearchContactsJSON("UsernameTest"));
+            assertEquals(null, "{\"type\":\"SEARCHCONTACTS\"}", jsonConstructor.constructSearchContactsJSON(null));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void getPublicKeyJSONisValid() {
+        JSONConstructor jsonConstructor = new JSONConstructor();
+        try {
+            assertEquals(null, "{\"type\":\"GETPUBLICKEY\",\"username\":\"UsernameTest\"}", jsonConstructor.constructGetPublicKeyJSON("UsernameTest"));
+            assertEquals(null, "{\"type\":\"GETPUBLICKEY\"}", jsonConstructor.constructGetPublicKeyJSON(null));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

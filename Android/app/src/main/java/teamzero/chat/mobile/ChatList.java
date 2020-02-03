@@ -137,21 +137,16 @@ public class ChatList extends AppCompatActivity {
                             StoredChatList scl = new StoredChatList();
                             scl.setUsername(userThatSentNewMessage);
                             scl.setLastMessageContent("Last message here");
-                            // Retrieve the public key of the sender
+                            // Retrieve the public key of the sender using the GETPUBLICKEY JSON request
                             String publicKey = "";
-                            // TODO: OTHER SOLUTION -- Will use GETPUBLICKEY instead of SEARCHCONTACTS
+
                             try {
-                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(userThatSentNewMessage));
+                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetPublicKeyJSON(userThatSentNewMessage));
 
                                 // Get response from server and parse it
                                 JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
-                                if (responseJSON.get("REPLY").toString().equalsIgnoreCase("SEARCHCONTACTS: SUCCESS")) {
-
-                                    if(responseJSON.has("contacts")) {
-                                        JSONObject x = responseJSON.getJSONObject("contacts");
-                                        publicKey = x.get("publicKey").toString();
-                                    }
-
+                                if (responseJSON.get("REPLY").toString().equalsIgnoreCase("GETPUBLICKEY: SUCCESS")) {
+                                    publicKey = responseJSON.get("publicKey").toString();
                                 }
 
                             } catch (JSONException e) {
