@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
 
                         // Send login JSON request to server
-                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password));
+                        WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password), true);
 
                         //Thread.sleep(2000);
 

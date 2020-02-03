@@ -98,7 +98,7 @@ public class Registration extends AppCompatActivity {
             System.out.println(Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
 
             // Send register JSON request to server
-            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded())));
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded())), false);
 
             //Thread.sleep(500);
 
@@ -119,7 +119,7 @@ public class Registration extends AppCompatActivity {
                 storeNewClientOnDevice(UOD);
 
                 // Then LOGIN
-                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password));
+                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructLoginJSON(username, password), true);
 
                 //Thread.sleep(500);
 
