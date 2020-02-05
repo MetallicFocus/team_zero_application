@@ -73,7 +73,7 @@ public class Chat extends AppCompatActivity {
                 try {
                     // Send TEXT JSON request to server to send to the other user
 
-                    // TODO: encrypt messageToSend
+                    // encrypt message sent to other user
 
                     String unencrypted =  messageToSend.getText().toString();
                     final byte[][] encrypted = AESUtilities.cbcEncrypt(AESUtilities.generateSecretKeyFromString(AESUtilities.TEST_SHARED_KEY), unencrypted.getBytes());
