@@ -16,9 +16,14 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.GeneralSecurityException;
+
+import tools.AESUtilities;
 import tools.JSONConstructor;
 
 public class Chat extends AppCompatActivity {
@@ -67,12 +72,21 @@ public class Chat extends AppCompatActivity {
 
                 try {
                     // Send TEXT JSON request to server to send to the other user
-                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, messageToSend.getText().toString()));
+
+                    // encrypt message sent to other user
+
+                    String unencrypted =  messageToSend.getText().toString();
+                    final byte[][] encrypted = AESUtilities.cbcEncrypt(AESUtilities.generateSecretKeyFromString(AESUtilities.TEST_SHARED_KEY), unencrypted.getBytes());
+
+                    String encryptedHex = AESUtilities.encryptedDataToHexString(encrypted);
+
+                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, encryptedHex));
+
                     addMessageBox(messageToSend.getText().toString(), 1);
 
                     //Thread.sleep(2000);
 
-                } catch (JSONException e) {
+                } catch (JSONException | GeneralSecurityException e) {
                     e.printStackTrace();
                 }
             }
@@ -91,7 +105,19 @@ public class Chat extends AppCompatActivity {
         if(UserDetails.messages.containsKey(UserDetails.chatWith)) {
             System.out.println(UserDetails.messages);
             for(int i = 0; i < UserDetails.messages.get(UserDetails.chatWith).size(); i++) {
-                addMessageBox(UserDetails.messages.get(UserDetails.chatWith).get(i), 2);
+                String receivedMessage = "[encrypted]";
+                // decrypt messages
+                try {
+                    String encryptedMessage = UserDetails.messages.get(UserDetails.chatWith).get(i);
+                    byte[][] encryptedBytes = AESUtilities.encryptedStringToBytes(encryptedMessage);
+                    byte[] decryptedBytes = AESUtilities.cbcDecrypt(AESUtilities.generateSecretKeyFromString(AESUtilities.TEST_SHARED_KEY), encryptedBytes[0], encryptedBytes[1]);
+                    receivedMessage = new String(decryptedBytes);
+                } catch (GeneralSecurityException e) {
+                    e.printStackTrace();
+                };
+
+
+                addMessageBox(receivedMessage, 2);
             }
             UserDetails.messages.remove(UserDetails.chatWith);
         }
