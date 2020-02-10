@@ -240,38 +240,46 @@ public class NewChat extends AppCompatActivity {
                 StoredChatList scl = new StoredChatList();
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
-                scl.setPublicKey(publicKeyb64OfUser);
 
-                /* Start shared secret key computation */
-
-                //Step 1: Get DHPublicKey object of other user
-
-                PublicKey publicKeyOfUser = DHUtilities.computeDHPublicKeyfromBase64String(publicKeyb64OfUser);
-
-                //Step 2: Retrieve myPrivateKey and compute DHPrivateKey
-
-                String myPrivateKeyStr = AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase().usersOnDeviceDao().getUserPrivateKey(UserDetails.username);
-                System.out.println("myPrivateKeyStr: " + myPrivateKeyStr);
-                PrivateKey myPrivateKey = DHUtilities.computeDHPrivateKeyfromBase64String(myPrivateKeyStr);
-
-                // Case here:  initiating chat myself
-                // Step 3 : compute shared key
-
-                byte[] sharedKey = new byte[]{};
-                try {
-                    sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser);
-                } catch (GeneralSecurityException e) {
-                    System.out.println("Could not compute SharedKey");
-                    e.printStackTrace();
+                // TODO: Debugging purposes only -- Will delete the 'if' and leave only what's in 'else'
+                if(publicKeyb64OfUser.isEmpty()) {
+                    scl.setPublicKey("BLANK");
+                    scl.setSharedSecretKey("2646294A404E635266556A576E5A7234");
                 }
+                else {
+                    scl.setPublicKey(publicKeyb64OfUser);
 
-                //test
-                System.out.println(new String(sharedKey));
+                    /* Start shared secret key computation */
 
-                /*end shared secret key compute */
+                    //Step 1: Get DHPublicKey object of other user
 
-                // set the shared key in stored chat list details as a String
-                scl.setSharedSecretKey(new String(sharedKey));
+                    PublicKey publicKeyOfUser = DHUtilities.computeDHPublicKeyfromBase64String(publicKeyb64OfUser);
+
+                    //Step 2: Retrieve myPrivateKey and compute DHPrivateKey
+
+                    String myPrivateKeyStr = AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase().usersOnDeviceDao().getUserPrivateKey(UserDetails.username);
+                    System.out.println("myPrivateKeyStr: " + myPrivateKeyStr);
+                    PrivateKey myPrivateKey = DHUtilities.computeDHPrivateKeyfromBase64String(myPrivateKeyStr);
+
+                    // Case here:  initiating chat myself
+                    // Step 3 : compute shared key
+
+                    byte[] sharedKey = new byte[]{};
+                    try {
+                        sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser);
+                    } catch (GeneralSecurityException e) {
+                        System.out.println("Could not compute SharedKey");
+                        e.printStackTrace();
+                    }
+
+                    //test
+                    System.out.println(new String(sharedKey));
+
+                    /*end shared secret key compute */
+
+                    // set the shared key in stored chat list details as a String
+                    scl.setSharedSecretKey(new String(sharedKey));
+                }
 
                 scl.setChatBelongsTo(UserDetails.username);
 
