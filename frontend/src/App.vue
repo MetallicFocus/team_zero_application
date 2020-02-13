@@ -31,6 +31,7 @@
 <script>
 //import HelloWorld from "./components/HelloWorld.vue";
 //TODO: Encryption
+
 const crypto = require("crypto");
 
 export default {
@@ -187,7 +188,6 @@ export default {
 
     submitForm: function() {
       if (true) {
-        console.log("emad");
         const dh = crypto.createDiffieHellman(256);
         dh.generateKeys();
         let key_exchange_arguments = {
@@ -232,7 +232,8 @@ export default {
       }
     },
     onSignIn() {
-      window.location.href = "/chat";
+      // this.$router.push("/index");
+      router.push({ name: "Index" });
     },
     resetForm(formName) {
       this.$refs[formName].resetFields();
