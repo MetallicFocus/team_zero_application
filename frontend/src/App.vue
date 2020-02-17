@@ -30,6 +30,7 @@
 
 <script>
 //import HelloWorld from "./components/HelloWorld.vue";
+
 //TODO: Encryption
 
 const crypto = require("crypto");

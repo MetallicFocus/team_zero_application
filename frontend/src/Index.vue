@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <template>
   <div id="app">
     <div id="login" v-show="signinState">
@@ -94,13 +95,19 @@
 import singleUserInfo from "./components/single-user-info.vue";
 import singleChat from "./components/single-chat.vue";
 import singleChatPanel from "./components/single-chat-panel.vue";
+import Vue from "vue";
 //TODO: Encryption
-const crypto = require("crypto");
+const CryptoJS = require("crypto-js");
+const crypto = require('crypto');
 
 export default {
   name: "app",
   data: function() {
     return {
+      crypto: {
+        key: null,
+        iv: null
+      },
       signinState: true,
       signinStyle:
         "position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-color: #29B19F; border-style: solid; width: 500px; height: 300px;",
@@ -170,41 +177,45 @@ export default {
   },
   watch: {
     response(newR, oldR) {
-      // console.log("Watched newR: " + newR);
-      this.parsed_response = JSON.parse(newR);
-      // console.log(this.parsed_response);
-      switch (this.parsed_response.type) {
-        case "TEXT":
-          if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
-          var sender = this.parsed_response.sender;
-          var message = this.parsed_response.message;
-          this.chatwith(sender);
-          //Todo: retrieve time instead of creating
-          var time = new Date();
-          this.updateChat(sender, this.self.name, message, time);
-          break;
-        case "REPLY":
-          switch (this.parsed_response.REPLY) {
-            case "LOGIN: SUCCESS":
-              // console.log("LOGIN: SUCCESS");
-              this.signinState = false;
-              this.initPost(this.self.name);
-              break;
-            case "GETALLCONTACTS: SUCCESS":
-              var contacts = this.parsed_response.contacts;
-              for (let i in contacts) {
-                if (contacts[i].username !== this.self.name)
-                  this.chatwith(contacts[i].username);
-              }
-              break;
-            case "SEARCHCONTACTS: SUCCESS":
-              if (this.parsed_response.contacts.length > 1)
-                this.searchUserForm.usersdata = this.parsed_response.contacts;
-              else
-                this.searchUserForm.usersdata = [this.parsed_response.contacts];
-              break;
+      try {
+          // console.log("Watched newR: " + newR);
+          this.parsed_response = JSON.parse(newR);
+          // console.log(this.parsed_response);
+          switch (this.parsed_response.type) {
+              case "TEXT":
+                  if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
+                  var sender = this.parsed_response.sender;
+                  var message = this.parsed_response.message;
+                  this.chatwith(sender);
+                  //Todo: retrieve time instead of creating
+                  var time = new Date();
+                  this.updateChat(sender, this.self.name, this.decrypt(message), time);
+                  break;
+              case "REPLY":
+                  switch (this.parsed_response.REPLY) {
+                      case "LOGIN: SUCCESS":
+                          // console.log("LOGIN: SUCCESS");
+                          this.signinState = false;
+                          this.initPost(this.self.name);
+                          break;
+                      case "GETALLCONTACTS: SUCCESS":
+                          var contacts = this.parsed_response.contacts;
+                          for (let i in contacts) {
+                              if (contacts[i].username !== this.self.name)
+                                  this.chatwith(contacts[i].username);
+                          }
+                          break;
+                      case "SEARCHCONTACTS: SUCCESS":
+                          if (this.parsed_response.contacts.length > 1)
+                              this.searchUserForm.usersdata = this.parsed_response.contacts;
+                          else
+                              this.searchUserForm.usersdata = [this.parsed_response.contacts];
+                          break;
+                  }
+                  break;
           }
-          break;
+      } catch (e) {
+          console.log(e.stack);
       }
     }
   },
@@ -258,35 +269,7 @@ export default {
       let message = args[1];
       let time = new Date(); //Todo: formalize date
 
-      const crypto = require("crypto");
-
-      const algorithm = "aes-192-cbc";
-      const password = "Password used to generate key";
-      // Key length is dependent on the algorithm. In this case for aes192, it is
-      // 24 bytes (192 bits).
-      // Use async `crypto.scrypt()` instead.
-      const key = crypto.scryptSync(password, "salt", 24);
-      // Use `crypto.randomBytes()` to generate a random iv instead of the static iv
-      // shown here.
-      const iv = Buffer.alloc(16, 0); // Initialization vector.
-
-      const cipher = crypto.createCipheriv(algorithm, key, iv);
-
-      let encrypted = "";
-      cipher.on("readable", () => {
-        let chunk;
-        while (null !== (chunk = cipher.read())) {
-          encrypted += chunk.toString("hex");
-        }
-      });
-      cipher.on("end", () => {
-        console.log(encrypted);
-        // Prints: e5f79c5915c02171eec6b212d5520d44480993d7d622a7c4c2da32f6efda0ffa
-      });
-
-      cipher.write("some clear text data");
-      cipher.end();
-
+      console.log(this.encrypt(message));
       this.request =
         '{"type": "TEXT"' +
         ', "sender":"' +
@@ -294,9 +277,11 @@ export default {
         '", "recipient":"' +
         recipient +
         '", "message":"' +
-        message +
+        this.encrypt(message) +
         '"}';
+        console.log(this.request);
       this.send();
+
       //Todo: determine text successful
       // if (this.parsed_response.REPLY === 'TEXT: SUCCESS'){
       //     this.updateChat(recipient, message);
@@ -386,9 +371,9 @@ export default {
     initPost: function() {
       this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
       this.send();
+      this.initCrypto();
     },
     onSignIn: function() {
-      console.log("sign in");
       this.self = { avatar: "/img/avatar.jpg", name: this.ruleForm.name };
       if (true) {
         //Todo: determine if connection is successful
@@ -412,158 +397,28 @@ export default {
     },
     onSignUp: function() {
       window.location.href = "/sign_up";
+    },
+    initCrypto: function () {
+        let key_hex = '2646294A404E635266556A576E5A7234';
+        this.crypto.key = CryptoJS.enc.Utf8.parse(this.hex2a(key_hex));
+        let iv_str = '0123456789abcdef';
+        this.crypto.iv = CryptoJS.enc.Utf8.parse(iv_str);
+    },
+    encrypt: function (message) {
+      return CryptoJS.AES.encrypt(message, this.crypto.key, {iv: this.crypto.iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7}).toString();
+    },
+    decrypt: function (ciphertext) {
+      return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {iv: this.crypto.iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7}).toString(CryptoJS.enc.Utf8);
+    },
+    hex2a: function (hex) {
+      var str = '';
+      for (var i = 0; (i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+      return str;
     }
   }
 };
 </script>
 
 <style>
-#main-panel {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-#self-info {
-}
-
-#search-bar {
-  background-color: #eefaf9;
-}
-
-#chat-list-panel {
-  height: 480px;
-  overflow: auto;
-}
-
-#object-info {
-}
-
-#chatting-panel {
-  background-color: #f5f7fa;
-}
-
-#text-panel {
-  background-color: #fbfdff;
-  margin-top: 20px;
-}
-
-#add {
-  margin-top: 10px;
-  text-align: center;
-  font-size: 40px;
-  color: #f0f0f0;
-}
-
-#add:hover {
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.chat {
-  height: 50px;
-  background-color: #abe8e0;
-  margin-top: 2px;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.chat:hover {
-  background-color: #97e2d8;
-}
-
-.chat .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  margin: 5px 12px;
-}
-
-.chat .name {
-  font-weight: 600;
-}
-
-.chat .last-chat-time {
-  text-align: right;
-}
-
-.chat .last-chat-content {
-  line-height: 30px;
-}
-
-.avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 25px;
-}
-
-.el-header {
-  background-color: #2ec5b1;
-  text-align: left;
-  line-height: 60px;
-}
-
-.el-footer {
-  background-color: #f4f4f5;
-}
-
-.el-aside {
-  background-color: #abe8e0;
-}
-
-.el-main {
-  background-color: #eefaf9;
-}
-
-.el-container {
-  height: 600px;
-  width: 1300px;
-  margin-bottom: 40px;
-}
-
-#mask {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: 100%;
-  background-color: #000000;
-  opacity: 0.5;
-}
-
-#searchUserPanel {
-  border-radius: 10px;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 800px;
-  height: 500px;
-  background-color: #ffffff;
-}
-
-#searchResults {
-  border-radius: 5px;
-  overflow: auto;
-  margin-top: 20px;
-  margin-left: 50px;
-  padding: 10px 10px;
-  width: 700px;
-  height: 300px;
-  background-color: #f2f8fe;
-}
-
-.single-user-info {
-  border-radius: 10px;
-  margin-top: 5px;
-  height: 60px;
-  padding-top: 30px;
-  text-align: center;
-}
-
-.single-user-info:hover {
-  background: #d5f3ef;
-  cursor: pointer;
-}
 </style>
