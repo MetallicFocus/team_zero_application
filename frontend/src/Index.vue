@@ -178,9 +178,8 @@ export default {
   watch: {
     response(newR, oldR) {
       try {
-          // console.log("Watched newR: " + newR);
+          console.log("Watched newR: " + newR);
           this.parsed_response = JSON.parse(newR);
-          // console.log(this.parsed_response);
           switch (this.parsed_response.type) {
               case "TEXT":
                   if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
@@ -201,8 +200,10 @@ export default {
                       case "GETALLCONTACTS: SUCCESS":
                           var contacts = this.parsed_response.contacts;
                           for (let i in contacts) {
-                              if (contacts[i].username !== this.self.name)
-                                  this.chatwith(contacts[i].username);
+                              if (contacts[i].username !== this.self.name) {
+                                this.chatwith(contacts[i].username);
+                                //this.getChatHistory(contacts[i].username);
+                              }
                           }
                           break;
                       case "SEARCHCONTACTS: SUCCESS":
@@ -211,12 +212,27 @@ export default {
                           else
                               this.searchUserForm.usersdata = [this.parsed_response.contacts];
                           break;
+                      case "GETCHATHISTORY: SUCCESS":
+                          var messages = this.parsed_response.messages;
+                          if (messages === undefined) break;
+                          else if (messages.length === undefined) {
+                              messages = [messages];
+                          }
+                          for (let i in messages) {
+                              var sender = messages[i].sender;
+                              var recipient = messages[i].recipient;
+                              var message = messages[i].message;
+                              var time = messages[i].timestamp;
+                              this.updateChat(sender, recipient, this.decrypt(message), new Date(time));
+                          }
+                          break;
                   }
                   break;
           }
       } catch (e) {
           console.log(e.stack);
       }
+
     }
   },
   methods: {
@@ -269,7 +285,6 @@ export default {
       let message = args[1];
       let time = new Date(); //Todo: formalize date
 
-      console.log(this.encrypt(message));
       this.request =
         '{"type": "TEXT"' +
         ', "sender":"' +
@@ -295,7 +310,11 @@ export default {
       let paddingHour = hour > 9 ? "" : "0";
       let minute = time.getMinutes();
       let paddingMinute = minute > 9 ? "" : "0";
-      time = paddingHour + hour + ":" + paddingMinute + minute;
+      let year = time.getYear()+1900;
+      let month = time.getMonth()+1;
+      let day = time.getDate();
+      time = year+'-'+month+'-'+day + ' ' + paddingHour + hour + ":" + paddingMinute + minute;;
+
       if (sender === this.self.name) {
         //message out
         for (var chat_key in this.chatlist) {
@@ -415,7 +434,16 @@ export default {
       for (var i = 0; (i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
         str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
       return str;
-    }
+    },
+    getChatHistory : function(contact_name) {
+        this.request = "{\n" +
+            "type: \"GETCHATHISTORY\",\n" +
+            "myUsername: \"" + this.self.name +"\",\n" +
+            "theirUsername: \"" + contact_name + "\",\n" +
+            "historyDays: \"" + 1 + "\"\n" +
+            "}";
+        this.send();
+    },
   }
 };
 </script>
