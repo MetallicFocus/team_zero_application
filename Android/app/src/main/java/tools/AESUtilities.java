@@ -1,10 +1,21 @@
 package tools;
 
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.security.GeneralSecurityException;
+import java.nio.charset.StandardCharsets;
 
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
+
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -64,6 +75,54 @@ public class AESUtilities {
 
         return new byte[][] { iv, cipher };
 
+    }
+
+    public static String encrypt(String plainText) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException, InvalidKeyException {
+        String key_str = "2646294A404E635266556A576E5A7234";
+        String iv_str = "0123456789abcdef";
+
+        byte[] key_a = Hex.decode(key_str); // to generate the real 16-byte key
+
+        byte[] iv_bytes = iv_str.getBytes();
+        SecretKeySpec key = new SecretKeySpec(key_a, "AES");
+        IvParameterSpec iv = new IvParameterSpec(iv_bytes);
+
+        byte[] plainTextBytes = plainText.getBytes();
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        Cipher aesCBC = Cipher.getInstance("AES/CBC/PKCS7Padding","BC");
+        aesCBC.init(Cipher.ENCRYPT_MODE, key, iv);
+        byte[] encryptedData = aesCBC.doFinal(plainTextBytes);
+
+        byte[] base64Data = Base64.encode(encryptedData);
+
+        System.out.println(new String(base64Data));
+
+        return new String(base64Data);
+    }
+
+    public static String decrypt(String cipherText) throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        String key_str = "2646294A404E635266556A576E5A7234";
+        String iv_str = "0123456789abcdef";
+
+        byte[] key_a = Hex.decode(key_str); // to generate the real 16-byte key
+
+        byte[] cipherData = Base64.decode(cipherText);
+
+        byte[] iv_bytes = iv_str.getBytes();
+        SecretKeySpec key = new SecretKeySpec(key_a, "AES");
+        IvParameterSpec iv = new IvParameterSpec(iv_bytes);
+
+        byte[] encrypted = cipherData;
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        Cipher aesCBC = Cipher.getInstance("AES/CBC/PKCS7Padding","BC");
+        aesCBC.init(Cipher.DECRYPT_MODE, key, iv);
+        byte[] decryptedData = aesCBC.doFinal(encrypted);
+
+        String decryptedText = new String(decryptedData, StandardCharsets.UTF_8);
+
+        System.out.println(decryptedText);
+
+        return decryptedText;
     }
 
 }

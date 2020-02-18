@@ -22,6 +22,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import tools.AESUtilities;
 import tools.JSONConstructor;
@@ -74,13 +82,10 @@ public class Chat extends AppCompatActivity {
                     // Send TEXT JSON request to server to send to the other user
 
                     // encrypt message sent to other user
+                    String unencryptedText = messageToSend.getText().toString();
+                    String encryptedText = AESUtilities.encrypt(unencryptedText);
 
-                    String unencrypted =  messageToSend.getText().toString();
-                    final byte[][] encrypted = AESUtilities.cbcEncrypt(AESUtilities.generateSecretKeyFromString(AESUtilities.TEST_SHARED_KEY), unencrypted.getBytes());
-
-                    String encryptedHex = AESUtilities.encryptedDataToHexString(encrypted);
-
-                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, encryptedHex));
+                    WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, encryptedText));
 
                     addMessageBox(messageToSend.getText().toString(), 1);
 
@@ -106,17 +111,15 @@ public class Chat extends AppCompatActivity {
             System.out.println(UserDetails.messages);
             for(int i = 0; i < UserDetails.messages.get(UserDetails.chatWith).size(); i++) {
                 String receivedMessage = "[encrypted]";
-                // decrypt messages
+
                 try {
-                    String encryptedMessage = UserDetails.messages.get(UserDetails.chatWith).get(i);
-                    byte[][] encryptedBytes = AESUtilities.encryptedStringToBytes(encryptedMessage);
-                    byte[] decryptedBytes = AESUtilities.cbcDecrypt(AESUtilities.generateSecretKeyFromString(AESUtilities.TEST_SHARED_KEY), encryptedBytes[0], encryptedBytes[1]);
-                    receivedMessage = new String(decryptedBytes);
-                } catch (GeneralSecurityException e) {
+                    receivedMessage = AESUtilities.decrypt(UserDetails.messages.get(UserDetails.chatWith).get(i));
+                    //System.out.println("decrypt = " + AESUtilities.decrypt("WE1JGWEelHWyWCL0l+CsHggW+KN9eiIZXL7cR5Jcotmpzj1N1mmhjdz3eYFUbJdT8KpjSJ2dBWOMqjX+tXW/1A=="));
+                } catch (NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
+                        InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException |
+                        IllegalBlockSizeException e) {
                     e.printStackTrace();
-                };
-
-
+                }
                 addMessageBox(receivedMessage, 2);
             }
             UserDetails.messages.remove(UserDetails.chatWith);

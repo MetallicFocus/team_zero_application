@@ -36,7 +36,7 @@ public class WebSocket {
         try {
             // Used the following URI for testing purposes only
             // TODO: Change URI to Heroku server
-            uri = new URI("ws://10.200.201.216:1234");
+            uri = new URI("ws://10.40.177.52:1234");
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
