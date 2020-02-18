@@ -1,6 +1,7 @@
 import Vue from 'vue'
-import App from './App.vue'
+import App from './App'
 import Index from './Index'
+import Test from './Test'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 
