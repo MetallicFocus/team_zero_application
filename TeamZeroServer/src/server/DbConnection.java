@@ -305,7 +305,11 @@ public class DbConnection {
 				while (rs.next()) {
 					String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
 					String message = rs.getString(COLUMN_MESSAGE_CONTENT);
-					ChatMessage chatMessage = new ChatMessage(thisUserName, otherUserName, message, timestamp);
+					int senderId = rs.getInt("sender_id");
+					int recipientId = rs.getInt("recipient_id");
+					String sender = getUsernameFromID(senderId);
+					String recipient = getUsernameFromID(recipientId);
+					ChatMessage chatMessage = new ChatMessage(sender, recipient, message, timestamp);
 					chatHistory.add(chatMessage);
 				}
 				ps.close();
@@ -404,6 +408,28 @@ public class DbConnection {
 			throw e;
 		}
 		return 0;
+	}
+	
+	public String getUsernameFromID(int id) throws SQLException {
+		Connection conn = this.connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("SELECT username FROM USERS WHERE user_id = ?;");
+			ps.setInt(1, id);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				String clientUsername = rs.getString(COLUMN_USERNAME);
+				ps.close();
+				conn.close();
+				return clientUsername;
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return "";
 	}
 
 	private String getMd5(String input) {
