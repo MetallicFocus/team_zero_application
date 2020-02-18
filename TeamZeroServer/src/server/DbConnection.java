@@ -296,7 +296,11 @@ public class DbConnection {
 			    String limitStr = ServerMain.DATE_FORMAT.format(historyLimit.getTime());
 			    
 				ps = conn.prepareStatement(
-						"SELECT * FROM chat_message WHERE chat_id = ? and timesent between ? and ?");
+						"SELECT chat_message.timesent, chat_message.message_content, u1.username AS sender, u2.username AS recipient"
+						+ " FROM chat_message "
+						+ "INNER JOIN users AS u1 ON (u1.user_id=chat_message.sender_id) "
+						+ "INNER JOIN users AS u2 ON (u2.user_id=chat_message.recipient_id)"
+						+ " WHERE chat_id = ? AND timesent between ? AND ?;");
 				ps.setInt(1, chatId);
 				ps.setTimestamp(2, Timestamp.valueOf(limitStr));
 				ps.setTimestamp(3, Timestamp.valueOf(nowStr));
@@ -305,10 +309,8 @@ public class DbConnection {
 				while (rs.next()) {
 					String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
 					String message = rs.getString(COLUMN_MESSAGE_CONTENT);
-					int senderId = rs.getInt("sender_id");
-					int recipientId = rs.getInt("recipient_id");
-					String sender = getUsernameFromID(senderId);
-					String recipient = getUsernameFromID(recipientId);
+					String sender = rs.getString("sender");
+					String recipient = rs.getString("recipient");
 					ChatMessage chatMessage = new ChatMessage(sender, recipient, message, timestamp);
 					chatHistory.add(chatMessage);
 				}
@@ -410,6 +412,7 @@ public class DbConnection {
 		return 0;
 	}
 	
+	// TODO: this is a temporary solution to getchathistory bug.
 	public String getUsernameFromID(int id) throws SQLException {
 		Connection conn = this.connect();
 		PreparedStatement ps = null;
