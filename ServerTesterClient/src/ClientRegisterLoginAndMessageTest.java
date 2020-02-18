@@ -160,11 +160,21 @@ public class ClientRegisterLoginAndMessageTest {
 
 	public String getRequestTextsMessage() {
 		String jsonMsg = "{\"type\": \"GETCHATHISTORY\"" + 
-				", \"myUsername\":\"" + username1 + 
-				"\", \"theirUsername\":\"" + username2 +
+				", \"myUsername\":\"" + username2 + 
+				"\", \"theirUsername\":\"" + username1 +
 				"\", \"historyDays\":\"" + 80 
 				+ "\"}";
 		return jsonMsg;
+	}
+
+	public String getClient2To1TextMessage() {
+		String jsonMsg =  
+				"{\"type\": \"TEXT\"" + 
+				", \"sender\":\"" + username2 + 
+				"\", \"recipient\":\"" + username1 + 
+				"\", \"message\":\"some test message from some test client 2 to test client 1.\"}";  
+		return jsonMsg;
+		
 	}
 
 }
