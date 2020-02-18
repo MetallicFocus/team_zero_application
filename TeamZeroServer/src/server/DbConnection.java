@@ -3,6 +3,7 @@ package server;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -32,6 +33,11 @@ public class DbConnection {
 	private static final String COLUMN_ID = "user_id";
 	private static final String COLUMN_CHAT_ID = "chat_id";
 	private static final String COLUMN_PUBLIC_KEY = "public_key";
+	private static final String COLUMN_GROUPNAME = "group_name";
+	private static final String COLUMN_GROUP_ID = "group_id";
+	private static final String COLUMN_SENDER_ID = "sender_id";
+	private static final String COLUMN_RECIPIENT_ID = "recipient_id";
+	private static final int MAX_NUMBER_OF_MEMBERS = 10;
 
 	private static final String COLUMN_TIMESENT = "timesent";
 
@@ -66,7 +72,6 @@ public class DbConnection {
 			if (rs.next()) {
 				String existingUser = rs.getString(COLUMN_USERNAME);
 				String existingEmail = rs.getString(COLUMN_EMAIL);
-				// TODO: Send errors to frontend
 				if (existingUser.equals(userName)) {
 
 					LOGGER.log(Level.WARNING, "Username already exists");
@@ -325,6 +330,143 @@ public class DbConnection {
 		return chatHistory;
 	}
 	
+	/**
+	 * Adds a new group (chat) to the database
+	 * @param groupName
+	 * @param creatingUser - the username of the user that requested the group be created
+	 * @return true if the operation is successful
+	 * @throws SQLException if there is any issue adding the group to the database
+	 */
+	public boolean addNewGroup(String groupName, String creatingUser) throws SQLException { //TODO group avatar
+		boolean success = true;
+		Connection conn = connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("SELECT * FROM groups WHERE group_name = ?;");
+			ps.setString(1, groupName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				String existingGroupname = rs.getString(COLUMN_GROUPNAME);
+				if (existingGroupname.equals(groupName)) {
+					LOGGER.log(Level.WARNING, "Groupname already exists");
+					success = false;
+					throw new SQLException("Groupname already exists");
+				}
+			} else {
+				ps = conn.prepareStatement("INSERT INTO GROUPS (group_name,number_of_members) VALUES (?, ?)");
+				ps.setString(1, groupName);
+				ps.setInt(2, MAX_NUMBER_OF_MEMBERS);
+				ps.executeUpdate();
+				
+				rs = ps.getGeneratedKeys(); // get the newly created group Id
+				int groupId = 0;
+				if (rs.next()) {
+					 groupId = rs.getInt(1);
+				}
+				// insert the userId and groupId into user_groups table
+
+				ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
+				ps.setInt(1, getUserIDFromUsername(creatingUser));
+				ps.setInt(2, groupId);
+
+				LOGGER.log(Level.FINE, "Added group {0}", groupName);
+				success = true;
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			success = false; // probably never gets returned due to throw
+			throw e;
+		}
+		return success;
+	}
+	
+	/**
+	 * Gets all the groups that exists in the database and returns them as an array list of Group objects
+	 * @return array list of group objects containing the group ID, group name and a list of group member usernames
+	 * @throws SQLException
+	 */
+	public ArrayList<Group> getAllGroups() throws SQLException{
+		ArrayList<Group> allGroups = new ArrayList<Group>();
+		Connection conn = this.connect();
+		try {
+			
+			//TODO fix this - currently it is not getting the members
+			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
+					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
+					+ "SELECT u.username "
+					+ "FROM users u "
+					+ "JOIN user_groups ug ON ug.user_id=u.user_id "
+					+ "WHERE ug.group_id=g.group_id) AS members ) u;");
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int groupId = rs.getInt(COLUMN_GROUP_ID);
+				String groupName = rs.getString(COLUMN_GROUPNAME);
+				String[] groupMembers = (String[]) rs.getArray("members").getArray();
+				Group group = new Group(groupId, groupName, groupMembers);
+				allGroups.add(group);
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return allGroups;
+	}
+	
+	//TODO
+	public ArrayList<Group> getSearchedGroups(String search){
+		return new ArrayList<Group>();
+	}
+	
+	//TODO
+	public void addGroupMessage(String sender, String groupName, String message, String timestamp) {
+		
+	}
+	
+	/**
+	 * Add a user to a group (chat)
+	 * @param groupName - name of group to add the user to
+	 * @param username
+	 * @return true if the operation is successful
+	 * @throws SQLException 
+	 */
+	public boolean addGroupMember(String groupName, String username) throws SQLException {
+		boolean success = true;
+		Connection conn = connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("SELECT * FROM groups WHERE group_name = ?;");
+			ps.setString(1, groupName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				int groupId = rs.getInt(COLUMN_GROUP_ID);
+				
+				// TODO check number of users with group_id is not more than MAX_NUMBER_OF_MEMBERS
+				//add user to user groups table
+				ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
+				ps.setInt(1, getUserIDFromUsername(username));
+				ps.setInt(2, groupId);
+
+				LOGGER.log(Level.FINE, "Added user to group {0}", groupName);
+				success = true;
+				
+			} else {
+				// groupName does not exist
+				throw new SQLException("Group name does not exist.");		
+			}
+			
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			success = false; // probably never gets returned due to throw
+			throw e;
+		}
+		return success;
+	}
 
 	public void addMessage(String sender, String recipient, String textMessage, String timestamp) throws SQLException {
 		Connection conn = connect();
@@ -332,8 +474,6 @@ public class DbConnection {
 		try {
 			PreparedStatement ps = conn.prepareStatement(
 					"SELECT * FROM chats WHERE (user1 = ? AND user2 = ?) OR (user1 = ? AND user2 = ?);");
-			
-			// TODO do this within same statement to avoid making multiple DB calls
 
 			int senderId = getUserIDFromUsername(sender);
 			int recipientId = getUserIDFromUsername(recipient);
@@ -410,29 +550,6 @@ public class DbConnection {
 			throw e;
 		}
 		return 0;
-	}
-	
-	// TODO: this is a temporary solution to getchathistory bug.
-	public String getUsernameFromID(int id) throws SQLException {
-		Connection conn = this.connect();
-		PreparedStatement ps = null;
-		try {
-			ps = conn.prepareStatement("SELECT username FROM USERS WHERE user_id = ?;");
-			ps.setInt(1, id);
-			ResultSet rs = ps.executeQuery();
-			if (rs.next()) {
-				String clientUsername = rs.getString(COLUMN_USERNAME);
-				ps.close();
-				conn.close();
-				return clientUsername;
-			}
-			ps.close();
-			conn.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw e;
-		}
-		return "";
 	}
 
 	private String getMd5(String input) {
