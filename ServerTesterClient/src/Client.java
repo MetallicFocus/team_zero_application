@@ -67,6 +67,8 @@ public class Client extends WebSocketClient {
 		
 		
 		c2.login();
+		
+		c2.text2();
 
 		try {
 			Thread.sleep(1000);
@@ -75,6 +77,7 @@ public class Client extends WebSocketClient {
 		}
 	
 		c1.text();
+		
 		
 		c1.getTexts();
 
@@ -257,6 +260,8 @@ class Client1 extends Client{
 		this.send(message);
 	}
 	
+
+	
 	public void unregister(){
 		System.out.println("Sending message to unregister client 1...");
 		String message = test.getClient2UnRegisterMessage();
@@ -295,6 +300,12 @@ class Client2 extends Client{
 	public void unregister(){
 		System.out.println("Sending message to unregister client 2...");
 		String message = test.getClient1UnRegisterMessage();
+		this.send(message);
+	}
+	
+	public void text2() {
+		System.out.println("Sending message to text client 1 from client 2...");
+		String message = test.getClient2To1TextMessage();
 		this.send(message);
 	}
 	
