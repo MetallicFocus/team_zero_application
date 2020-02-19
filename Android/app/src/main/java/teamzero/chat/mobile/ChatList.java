@@ -32,6 +32,10 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +43,9 @@ import database.AppDatabaseClient;
 import database.StoredChatList;
 import database.UsersOnDevice;
 
+import tools.DHUtilities;
 import tools.JSONConstructor;
+import tools.RSAUtilities;
 
 
 public class ChatList extends AppCompatActivity {
@@ -137,21 +143,17 @@ public class ChatList extends AppCompatActivity {
                             StoredChatList scl = new StoredChatList();
                             scl.setUsername(userThatSentNewMessage);
                             scl.setLastMessageContent("Last message here");
-                            // Retrieve the public key of the sender
-                            String publicKey = "";
-                            // TODO: OTHER SOLUTION -- Will use GETPUBLICKEY instead of SEARCHCONTACTS
+                            // Retrieve the public key of the sender using the GETPUBLICKEY JSON request
+                            String publicKey = "BLANK";
+
                             try {
-                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructSearchContactsJSON(userThatSentNewMessage));
+                                WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetPublicKeyJSON(userThatSentNewMessage));
 
                                 // Get response from server and parse it
                                 JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
-                                if (responseJSON.get("REPLY").toString().equalsIgnoreCase("SEARCHCONTACTS: SUCCESS")) {
-
-                                    if(responseJSON.has("contacts")) {
-                                        JSONObject x = responseJSON.getJSONObject("contacts");
-                                        publicKey = x.get("publicKey").toString();
-                                    }
-
+                                if (responseJSON.get("REPLY").toString().equalsIgnoreCase("GETPUBLICKEY: SUCCESS")) {
+                                    if(responseJSON.has("publicKey"))
+                                        publicKey = responseJSON.get("publicKey").toString();
                                 }
 
                             } catch (JSONException e) {
@@ -160,10 +162,41 @@ public class ChatList extends AppCompatActivity {
 
                             scl.setPublicKey(publicKey);
 
-                            // Case here: if chat was started by other user, byte[] sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser)
 
-                            // TODO: Compute the shared secret key
-                            scl.setSharedSecretKey(null);
+                            // TODO: Debugging purposes only -- Will keep what is inside 'if' statement and delete 'else'
+
+                            if(!publicKey.equalsIgnoreCase("BLANK")) {
+                                /* Shared secret key computation start */
+
+                                //Step 1: compute DHPublicKey of other user
+
+                                PublicKey publicKeyOfUser = DHUtilities.computeDHPublicKeyfromBase64String(publicKey);
+
+
+                                //Step 2: Retrieve myPrivateKey & convert to DHPrivateKey
+                                String myPrivateKeyStr = AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase().usersOnDeviceDao().getUserPrivateKey(UserDetails.username);
+                                System.out.println("myPrivateKeyStr: " + myPrivateKeyStr);
+                                PrivateKey myPrivateKey = DHUtilities.computeDHPrivateKeyfromBase64String(myPrivateKeyStr);
+
+                                byte[] sharedKey = new byte[]{};
+                                try {
+                                    sharedKey = DHUtilities.recipientAgreementBasic(myPrivateKey, publicKeyOfUser);
+                                } catch (GeneralSecurityException e) {
+                                    System.out.println("Could not compute SharedKey");
+                                    e.printStackTrace();
+                                }
+
+                                /*end shared secret key compute */
+
+
+                                //test
+                                System.out.println(new String(sharedKey));
+
+                                // set the shared key in stored chat list details as a String
+                                scl.setSharedSecretKey(new String(sharedKey));
+                            }
+                            else scl.setSharedSecretKey("2646294A404E635266556A576E5A7234");
+
                             scl.setChatBelongsTo(UserDetails.username);
 
                             // Add the user into the local chat list database

@@ -85,4 +85,13 @@ public class JSONConstructor {
         return builtJSON;
     }
 
+    public String constructGetPublicKeyJSON(String username) throws JSONException {
+
+        jsonObject.put("type", "GETPUBLICKEY");
+        jsonObject.put("username", username);
+
+        builtJSON = jsonObject.toString();
+        return builtJSON;
+    }
+
 }

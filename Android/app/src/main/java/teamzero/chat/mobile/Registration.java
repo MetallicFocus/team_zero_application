@@ -25,6 +25,7 @@ import database.AppDatabaseClient;
 import database.StoredChatList;
 import database.UsersOnDevice;
 import database.UsersOnDeviceDao;
+import tools.DHUtilities;
 import tools.JSONConstructor;
 import tools.RSAUtilities;
 import tools.RegistrationValidator;
@@ -82,7 +83,8 @@ public class Registration extends AppCompatActivity {
 
         try {
 
-            KeyPair publicPrivateKeys = RSAUtilities.generateKeyPair();
+            KeyPair publicPrivateKeys = DHUtilities.generateKeyPair();
+            //KeyPair publicPrivateKeys = RSAUtilities.generateKeyPair();
 
             // TODO: Cleanup
             System.out.println("-- PRE-ENCODING --");
@@ -135,7 +137,7 @@ public class Registration extends AppCompatActivity {
             }
             else Toast.makeText(getApplicationContext(), R.string.registration_unsuccessful_text, Toast.LENGTH_LONG).show();
 
-        } catch (JSONException | GeneralSecurityException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }

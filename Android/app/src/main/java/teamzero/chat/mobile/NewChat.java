@@ -27,17 +27,26 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.GeneralSecurityException;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import database.AppDatabaseClient;
 import database.StoredChatList;
+import database.UsersOnDevice;
+
+import tools.DHUtilities;
 import tools.JSONConstructor;
+import tools.RSAUtilities;
+
 import users.data.OtherUsersData;
 
 public class NewChat extends AppCompatActivity {
@@ -231,20 +240,47 @@ public class NewChat extends AppCompatActivity {
                 StoredChatList scl = new StoredChatList();
                 scl.setUsername(searchUsersEditTextString);
                 scl.setLastMessageContent("Last message here");
-                scl.setPublicKey(publicKeyb64OfUser);
 
-                // TODO: Compute shared secret key
-                /* Start shared secret key computation */
+                // TODO: Debugging purposes only -- Will delete the 'if' and leave only what's in 'else'
+                if(publicKeyb64OfUser.isEmpty()) {
+                    scl.setPublicKey("BLANK");
+                    scl.setSharedSecretKey("2646294A404E635266556A576E5A7234");
+                }
+                else {
+                    scl.setPublicKey(publicKeyb64OfUser);
 
-                //Step 1: PublicKey publicKeyOfUser = RSAUtilities.computePublicKeyfromBase64String(publicKeyb64OfUser)
+                    /* Start shared secret key computation */
 
-                //Step 2: Retrieve myPrivateKey
+                    //Step 1: Get DHPublicKey object of other user
 
-                // Case here: if initiating chat myself, byte[] sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser)
+                    PublicKey publicKeyOfUser = DHUtilities.computeDHPublicKeyfromBase64String(publicKeyb64OfUser);
 
-                /*end shared secret key compute */
+                    //Step 2: Retrieve myPrivateKey and compute DHPrivateKey
 
-                scl.setSharedSecretKey(null);
+                    String myPrivateKeyStr = AppDatabaseClient.getInstance(getApplicationContext()).getAppDatabase().usersOnDeviceDao().getUserPrivateKey(UserDetails.username);
+                    System.out.println("myPrivateKeyStr: " + myPrivateKeyStr);
+                    PrivateKey myPrivateKey = DHUtilities.computeDHPrivateKeyfromBase64String(myPrivateKeyStr);
+
+                    // Case here:  initiating chat myself
+                    // Step 3 : compute shared key
+
+                    byte[] sharedKey = new byte[]{};
+                    try {
+                        sharedKey = DHUtilities.initiatorAgreementBasic(myPrivateKey, publicKeyOfUser);
+                    } catch (GeneralSecurityException e) {
+                        System.out.println("Could not compute SharedKey");
+                        e.printStackTrace();
+                    }
+
+                    //test
+                    System.out.println(new String(sharedKey));
+
+                    /*end shared secret key compute */
+
+                    // set the shared key in stored chat list details as a String
+                    scl.setSharedSecretKey(new String(sharedKey));
+                }
+
                 scl.setChatBelongsTo(UserDetails.username);
 
                 // Add the user into the local chat list database
