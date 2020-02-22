@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -70,6 +71,8 @@ public class Chat extends AppCompatActivity {
         assert getSupportActionBar() != null;
         // If it is, display a back button on the action bar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        showHistoryOfMessages(UserDetails.username, UserDetails.chatWith, "1");
 
         // When a user clicks on the "send" button in order to send his message
         sendMsgButton.setOnClickListener(new View.OnClickListener() {
@@ -152,6 +155,51 @@ public class Chat extends AppCompatActivity {
         textView.setLayoutParams(lp2);
         linearLayoutScrollView.addView(textView);
         scrollView.fullScroll(View.FOCUS_DOWN);
+    }
+
+    public void showHistoryOfMessages(String sender, String recipient, String numberOfDays) {
+
+        try {
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetChatHistory(sender, recipient, numberOfDays));
+
+            // Get response from server and parse it
+            JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+            if (responseJSON.get("REPLY").toString().equalsIgnoreCase("GETCHATHISTORY: SUCCESS")) {
+
+                // If there were messages found on the server for this chat within last numberOfDays days
+                if(responseJSON.has("messages")) {
+
+                    JSONArray jsonArr = responseJSON.getJSONArray("messages");
+
+                    for (int i = 0; i < jsonArr.length(); i++) {
+                        JSONObject x = jsonArr.getJSONObject(i);
+                        try {
+
+                            // If message at iteration i was send by this user, display it on the left side with appropriate color
+                            if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
+                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 1);
+
+                            // If message at iteration i was send by the other user, display it on the right side with appropriate color
+                            if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
+                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
+
+                        } catch (NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
+                                InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        // If received messages when the user was not in chat, after GETCHATHISTORY the last messages
+        // while offline will be duplicated. In this case, delete them as GETCHATHISTORY will retrieve them for us
+        if(UserDetails.messages.containsKey(UserDetails.chatWith))
+            UserDetails.messages.remove(UserDetails.chatWith);
+
     }
 
     // Finishes current activity (dismisses dialogs, closes search, etc.) and goes to the parent activity
