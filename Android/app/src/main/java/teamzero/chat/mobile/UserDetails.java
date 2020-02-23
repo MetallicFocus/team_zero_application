@@ -13,4 +13,5 @@ public class UserDetails {
     static String messageFrom = "";
     static HashMap<String, ArrayList<String>> messages = new HashMap<>();
     static String chatWith = "";
+    static boolean historyIsHidden = false;
 }

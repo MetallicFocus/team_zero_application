@@ -72,7 +72,8 @@ public class Chat extends AppCompatActivity {
         // If it is, display a back button on the action bar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        showHistoryOfMessages(UserDetails.username, UserDetails.chatWith, "1");
+        if(!UserDetails.historyIsHidden)
+            showHistoryOfMessages(UserDetails.username, UserDetails.chatWith, "1");
 
         // When a user clicks on the "send" button in order to send his message
         sendMsgButton.setOnClickListener(new View.OnClickListener() {
@@ -97,11 +98,16 @@ public class Chat extends AppCompatActivity {
                 } catch (JSONException | GeneralSecurityException e) {
                     e.printStackTrace();
                 }
+
+                messageToSend.getText().clear();
             }
         });
 
         // Start the handler and run it every 1 second
         handler.postDelayed(runnable, 1000);
+
+        // Scroll to the bottom of the chat for the latest messages
+        scrollToTheBottom();
     }
 
     public void getMsg() {
@@ -126,6 +132,9 @@ public class Chat extends AppCompatActivity {
                 addMessageBox(receivedMessage, 2);
             }
             UserDetails.messages.remove(UserDetails.chatWith);
+
+            // Scroll to the bottom of the chat when getting new messages
+            scrollToTheBottom();
         }
     }
 
@@ -211,6 +220,17 @@ public class Chat extends AppCompatActivity {
         if(UserDetails.messages.containsKey(UserDetails.chatWith))
             UserDetails.messages.remove(UserDetails.chatWith);
 
+    }
+
+    public void scrollToTheBottom() {
+        scrollView.post(new Runnable() {
+            @Override
+            public void run() {
+                // Following print is to debug if the new Runnable executes more than once
+                System.out.println("ScrollView post test");
+                scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+            }
+        });
     }
 
     // Finishes current activity (dismisses dialogs, closes search, etc.) and goes to the parent activity
