@@ -169,11 +169,12 @@ public class Chat extends AppCompatActivity {
                 // If there were messages found on the server for this chat within last numberOfDays days
                 if(responseJSON.has("messages")) {
 
-                    JSONArray jsonArr = responseJSON.getJSONArray("messages");
+                    // First try to get an array of objects (messages) from the server
+                    try {
+                        JSONArray jsonArr = responseJSON.getJSONArray("messages");
 
-                    for (int i = 0; i < jsonArr.length(); i++) {
-                        JSONObject x = jsonArr.getJSONObject(i);
-                        try {
+                        for (int i = 0; i < jsonArr.length(); i++) {
+                            JSONObject x = jsonArr.getJSONObject(i);
 
                             // If message at iteration i was send by this user, display it on the left side with appropriate color
                             if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
@@ -182,16 +183,26 @@ public class Chat extends AppCompatActivity {
                             // If message at iteration i was send by the other user, display it on the right side with appropriate color
                             if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
                                 addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
-
-                        } catch (NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
-                                InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
-                            e.printStackTrace();
                         }
+
+                    } catch(JSONException e) {
+                        // If there is only one message found, returned JSON will not contain '[]'
+                        // and therefore will not be an array, so it will be caught here
+                        JSONObject x = responseJSON.getJSONObject("messages");
+
+                        // If message at iteration i was send by this user, display it on the left side with appropriate color
+                        if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
+                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 1);
+
+                        // If message at iteration i was send by the other user, display it on the right side with appropriate color
+                        if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
+                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
                     }
                 }
 
             }
-        } catch (JSONException e) {
+        } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
+                InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
             e.printStackTrace();
         }
 
