@@ -297,6 +297,10 @@ public class ChatList extends AppCompatActivity {
         // Get the id of the selected menu item to determine what the user clicked
         switch (item.getItemId()) {
 
+            case R.id.hide_chat_history:
+                hideChatHistory();
+                return true;
+
             case R.id.sign_out:
                 signOutOrUnregister("Sign Out");
                 return true;
@@ -316,6 +320,28 @@ public class ChatList extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void hideChatHistory() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setPositiveButton("ON", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                UserDetails.historyIsHidden = false;
+            }
+        });
+
+        builder.setNegativeButton("OFF", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                UserDetails.historyIsHidden = true;
+            }
+        });
+
+        // Create the AlertDialog
+        AlertDialog dialog = builder.create();
+        dialog.setTitle("Chat History");
+        dialog.setMessage("Turn the chat history ON or OFF?");
+        dialog.show();
     }
 
     public void signOutOrUnregister(final String choice) {

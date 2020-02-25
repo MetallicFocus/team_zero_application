@@ -101,4 +101,17 @@ public class JSONConstructorInstrumentedTests {
             e.printStackTrace();
         }
     }
+
+    @Test
+    public void getChatHistoryJSONisValid() {
+        JSONConstructor jsonConstructor = new JSONConstructor();
+        try {
+            assertEquals(null, "{\"type\":\"GETCHATHISTORY\",\"myUsername\":\"UsernameTest\",\"theirUsername\":\"usernameTwo\",\"historyDays\":\"1\"}", jsonConstructor.constructGetChatHistory("UsernameTest", "usernameTwo", "1"));
+            assertEquals(null, "{\"type\":\"GETCHATHISTORY\",\"myUsername\":\"UsernameTest\",\"theirUsername\":\"usernameTwo\"}", jsonConstructor.constructGetChatHistory("UsernameTest", "usernameTwo", null));
+            assertEquals(null, "{\"type\":\"GETCHATHISTORY\",\"myUsername\":\"UsernameTest\"}", jsonConstructor.constructGetChatHistory("UsernameTest", null, null));
+            assertEquals(null, "{\"type\":\"GETCHATHISTORY\"}", jsonConstructor.constructGetChatHistory(null, null, null));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

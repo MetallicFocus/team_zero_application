@@ -33,4 +33,5 @@
     <string name="unregister_text"> Unregister </string>
     <string name="profile_picture_text"> Profile picture </string>
     <string name="delete_all_chats_text"> Delete all chats </string>
+    <string name="hide_chat_history_text"> Hide Chat History </string>
 </resources>

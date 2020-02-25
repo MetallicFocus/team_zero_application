@@ -94,4 +94,15 @@ public class JSONConstructor {
         return builtJSON;
     }
 
+    public String constructGetChatHistory(String myUsername, String theirUsername, String numberOfDays) throws JSONException {
+
+        jsonObject.put("type", "GETCHATHISTORY");
+        jsonObject.put("myUsername", myUsername);
+        jsonObject.put("theirUsername", theirUsername);
+        jsonObject.put("historyDays", numberOfDays);
+
+        builtJSON = jsonObject.toString();
+        return builtJSON;
+    }
+
 }

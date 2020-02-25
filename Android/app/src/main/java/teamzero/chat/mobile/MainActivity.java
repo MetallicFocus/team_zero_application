@@ -88,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
                             UserDetails.username = username;
                             UserDetails.password = password;
 
+                            UserDetails.historyIsHidden = false;
+
                             startActivity(new Intent(MainActivity.this, ChatList.class));
                         }
                         else Toast.makeText(getApplicationContext(), R.string.login_failed_text, Toast.LENGTH_SHORT).show();

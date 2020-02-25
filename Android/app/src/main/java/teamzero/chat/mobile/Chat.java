@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -71,6 +72,9 @@ public class Chat extends AppCompatActivity {
         // If it is, display a back button on the action bar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        if(!UserDetails.historyIsHidden)
+            showHistoryOfMessages(UserDetails.username, UserDetails.chatWith, "1");
+
         // When a user clicks on the "send" button in order to send his message
         sendMsgButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -94,11 +98,16 @@ public class Chat extends AppCompatActivity {
                 } catch (JSONException | GeneralSecurityException e) {
                     e.printStackTrace();
                 }
+
+                messageToSend.getText().clear();
             }
         });
 
         // Start the handler and run it every 1 second
         handler.postDelayed(runnable, 1000);
+
+        // Scroll to the bottom of the chat for the latest messages
+        scrollToTheBottom();
     }
 
     public void getMsg() {
@@ -123,6 +132,9 @@ public class Chat extends AppCompatActivity {
                 addMessageBox(receivedMessage, 2);
             }
             UserDetails.messages.remove(UserDetails.chatWith);
+
+            // Scroll to the bottom of the chat when getting new messages
+            scrollToTheBottom();
         }
     }
 
@@ -152,6 +164,73 @@ public class Chat extends AppCompatActivity {
         textView.setLayoutParams(lp2);
         linearLayoutScrollView.addView(textView);
         scrollView.fullScroll(View.FOCUS_DOWN);
+    }
+
+    public void showHistoryOfMessages(String sender, String recipient, String numberOfDays) {
+
+        try {
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructGetChatHistory(sender, recipient, numberOfDays));
+
+            // Get response from server and parse it
+            JSONObject responseJSON = new JSONObject(WebSocketHandler.getSocket().getResponse());
+            if (responseJSON.get("REPLY").toString().equalsIgnoreCase("GETCHATHISTORY: SUCCESS")) {
+
+                // If there were messages found on the server for this chat within last numberOfDays days
+                if(responseJSON.has("messages")) {
+
+                    // First try to get an array of objects (messages) from the server
+                    try {
+                        JSONArray jsonArr = responseJSON.getJSONArray("messages");
+
+                        for (int i = 0; i < jsonArr.length(); i++) {
+                            JSONObject x = jsonArr.getJSONObject(i);
+
+                            // If message at iteration i was send by this user, display it on the left side with appropriate color
+                            if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
+                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 1);
+
+                            // If message at iteration i was send by the other user, display it on the right side with appropriate color
+                            if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
+                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
+                        }
+
+                    } catch(JSONException e) {
+                        // If there is only one message found, returned JSON will not contain '[]'
+                        // and therefore will not be an array, so it will be caught here
+                        JSONObject x = responseJSON.getJSONObject("messages");
+
+                        // If message at iteration i was send by this user, display it on the left side with appropriate color
+                        if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
+                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 1);
+
+                        // If message at iteration i was send by the other user, display it on the right side with appropriate color
+                        if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
+                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
+                    }
+                }
+
+            }
+        } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
+                InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+            e.printStackTrace();
+        }
+
+        // If received messages when the user was not in chat, after GETCHATHISTORY the last messages
+        // while offline will be duplicated. In this case, delete them as GETCHATHISTORY will retrieve them for us
+        if(UserDetails.messages.containsKey(UserDetails.chatWith))
+            UserDetails.messages.remove(UserDetails.chatWith);
+
+    }
+
+    public void scrollToTheBottom() {
+        scrollView.post(new Runnable() {
+            @Override
+            public void run() {
+                // Following print is to debug if the new Runnable executes more than once
+                System.out.println("ScrollView post test");
+                scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+            }
+        });
     }
 
     // Finishes current activity (dismisses dialogs, closes search, etc.) and goes to the parent activity

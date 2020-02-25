@@ -14,6 +14,8 @@
     <item android:id="@+id/settings"
         android:title="@string/settings_menu_text" >
         <menu>
+            <item android:id="@+id/hide_chat_history"
+                android:title="@string/hide_chat_history_text" />
             <item android:id="@+id/unregister"
             android:title="@string/unregister_text" />
             <item android:id="@+id/delete_all_chats"
