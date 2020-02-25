@@ -305,7 +305,7 @@ public class DbConnection {
 						+ " FROM chat_message "
 						+ "INNER JOIN users AS u1 ON (u1.user_id=chat_message.sender_id) "
 						+ "INNER JOIN users AS u2 ON (u2.user_id=chat_message.recipient_id)"
-						+ " WHERE chat_id = ? AND timesent between ? AND ?;");
+						+ " WHERE chat_id = ? AND timesent between ? AND ? ORDER BY timesent ASC;");
 				ps.setInt(1, chatId);
 				ps.setTimestamp(2, Timestamp.valueOf(limitStr));
 				ps.setTimestamp(3, Timestamp.valueOf(nowStr));

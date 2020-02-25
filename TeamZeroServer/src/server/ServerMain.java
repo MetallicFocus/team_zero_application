@@ -713,6 +713,13 @@ public class ServerMain extends WebSocketServer {
 			return;
 		}
 		
+		try {
+			Thread.sleep(10);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		Iterator<String> iterator = messagesToSend.iterator();
 		//TODO: currently sends as separate messages. it may be preferable to send a single larger
 		// message with all the data?
