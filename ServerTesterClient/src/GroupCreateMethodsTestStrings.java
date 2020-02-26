@@ -119,7 +119,7 @@ public class GroupCreateMethodsTestStrings {
 		return jsonMsg;
 	}
 
-	public String searchContactsMessage(String search) {
+	public String searchGroupsMessage(String search) {
 		String jsonMsg = 
 				"{\"type\": \"SEARCHGROUPS\"" +
 				", \"search\": \"" + search + "\"}";
