@@ -449,8 +449,45 @@ public class DbConnection {
 	}
 	
 	//TODO
-	public void addGroupMessage(String sender, String groupName, String message, String timestamp) {
-		
+	public void addGroupMessage(String sender, String groupName, String message, String timestamp) throws SQLException {
+		Connection conn = connect();
+		int chatId = 0;
+		try {
+			
+			// check that the sender is a member of the group
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ?");
+
+			int senderId = getUserIDFromUsername(sender);
+			int groupId = getGroupIDFromGroupName(groupName);
+			
+			ps.setInt(1, groupId);
+			ps.setInt(2, senderId);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				
+				chatId = rs.getInt(COLUMN_CHAT_ID);
+				ps = conn.prepareStatement(
+						"INSERT INTO groupt_message (sender_id,group_id,timesent,message_content) VALUES (?, ?, ?, ?)");
+				ps.setInt(1, senderId);
+				ps.setInt(2, groupId);
+				ps.setTimestamp(3, Timestamp.valueOf(timestamp));
+				ps.setString(4, message);
+				ps.executeUpdate();
+				ps.close();
+			} else {
+				// a group with this user does not exist
+				// clean up and throw exception so the message can get to the user.
+
+				ps.close();
+				conn.close();
+				throw new SQLException("No such group with member " + sender + " in it.");
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 	
 	/**
@@ -539,9 +576,7 @@ public class DbConnection {
 					ps1.setInt(2, senderId);
 					ps1.setInt(3, recipientId);
 					ps1.setString(4, textMessage);
-					Date date = new Date();
-					Timestamp ts = new Timestamp(date.getTime());
-					ps1.setTimestamp(5, ts);
+					ps1.setTimestamp(5, Timestamp.valueOf(timestamp));
 					ps1.executeUpdate();
 					ps1.close();
 				} else {
@@ -569,6 +604,28 @@ public class DbConnection {
 				ps.close();
 				conn.close();
 				return clientId;
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return 0;
+	}
+	
+	public int getGroupIDFromGroupName(String groupName) throws SQLException {
+		Connection conn = this.connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("SELECT group_id FROM groups WHERE group_name = ?;");
+			ps.setString(1, groupName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				int groupId = rs.getInt(COLUMN_ID);
+				ps.close();
+				conn.close();
+				return groupId;
 			}
 			ps.close();
 			conn.close();

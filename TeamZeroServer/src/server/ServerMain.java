@@ -521,7 +521,7 @@ public class ServerMain extends WebSocketServer {
 						ArrayList<Group> searchedGroups = dbConnection.getSearchedGroups(search);
 						JSONObject searchGroupsReply = new JSONObject();
 						searchGroupsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
-						searchGroupsReply.put(MESSAGE_REPLY, CASE_GETALLGROUPS + ": SUCCESS");
+						searchGroupsReply.put(MESSAGE_REPLY, CASE_SEARCHGROUPS + ": SUCCESS");
 						for(Group g : searchedGroups) {
 							JSONObject group = new JSONObject();
 							group.put(JSON_KEY_GROUPNAME, g.getGroupName());
