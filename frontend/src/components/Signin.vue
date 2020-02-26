@@ -1,6 +1,6 @@
 <!--suppress ALL -->
 <template>
-  <div id="app">
+  <div id="Index">
     <div id="login" v-show="signinState">
       <div :style="signinStyle">
         <el-form
@@ -15,10 +15,11 @@
           </el-form-item>
           <el-form-item style="margin-left: 10px;">
             <el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button>
-            <el-button
+            <router-link
+              to="/Signup"
+              tag="el-button"
               style="width: 100px; height: 50px; margin-left: 50px;"
-              v-on:click="onSignUp()"
-            >Sign Up</el-button>
+            >Signup</router-link>
           </el-form-item>
         </el-form>
       </div>
@@ -92,16 +93,16 @@
   </div>
 </template>
 <script>
-import singleUserInfo from "./components/single-user-info.vue";
-import singleChat from "./components/single-chat.vue";
-import singleChatPanel from "./components/single-chat-panel.vue";
+import singleUserInfo from "./single-user-info.vue";
+import singleChat from "./single-chat.vue";
+import singleChatPanel from "./single-chat-panel.vue";
 import Vue from "vue";
 //TODO: Encryption
 const CryptoJS = require("crypto-js");
-const crypto = require('crypto');
+const crypto = require("crypto");
 
 export default {
-  name: "app",
+  name: "Index",
   data: function() {
     return {
       crypto: {
@@ -178,61 +179,72 @@ export default {
   watch: {
     response(newR, oldR) {
       try {
-          console.log("Watched newR: " + newR);
-          this.parsed_response = JSON.parse(newR);
-          switch (this.parsed_response.type) {
-              case "TEXT":
-                  if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
-                  var sender = this.parsed_response.sender;
-                  var message = this.parsed_response.message;
-                  this.chatwith(sender);
-                  //Todo: retrieve time instead of creating
-                  var time = new Date();
-                  this.updateChat(sender, this.self.name, this.decrypt(message), time);
-                  break;
-              case "REPLY":
-                  switch (this.parsed_response.REPLY) {
-                      case "LOGIN: SUCCESS":
-                          // console.log("LOGIN: SUCCESS");
-                          this.signinState = false;
-                          this.initPost(this.self.name);
-                          break;
-                      case "GETALLCONTACTS: SUCCESS":
-                          var contacts = this.parsed_response.contacts;
-                          for (let i in contacts) {
-                              if (contacts[i].username !== this.self.name) {
-                                this.chatwith(contacts[i].username);
-                                //this.getChatHistory(contacts[i].username);
-                              }
-                          }
-                          break;
-                      case "SEARCHCONTACTS: SUCCESS":
-                          if (this.parsed_response.contacts.length > 1)
-                              this.searchUserForm.usersdata = this.parsed_response.contacts;
-                          else
-                              this.searchUserForm.usersdata = [this.parsed_response.contacts];
-                          break;
-                      case "GETCHATHISTORY: SUCCESS":
-                          var messages = this.parsed_response.messages;
-                          if (messages === undefined) break;
-                          else if (messages.length === undefined) {
-                              messages = [messages];
-                          }
-                          for (let i in messages) {
-                              var sender = messages[i].sender;
-                              var recipient = messages[i].recipient;
-                              var message = messages[i].message;
-                              var time = messages[i].timestamp;
-                              this.updateChat(sender, recipient, this.decrypt(message), new Date(time));
-                          }
-                          break;
+        console.log("Watched newR: " + newR);
+        this.parsed_response = JSON.parse(newR);
+        switch (this.parsed_response.type) {
+          case "TEXT":
+            if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
+            var sender = this.parsed_response.sender;
+            var message = this.parsed_response.message;
+            this.chatwith(sender);
+            //Todo: retrieve time instead of creating
+            var time = new Date();
+            this.updateChat(
+              sender,
+              this.self.name,
+              this.decrypt(message),
+              time
+            );
+            break;
+          case "REPLY":
+            switch (this.parsed_response.REPLY) {
+              case "LOGIN: SUCCESS":
+                // console.log("LOGIN: SUCCESS");
+                this.signinState = false;
+                this.initPost(this.self.name);
+                break;
+              case "GETALLCONTACTS: SUCCESS":
+                var contacts = this.parsed_response.contacts;
+                for (let i in contacts) {
+                  if (contacts[i].username !== this.self.name) {
+                    this.chatwith(contacts[i].username);
+                    //this.getChatHistory(contacts[i].username);
                   }
-                  break;
-          }
+                }
+                break;
+              case "SEARCHCONTACTS: SUCCESS":
+                if (this.parsed_response.contacts.length > 1)
+                  this.searchUserForm.usersdata = this.parsed_response.contacts;
+                else
+                  this.searchUserForm.usersdata = [
+                    this.parsed_response.contacts
+                  ];
+                break;
+              case "GETCHATHISTORY: SUCCESS":
+                var messages = this.parsed_response.messages;
+                if (messages === undefined) break;
+                else if (messages.length === undefined) {
+                  messages = [messages];
+                }
+                for (let i in messages) {
+                  var sender = messages[i].sender;
+                  var recipient = messages[i].recipient;
+                  var message = messages[i].message;
+                  var time = messages[i].timestamp;
+                  this.updateChat(
+                    sender,
+                    recipient,
+                    this.decrypt(message),
+                    new Date(time)
+                  );
+                }
+                break;
+            }
+            break;
+        }
       } catch (e) {
-          console.log(e.stack);
+        console.log(e.stack);
       }
-
     }
   },
   methods: {
@@ -294,7 +306,7 @@ export default {
         '", "message":"' +
         this.encrypt(message) +
         '"}';
-        console.log(this.request);
+      console.log(this.request);
       this.send();
 
       //Todo: determine text successful
@@ -310,10 +322,21 @@ export default {
       let paddingHour = hour > 9 ? "" : "0";
       let minute = time.getMinutes();
       let paddingMinute = minute > 9 ? "" : "0";
-      let year = time.getYear()+1900;
-      let month = time.getMonth()+1;
+      let year = time.getYear() + 1900;
+      let month = time.getMonth() + 1;
       let day = time.getDate();
-      time = year+'-'+month+'-'+day + ' ' + paddingHour + hour + ":" + paddingMinute + minute;;
+      time =
+        year +
+        "-" +
+        month +
+        "-" +
+        day +
+        " " +
+        paddingHour +
+        hour +
+        ":" +
+        paddingMinute +
+        minute;
 
       if (sender === this.self.name) {
         //message out
@@ -414,36 +437,48 @@ export default {
         alert("Error: " + this.response);
       }
     },
-    onSignUp: function() {
-      window.location.href = "/sign_up";
+    initCrypto: function() {
+      let key_hex = "2646294A404E635266556A576E5A7234";
+      this.crypto.key = CryptoJS.enc.Utf8.parse(this.hex2a(key_hex));
+      let iv_str = "0123456789abcdef";
+      this.crypto.iv = CryptoJS.enc.Utf8.parse(iv_str);
     },
-    initCrypto: function () {
-        let key_hex = '2646294A404E635266556A576E5A7234';
-        this.crypto.key = CryptoJS.enc.Utf8.parse(this.hex2a(key_hex));
-        let iv_str = '0123456789abcdef';
-        this.crypto.iv = CryptoJS.enc.Utf8.parse(iv_str);
+    encrypt: function(message) {
+      return CryptoJS.AES.encrypt(message, this.crypto.key, {
+        iv: this.crypto.iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }).toString();
     },
-    encrypt: function (message) {
-      return CryptoJS.AES.encrypt(message, this.crypto.key, {iv: this.crypto.iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7}).toString();
+    decrypt: function(ciphertext) {
+      return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {
+        iv: this.crypto.iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }).toString(CryptoJS.enc.Utf8);
     },
-    decrypt: function (ciphertext) {
-      return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {iv: this.crypto.iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7}).toString(CryptoJS.enc.Utf8);
-    },
-    hex2a: function (hex) {
-      var str = '';
-      for (var i = 0; (i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
+    hex2a: function(hex) {
+      var str = "";
+      for (var i = 0; i < hex.length && hex.substr(i, 2) !== "00"; i += 2)
         str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
       return str;
     },
-    getChatHistory : function(contact_name) {
-        this.request = "{\n" +
-            "type: \"GETCHATHISTORY\",\n" +
-            "myUsername: \"" + this.self.name +"\",\n" +
-            "theirUsername: \"" + contact_name + "\",\n" +
-            "historyDays: \"" + 1 + "\"\n" +
-            "}";
-        this.send();
-    },
+    getChatHistory: function(contact_name) {
+      this.request =
+        "{\n" +
+        'type: "GETCHATHISTORY",\n' +
+        'myUsername: "' +
+        this.self.name +
+        '",\n' +
+        'theirUsername: "' +
+        contact_name +
+        '",\n' +
+        'historyDays: "' +
+        1 +
+        '"\n' +
+        "}";
+      this.send();
+    }
   }
 };
 </script>
