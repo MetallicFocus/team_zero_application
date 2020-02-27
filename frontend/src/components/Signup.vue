@@ -242,5 +242,5 @@ export default {
 };
 </script>
 
-<style>
+<style scoped src="../css/main.css">
 </style>

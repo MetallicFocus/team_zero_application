@@ -32,3 +32,5 @@ export default {
 };
 </script>
 
+<style scoped src="../css/main.css">
+</style>
