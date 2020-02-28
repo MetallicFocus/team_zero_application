@@ -397,8 +397,6 @@ public class DbConnection {
 		ArrayList<Group> allGroups = new ArrayList<Group>();
 		Connection conn = this.connect();
 		try {
-			
-			//TODO fix this - currently it is not getting the members
 			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
 					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
 					+ "SELECT u.username "
@@ -428,8 +426,6 @@ public class DbConnection {
 		ArrayList<Group> searchedGroups = new ArrayList<Group>();
 		Connection conn = this.connect();
 		try {
-			
-			//TODO fix this - currently it is not getting the members
 			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
 					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
 					+ "SELECT u.username "
