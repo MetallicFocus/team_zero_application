@@ -6,18 +6,18 @@ public class GroupCreateMethodsTestStrings {
 
 	private String password1 = "testpassword";
 
-	private String groupName1 = "testGroupName";
+	private String groupName1 = "AnotherTestGroupName001";
 
-	private String groupName3 = "testGroupName3";
-	private String groupName2 = "testGroupName2";
+	private String groupName3 = "AnotherTestGroupName3";
+	private String groupName2 = "AnotherTestGroupName2";
 	
 	private String username2 = "t02";
 
-	private String username3 = "t03";
+	private String username3 = "t04";
 	
 	private String password2 = "testpassword2";	
 	
-	private String password3 = "testpassword";
+	private String password3 = "testpassword4";
 	
 
 	public String getClient1GroupCreateMessage() {
@@ -106,7 +106,7 @@ public class GroupCreateMethodsTestStrings {
 		String jsonMsg =  
 				"{\"type\": \"GROUPTEXT\"" + 
 				", \"sender\":\"" + username1 + 
-				"\", \"recipient\":\"" + groupName1 + 
+				"\", \"groupName\":\"" + groupName1 + 
 				"\", \"message\":\"message from test client 1 to test group 1.\"}";  
 		return jsonMsg;
 		
@@ -119,7 +119,7 @@ public class GroupCreateMethodsTestStrings {
 		return jsonMsg;
 	}
 
-	public String searchContactsMessage(String search) {
+	public String searchGroupsMessage(String search) {
 		String jsonMsg = 
 				"{\"type\": \"SEARCHGROUPS\"" +
 				", \"search\": \"" + search + "\"}";
@@ -139,7 +139,7 @@ public class GroupCreateMethodsTestStrings {
 		String jsonMsg =  
 				"{\"type\": \"GROUPTEXT\"" + 
 				", \"sender\":\"" + username2 + 
-				"\", \"recipient\":\"" + groupName1 + 
+				"\", \"groupName\":\"" + groupName1 + 
 				"\", \"message\":\"message from test client 2 to test group 1.\"}";  
 		return jsonMsg;
 		

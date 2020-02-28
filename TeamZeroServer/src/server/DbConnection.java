@@ -353,25 +353,31 @@ public class DbConnection {
 					throw new SQLException("Groupname already exists");
 				}
 			} else {
-				ps = conn.prepareStatement("INSERT INTO GROUPS (group_name,number_of_members) VALUES (?, ?)");
-				ps.setString(1, groupName);
-				ps.setInt(2, MAX_NUMBER_OF_MEMBERS);
-				ps.executeUpdate();
+				PreparedStatement ps1 = conn.prepareStatement("INSERT INTO GROUPS (group_name,number_of_members) VALUES (?, ?) RETURNING group_id");
+				ps1.setString(1, groupName);
+				ps1.setInt(2, MAX_NUMBER_OF_MEMBERS);
+				ResultSet result = ps1.executeQuery();
+
+				 LOGGER.log(Level.FINE, "Created new group {0}", groupName);
 				
-				rs = ps.getGeneratedKeys(); // get the newly created group Id
+				 // get the newly created group Id
 				int groupId = 0;
-				if (rs.next()) {
-					 groupId = rs.getInt(1);
+				if (result.next()) {
+					 groupId = result.getInt(1);
+				
+				// insert the userId and groupId into user_groups table as well
+				// this user is also a member of the group they created
+					 LOGGER.log(Level.FINE, "Adding group creator {0} to group", creatingUser);
+					 ps1 = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
+					 ps1.setInt(1, getUserIDFromUsername(creatingUser));
+					 ps1.setInt(2, groupId);
+					 ps1.executeUpdate();
+					 LOGGER.log(Level.FINE, "Added group {0}", groupName);
+					 success = true;
+					 ps1.close();
 				}
-				// insert the userId and groupId into user_groups table
-
-				ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
-				ps.setInt(1, getUserIDFromUsername(creatingUser));
-				ps.setInt(2, groupId);
-
-				LOGGER.log(Level.FINE, "Added group {0}", groupName);
-				success = true;
 			}
+			
 			ps.close();
 			conn.close();
 		} catch (SQLException e) {
@@ -391,8 +397,6 @@ public class DbConnection {
 		ArrayList<Group> allGroups = new ArrayList<Group>();
 		Connection conn = this.connect();
 		try {
-			
-			//TODO fix this - currently it is not getting the members
 			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
 					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
 					+ "SELECT u.username "
@@ -413,17 +417,106 @@ public class DbConnection {
 			e.printStackTrace();
 			throw e;
 		}
+		LOGGER.log(Level.FINE, "Getting all groups: {0}", allGroups);
 		return allGroups;
 	}
 	
-	//TODO
-	public ArrayList<Group> getSearchedGroups(String search){
-		return new ArrayList<Group>();
+	
+	public ArrayList<Group> getSearchedGroups(String search) throws SQLException{
+		ArrayList<Group> searchedGroups = new ArrayList<Group>();
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
+					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
+					+ "SELECT u.username "
+					+ "FROM users u "
+					+ "JOIN user_groups ug ON ug.user_id=u.user_id "
+					+ "WHERE ug.group_id=g.group_id ) AS members ) u WHERE lower(group_name) LIKE ?;");
+			
+			ps.setString(1, "%" + search.toLowerCase() + "%");
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int groupId = rs.getInt(COLUMN_GROUP_ID);
+				String groupName = rs.getString(COLUMN_GROUPNAME);
+				String[] groupMembers = (String[]) rs.getArray("members").getArray();
+				Group group = new Group(groupId, groupName, groupMembers);
+				searchedGroups.add(group);
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return searchedGroups;
 	}
 	
-	//TODO
-	public void addGroupMessage(String sender, String groupName, String message, String timestamp) {
-		
+	
+	/**
+	 * Adds a group text message to the database
+	 * @param sender the user sending the message
+	 * @param groupName the group receiving the message
+	 * @param message the contents of the text message 
+	 * @param timestamp the time the user sent the message (as received by the server)
+	 * @return An arraylist of client usernames that the message needs to be sent to
+	 * @throws SQLException
+	 */
+	public ArrayList<String> addGroupMessage(String sender, String groupName, String message, String timestamp) throws SQLException {
+		ArrayList<String> groupMembers = new ArrayList<String>();
+		Connection conn = connect();
+		try {
+			
+			// check that the sender is a member of the group
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ?");
+
+			int senderId = getUserIDFromUsername(sender);
+			int groupId = getGroupIDFromGroupName(groupName);
+			
+			ps.setInt(1, groupId);
+			ps.setInt(2, senderId);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				
+				ps = conn.prepareStatement(
+						"INSERT INTO group_message (sender_id,group_id,timesent,message_content) VALUES (?, ?, ?, ?)");
+				ps.setInt(1, senderId);
+				ps.setInt(2, groupId);
+				ps.setTimestamp(3, Timestamp.valueOf(timestamp));
+				ps.setString(4, message);
+				ps.executeUpdate();
+				
+				// Get all clients in the group except for the client that sent the message
+				ps = conn.prepareStatement("SELECT username from users LEFT JOIN user_groups on users.user_id = user_groups.user_id WHERE group_id = ?;");
+				ps.setInt(1, groupId);
+				rs = ps.executeQuery();
+				while(rs.next()) {
+					String userName = rs.getString(COLUMN_USERNAME);
+					if (userName != sender) {
+						groupMembers.add(userName);
+					}
+				}
+				
+				ps.close();
+			} else {
+				// a group with this user does not exist
+				// clean up and throw exception so the message can get to the user.
+
+				ps.close();
+				conn.close();
+				throw new SQLException("No such group with member " + sender + " in it.");
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return groupMembers;
+	}
+	
+	// TODO
+	public boolean removeGroupMember(String groupName, String username) throws SQLException{
+			return false;
 	}
 	
 	/**
@@ -444,15 +537,28 @@ public class DbConnection {
 			if (rs.next()) {
 				int groupId = rs.getInt(COLUMN_GROUP_ID);
 				
-				// TODO check number of users with group_id is not more than MAX_NUMBER_OF_MEMBERS
-				//add user to user groups table
-				ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
-				ps.setInt(1, getUserIDFromUsername(username));
-				ps.setInt(2, groupId);
-
-				LOGGER.log(Level.FINE, "Added user to group {0}", groupName);
-				success = true;
+				// check if user does not already exist in the group.
+				int userId = getUserIDFromUsername(username);
+				ps = conn.prepareStatement("SELECT * FROM user_groups WHERE group_id = ? AND user_id = ?;");
+				ps.setInt(1, groupId);
+				ps.setInt(2, userId);
+				rs = ps.executeQuery();
 				
+				if (!rs.next()) {
+					// TODO check number of users with group_id is not more than MAX_NUMBER_OF_MEMBERS
+					//add user to user groups table
+					ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
+					ps.setInt(1, getUserIDFromUsername(username));
+					ps.setInt(2, groupId);
+
+					ps.executeUpdate();
+					LOGGER.log(Level.FINE, "Added user to group {0}", groupName);
+					success = true;
+				}
+				else {
+					//user already exists in this group
+					success = false;
+				}
 			} else {
 				// groupName does not exist
 				throw new SQLException("Group name does not exist.");		
@@ -512,9 +618,7 @@ public class DbConnection {
 					ps1.setInt(2, senderId);
 					ps1.setInt(3, recipientId);
 					ps1.setString(4, textMessage);
-					Date date = new Date();
-					Timestamp ts = new Timestamp(date.getTime());
-					ps1.setTimestamp(5, ts);
+					ps1.setTimestamp(5, Timestamp.valueOf(timestamp));
 					ps1.executeUpdate();
 					ps1.close();
 				} else {
@@ -542,6 +646,28 @@ public class DbConnection {
 				ps.close();
 				conn.close();
 				return clientId;
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return 0;
+	}
+	
+	public int getGroupIDFromGroupName(String groupName) throws SQLException {
+		Connection conn = this.connect();
+		PreparedStatement ps = null;
+		try {
+			ps = conn.prepareStatement("SELECT group_id FROM groups WHERE group_name = ?;");
+			ps.setString(1, groupName);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				int groupId = rs.getInt(COLUMN_GROUP_ID);
+				ps.close();
+				conn.close();
+				return groupId;
 			}
 			ps.close();
 			conn.close();

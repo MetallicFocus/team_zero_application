@@ -459,14 +459,14 @@ public class ServerMain extends WebSocketServer {
 				case CASE_GROUP_TEXT:
 					// check if user is authenticated
 					if (isAuthenticated(websocket)) {
-						userName = json.getString(JSON_KEY_USERNAME);
+						userName = json.getString(JSON_KEY_SENDER);
 						String groupName = json.getString(JSON_KEY_GROUPNAME);
 						String groupText = json.getString(JSON_KEY_MESSAGE);
 						 
 						String ts = DATE_FORMAT.format(new Date());
-						dbConnection.addGroupMessage(userName, groupName, groupText, ts);
+						ArrayList<String> memberUserNames = dbConnection.addGroupMessage(userName, groupName, groupText, ts);
 						json.put(JSON_KEY_TIMESTAMP, ts);
-						sendClientText(websocket, json);
+						sendGroupText(websocket, json, memberUserNames);
 						 
 					}
 					else {
@@ -521,7 +521,7 @@ public class ServerMain extends WebSocketServer {
 						ArrayList<Group> searchedGroups = dbConnection.getSearchedGroups(search);
 						JSONObject searchGroupsReply = new JSONObject();
 						searchGroupsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
-						searchGroupsReply.put(MESSAGE_REPLY, CASE_GETALLGROUPS + ": SUCCESS");
+						searchGroupsReply.put(MESSAGE_REPLY, CASE_SEARCHGROUPS + ": SUCCESS");
 						for(Group g : searchedGroups) {
 							JSONObject group = new JSONObject();
 							group.put(JSON_KEY_GROUPNAME, g.getGroupName());
@@ -586,6 +586,69 @@ public class ServerMain extends WebSocketServer {
 		Client c = ClientManager.getInstance().getClientById(id);
 		if (c == null) return false;
 		return  c.isLoggedIn();
+	}
+	
+	private void sendGroupText(WebSocket websocket, JSONObject message, ArrayList<String> memberUserNames) throws JSONException{
+		/*
+		 * expecting the following json
+
+			{
+				type: GROUPTEXT
+				sender: fromUsername
+				groupName: groupName
+				message: message
+				timestamp: datetime
+			}
+		*/
+		
+		// get member details
+		for (int i = 0; i < memberUserNames.size(); i++) {
+			Client recipient = ClientManager.getInstance().getClientByUsername(memberUserNames.get(i));
+			String recipientUsername = recipient.getUsername();
+			WebSocket recipientSocket = null;
+			
+			if (recipient != null) {
+				recipientSocket = getWebSocketByClientId(recipient.getId());
+			}
+			if (recipientSocket != null) {
+				// if recipient is connected, send message right away
+					recipientSocket.send(message.toString());
+					LOGGER.log( Level.FINE, 
+							"Group message sent to recipient {0}", recipientUsername);
+			}
+			else {
+				// if recipient is not currently connected
+				// insert message into unsent messages map
+		
+				ArrayList<String> unsentMessages;
+				
+				// check if there already are any unsent messages
+				if (recipientUnsentMessages.containsKey(recipientUsername)){
+					unsentMessages = recipientUnsentMessages.get(recipientUsername);
+					unsentMessages.add(message.toString());
+					
+					// but the updated array list back in the map
+					recipientUnsentMessages.put(recipientUsername, unsentMessages);
+					LOGGER.log( Level.FINE, 
+							"Group message added to unsent messages map for recipient {0}", recipientUsername);
+				}
+				else { 
+					// if there are no previous messages, add a new array with one message
+					unsentMessages = new ArrayList<String>();
+					unsentMessages.add(message.toString());
+					recipientUnsentMessages.put(recipientUsername, unsentMessages);	
+					LOGGER.log( Level.FINE, 
+							"New unsent messages map created for recipient {0} to receive group message", recipientUsername);
+				}
+				
+			}		
+		}
+		websocket.send(
+				generateReplyToClient(
+						CASE_GROUP_TEXT,
+					MESSAGE_REPLY_SUCCESS, 	
+						"Message sent to group."));
+		
 	}
 	
 	

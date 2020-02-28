@@ -59,6 +59,10 @@ public class GroupTest extends WebSocketClient{
 
 		this.send(groupTester.getClient2JoinGroupMessage());
 
+		this.send(groupTester.getClient2GroupCreateMessage());
+		
+		this.send(groupTester.getClient3JoinGroupMessage());
+
 		this.send(groupTester.getGetAllGroupsMessage());
 
 		this.send(groupTester.getClient3GroupCreateMessage());
@@ -71,6 +75,9 @@ public class GroupTest extends WebSocketClient{
 		
 
 		this.send(groupTester.getGetAllGroupsMessage());
+		this.send(groupTester.searchGroupsMessage("001"));
+		this.send(groupTester.getClient1ToGroup1TextMessage());
+		this.send(groupTester.getClient2ToGroupTextMessage());
 		
 
 		
