@@ -3,6 +3,7 @@ CREATE TABLE users(
     username VARCHAR (50) UNIQUE NOT NULL,
     email VARCHAR (355) UNIQUE NOT NULL,
     password VARCHAR (50) NOT NULL,
+    unregistered BOOLEAN NOT NULL,
     avatar BYTEA
 );
 
@@ -16,6 +17,7 @@ CREATE TABLE groups(
 CREATE TABLE user_groups(
     user_id integer,
     group_id integer,
+    left_group BOOLEAN NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (user_id),
     FOREIGN KEY (group_id) REFERENCES groups (group_id)
 );
