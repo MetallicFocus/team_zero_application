@@ -6,6 +6,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+
+import android.util.DisplayMetrics;
+
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -91,7 +100,7 @@ public class Chat extends AppCompatActivity {
 
                     WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, encryptedText));
 
-                    addMessageBox(messageToSend.getText().toString(), 1);
+                    addMessageBox(messageToSend.getText().toString(), "",1);
 
                     //Thread.sleep(2000);
 
@@ -129,7 +138,7 @@ public class Chat extends AppCompatActivity {
                         IllegalBlockSizeException e) {
                     e.printStackTrace();
                 }
-                addMessageBox(receivedMessage, 2);
+                addMessageBox(receivedMessage, "",2);
             }
             UserDetails.messages.remove(UserDetails.chatWith);
 
@@ -138,27 +147,71 @@ public class Chat extends AppCompatActivity {
         }
     }
 
-    public void addMessageBox(String message, int type) {
+    public void addMessageBox(String message, String timestamp, int type) {
         TextView textView = new TextView(Chat.this);
-        textView.setText(message);
+
+        String resourceText = "";
+        SpannableString sS;
+        // start and end are used as delimiters for different styles within SpannableString
+        int start = -1, end = -1;
+
+        // If the message has been sent now / has been received now
+        if(timestamp.isEmpty()) {
+            resourceText = "Now: " + message;
+            start = 5;
+            end = 4;
+        }
+        else {
+            // If the message has been sent earlier / received earlier
+            // Take the hh:mm using substring from timestamp
+            resourceText = timestamp.substring(11, 16) + ": " + message;
+            start = 7;
+            end = 6;
+        }
+
+        sS = new SpannableString(resourceText);
+
+        sS.setSpan(new ForegroundColorSpan(Color.GRAY), 0, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        sS.setSpan(new RelativeSizeSpan(0.7f), 0, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        sS.setSpan(new ForegroundColorSpan(Color.BLACK), start, sS.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        if(type == 1)
+            sS.setSpan(new BackgroundColorSpan(Color.rgb	(220, 248, 198)), start, sS.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        if(type == 2)
+            sS.setSpan(new BackgroundColorSpan(Color.rgb(198,220,248)), start, sS.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        SpannableStringBuilder sSBuilder = new SpannableStringBuilder();
+        sSBuilder.append(sS);
+
+        // Set the text inside the textView with the styles built using SpannableString
+        textView.setText(sSBuilder);
 
         LinearLayout.LayoutParams lp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp2.weight = 17.0f;
         lp2.bottomMargin = 10;
-        textView.setTextColor(Color.parseColor("black"));
+        //textView.setTextColor(Color.parseColor("black"));
+
+        // Calculate the width of the screen
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int width = displayMetrics.widthPixels;
 
         if(type == 1) {
             lp2.gravity = Gravity.LEFT;
             lp2.leftMargin = 20;
-            lp2.topMargin = 4;
-            lp2.rightMargin = 10;
-            textView.setBackgroundColor(Color.parseColor("#06BD75"));
+            lp2.topMargin = 5;
+            // Display the text up until half of the screen width
+            lp2.rightMargin = width/2;
+            //textView.setBackgroundColor(Color.parseColor("#06BD75"));
             //textView.setBackgroundResource(R.drawable.outgoing_message);
         }
         else {
             lp2.gravity = Gravity.RIGHT;
+            lp2.topMargin = 5;
             lp2.rightMargin = 10;
-            textView.setBackgroundColor(Color.parseColor("#33C4FF"));
+            // Display the text up until half of the screen width
+            lp2.leftMargin = width/2;
+            //textView.setBackgroundColor(Color.parseColor("#33C4FF"));
             //textView.setBackgroundResource(R.drawable.incoming_message);
         }
         textView.setLayoutParams(lp2);
@@ -187,11 +240,11 @@ public class Chat extends AppCompatActivity {
 
                             // If message at iteration i was send by this user, display it on the left side with appropriate color
                             if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
-                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 1);
+                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(), 1);
 
                             // If message at iteration i was send by the other user, display it on the right side with appropriate color
                             if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
-                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
+                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),2);
                         }
 
                     } catch(JSONException e) {
@@ -201,11 +254,11 @@ public class Chat extends AppCompatActivity {
 
                         // If message at iteration i was send by this user, display it on the left side with appropriate color
                         if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
-                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 1);
+                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),1);
 
                         // If message at iteration i was send by the other user, display it on the right side with appropriate color
                         if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
-                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), 2);
+                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),2);
                     }
                 }
 
