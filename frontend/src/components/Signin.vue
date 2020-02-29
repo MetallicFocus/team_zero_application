@@ -185,16 +185,8 @@ export default {
           case "TEXT":
             if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
             var sender = this.parsed_response.sender;
-            var message = this.parsed_response.message;
-            this.chatwith(sender);
-            //Todo: retrieve time instead of creating
-            var time = new Date();
-            this.updateChat(
-              sender,
-              this.self.name,
-              this.decrypt(message),
-              time
-            );
+            var message = this.decrypt(this.parsed_response.message);
+            this.getNewText(sender, message);
             break;
           case "REPLY":
             switch (this.parsed_response.REPLY) {
@@ -208,7 +200,6 @@ export default {
                 for (let i in contacts) {
                   if (contacts[i].username !== this.self.name) {
                     this.chatwith(contacts[i].username);
-                    //this.getChatHistory(contacts[i].username);
                   }
                 }
                 break;
@@ -288,6 +279,7 @@ export default {
         if (this.chatlist[chat_key].id !== id) {
           this.chatlist[chat_key].show = 0;
         } else {
+          this.getChatHistory(this.chatlist[chat_key].name);
           this.chatlist[chat_key].show = 1;
         }
       }
@@ -317,6 +309,23 @@ export default {
       // }
       this.updateChat(this.self.name, recipient, message, time);
     },
+    getNewText: function(sender, message) {
+        this.createNewChat(sender);
+        var time = new Date();
+        this.updateChat(
+            sender,
+            this.self.name,
+            message,
+            time
+        );
+
+        const h = this.$createElement;
+
+        this.$notify({
+            title: 'New message!',
+            message: h('i', { style: 'color: teal'}, sender + ': ' + message)
+        });
+    },
     updateChat: function(sender, recipient, message, time) {
       let hour = time.getHours();
       let paddingHour = hour > 9 ? "" : "0";
@@ -337,43 +346,57 @@ export default {
         ":" +
         paddingMinute +
         minute;
+        var message_info = {
+            avatar: "/img/avatar.jpg",
+            time: time,
+            content: message,
+            objectflag: 0
+        };
+        var message_key = '';
 
       if (sender === this.self.name) {
         //message out
         for (var chat_key in this.chatlist) {
           if (this.chatlist[chat_key].name === recipient) {
-            var message_key = this.chatlist[chat_key].messages.length;
-            Vue.set(this.chatlist[chat_key].messages, message_key, {
-              avatar: "/img/avatar.jpg",
-              time: time,
-              content: message,
-              objectflag: 0
-            });
+            if (!this.isChatRedundant(chat_key, message_info)) {
+                message_key = this.chatlist[chat_key].messages.length;
+                Vue.set(this.chatlist[chat_key].messages, message_key,message_info);
+            }
+
           }
         }
       } else {
         for (chat_key in this.chatlist) {
           //message in
           if (this.chatlist[chat_key].name === sender) {
-            message_key = this.chatlist[chat_key].messages.length;
-            Vue.set(this.chatlist[chat_key].messages, message_key, {
-              avatar: "/img/avatar.jpg",
-              time: time,
-              content: message,
-              objectflag: 1
-            });
+              if (!this.isChatRedundant(chat_key, message_info)) {
+                  message_key = this.chatlist[chat_key].messages.length;
+                  message_info.objectflag = 1;
+                  Vue.set(this.chatlist[chat_key].messages, message_key, message_info);
+              }
           }
         }
       }
 
       //Todo: animation: slide down to the new message
     },
-    searchHistory: function(searchField) {},
+    searchHistory: function(searchField) {}, //Todo: implement history search
     showSearchPanel: function() {
       this.searchUserForm.display = true;
     },
     closeSearchPanel: function() {
       this.searchUserForm.display = false;
+    },
+    createNewChat: function(username) {
+        Vue.set(this.chatlist, this.chat_num, {
+            id: ++this.chat_num,
+            avatar: "/img/avatar.jpg",
+            name: username,
+            time: "",
+            content: "",
+            show: 0,
+            messages: []
+        });
     },
     chatwith: function(username) {
       if (username === this.self.name) return; //Todo: chat with oneself
@@ -386,15 +409,7 @@ export default {
           return;
         }
       }
-      Vue.set(this.chatlist, this.chat_num, {
-        id: ++this.chat_num,
-        avatar: "/img/avatar.jpg",
-        name: username,
-        time: "",
-        content: "",
-        show: 0,
-        messages: []
-      });
+      this.createNewChat(username);
       this.closeSearchPanel();
       this.showchat(this.chat_num);
     },
@@ -411,8 +426,8 @@ export default {
       //Todo: fail to search
     },
     initPost: function() {
-      this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
-      this.send();
+      // this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
+      // this.send();
       this.initCrypto();
     },
     onSignIn: function() {
@@ -478,6 +493,14 @@ export default {
         '"\n' +
         "}";
       this.send();
+    },
+    isChatRedundant: function (chat_key, message) {
+      var redundant = false;
+      var chat = this.chatlist[chat_key];
+      for (var message_key in chat.messages) {
+        if (chat.messages[message_key].content === message.content && chat.messages[message_key].time === message.time) redundant = true;
+      }
+      return redundant;
     }
   }
 };
