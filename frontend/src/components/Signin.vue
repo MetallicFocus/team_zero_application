@@ -42,18 +42,21 @@
           </el-header>
           <el-header id="search-bar">
             <el-input v-model="search" placeholder="Search for history" style="width: 195px;"></el-input>
-            <el-button icon="el-icon-search" type="primary" @click="searchHistory(searchField)"></el-button>
+            <el-button icon="el-icon-search" type="primary" @click="searchHistory()"></el-button>
           </el-header>
           <el-main id="chat-list-panel">
             <single-chat
-              v-on:click-id="showchat(chat.id)"
+              v-on:click-id="showchat(chat.id, false)"
               v-for="chat in chatlist"
               v-bind:key="chat.id"
               :id="chat.id"
               :avatar="chat.avatar"
               :name="chat.name"
-              :time="chat.time"
-              :content="chat.content"
+              :time="chat.messages[chat.messages.length-1].time"
+              :content="chat.messages[chat.messages.length-1].content"
+              :lastSender="chat.messages[chat.messages.length-1].objectflag"
+              :newMessageNum="chat.new_message_num"
+              :hidden="chat.badge_hidden"
             ></single-chat>
           </el-main>
         </el-aside>
@@ -138,20 +141,20 @@ export default {
           id: "1",
           avatar: "/img/avatar.jpg",
           name: "Template",
-          time: "00:00",
-          content: "Me: test!",
           show: 1,
+          new_message_num: 0,
+          badge_hidden: true,
           messages: [
             {
               avatar: "/img/avatar.jpg",
-              time: "00:00",
-              content: "11111111111!",
+              time: "2020-02-29 00:00",
+              content: "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
               objectflag: 1
             },
             {
               avatar: "/img/avatar.jpg",
-              time: "00:00",
-              content: "22222222222!",
+              time: "2020-02-29 00:01",
+              content: "2222fffffffffffffffff!",
               objectflag: 0
             }
           ]
@@ -226,7 +229,8 @@ export default {
                     sender,
                     recipient,
                     this.decrypt(message),
-                    new Date(time)
+                    new Date(time),
+                    false
                   );
                 }
                 break;
@@ -274,13 +278,14 @@ export default {
     send() {
       this.websocket.send(this.request);
     },
-    showchat: function(id) {
+    showchat: function(id, is_first_click) {
       for (var chat_key of Object.keys(this.chatlist)) {
         if (this.chatlist[chat_key].id !== id) {
           this.chatlist[chat_key].show = 0;
         } else {
-          this.getChatHistory(this.chatlist[chat_key].name);
+          if(is_first_click) this.getChatHistory(this.chatlist[chat_key].name);
           this.chatlist[chat_key].show = 1;
+          this.chatlist[chat_key].badge_hidden = true;
         }
       }
     },
@@ -307,18 +312,22 @@ export default {
       // } else {
       //     console.log(this.parsed_response.message);
       // }
-      this.updateChat(this.self.name, recipient, message, time);
+      this.updateChat(this.self.name, recipient, message, time, false);
     },
     getNewText: function(sender, message) {
-        this.createNewChat(sender);
+        var chat_key = this.isContactExist(sender);
+        if (chat_key === false) chat_key = this.createNewChat(sender);
+
         var time = new Date();
         this.updateChat(
             sender,
             this.self.name,
             message,
-            time
+            time,
+            true
         );
-
+        this.popUpChat(chat_key);
+        // Todo: onclick: turn to concerned chat panel
         const h = this.$createElement;
 
         this.$notify({
@@ -326,7 +335,18 @@ export default {
             message: h('i', { style: 'color: teal'}, sender + ': ' + message)
         });
     },
-    updateChat: function(sender, recipient, message, time) {
+    isContactExist: function(username) {
+      var exist = false;
+        for (var chat_key in this.chatlist) {
+          if (this.chatlist[chat_key].name === username) {
+            //check if chat is already existed
+                //Todo: to correct: chat panel dispears for a while
+            exist = chat_key;
+          }
+      }
+      return exist;
+    },
+    updateChat: function(sender, recipient, message, time, is_new_message) {
       let hour = time.getHours();
       let paddingHour = hour > 9 ? "" : "0";
       let minute = time.getMinutes();
@@ -366,9 +386,15 @@ export default {
           }
         }
       } else {
-        for (chat_key in this.chatlist) {
+        for (var chat_key in this.chatlist) {
           //message in
           if (this.chatlist[chat_key].name === sender) {
+              if (is_new_message) {
+                  if(this.chatlist[chat_key].badge_hidden) this.chatlist[chat_key].new_message_num = 0;
+                  this.chatlist[chat_key].new_message_num++;
+                  this.chatlist[chat_key].badge_hidden = false;
+                  this.chatlist[chat_key].messages.sort(time);//Todo: sort messages
+              }
               if (!this.isChatRedundant(chat_key, message_info)) {
                   message_key = this.chatlist[chat_key].messages.length;
                   message_info.objectflag = 1;
@@ -380,14 +406,20 @@ export default {
 
       //Todo: animation: slide down to the new message
     },
-    searchHistory: function(searchField) {}, //Todo: implement history search
+    searchHistory: function() {
+        var search = this.search;
+    }, //Todo: implement history search
     showSearchPanel: function() {
       this.searchUserForm.display = true;
     },
     closeSearchPanel: function() {
       this.searchUserForm.display = false;
     },
+    closeSearchPanel: function() {
+      this.searchUserForm.display = false;
+    },
     createNewChat: function(username) {
+        var chat_key = this.chat_num;
         Vue.set(this.chatlist, this.chat_num, {
             id: ++this.chat_num,
             avatar: "/img/avatar.jpg",
@@ -395,8 +427,10 @@ export default {
             time: "",
             content: "",
             show: 0,
+            new_message_num: 0,
             messages: []
         });
+        return chat_key;
     },
     chatwith: function(username) {
       if (username === this.self.name) return; //Todo: chat with oneself
@@ -405,13 +439,13 @@ export default {
           //check if chat is already existed
           //Todo: to correct: chat panel dispears for a while
           this.closeSearchPanel();
-          this.showchat(++chat_key);
+          this.showchat(++chat_key, false);
           return;
         }
       }
       this.createNewChat(username);
       this.closeSearchPanel();
-      this.showchat(this.chat_num);
+      this.showchat(this.chat_num, true);
     },
     searchUsers: function() {
       this.request =
@@ -501,6 +535,11 @@ export default {
         if (chat.messages[message_key].content === message.content && chat.messages[message_key].time === message.time) redundant = true;
       }
       return redundant;
+    },
+    popUpChat: function (chat_key) {
+        var chat = this.chatlist[chat_key];
+        this.chatlist.splice(chat_key, chat_key+1);
+        this.chatlist.unshift(chat);
     }
   }
 };

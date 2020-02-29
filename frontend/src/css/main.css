@@ -10,6 +10,7 @@
 }
 
 #search-bar {
+    height: 1000px;
     background-color: #EEFAF9;
 }
 
@@ -44,11 +45,12 @@
 }
 
 .chat {
-    height: 50px;
+    height: 60px;
     background-color: #ABE8E0;
     margin-top: 2px;
     padding-top: 10px;
     padding-bottom: 10px;
+    overflow: hidden;
 }
 
 .chat:hover {
@@ -56,17 +58,19 @@
 }
 
 .chat .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 20px;
-    margin: 5px 12px;
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+    margin: 8px 10px;
 }
 
 .chat .name {
     font-weight: 600;
+    float: left;
 }
 
 .chat .last-chat-time {
+    font-size: 10px;
     text-align: right;
 }
 
@@ -101,6 +105,12 @@
 .el-container {
     height: 600px;
     width: 1300px;
+    margin-bottom: 40px;
+}
+
+#right-panel {
+    height: 600px;
+    width: 1000px;
     margin-bottom: 40px;
 }
 

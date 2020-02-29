@@ -1,6 +1,6 @@
 <template>
   <div @click="$emit('chat')">
-    <el-container class="right-panel">
+    <el-container id="right-panel">
       <el-header id="object-info">
         <el-avatar class="avatar" :src="chat.avatar" style="margin-top: 5px;"></el-avatar>
         <label style="font-size: 30px">{{chat.name}}</label>

@@ -2,20 +2,22 @@
   <div class="chat" @click="$emit('click-id')">
     <el-row>
       <el-col :span="6">
-        <el-avatar class="avatar" :src="avatar"></el-avatar>
+        <el-badge :value=this.newMessageNum :hidden=this.hidden>
+          <el-avatar class="avatar" :src="avatar"></el-avatar>
+        </el-badge>
       </el-col>
       <el-col :span="18">
-        <el-row style="margin-top: 3px;">
-          <el-col :span="18">
+        <el-row>
+          <el-col :span="16" style="margin-top: 5px;">
             <label class="name">{{name}}</label>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="8">
             <label class="last-chat-time">{{time}}</label>
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="24">
-            <label class="last-chat-content">{{content}}</label>
+          <el-col :span="22" style="overflow: hidden">
+            <label class="last-chat-content" style="float: left">{{content}}</label>
           </el-col>
         </el-row>
       </el-col>
@@ -25,9 +27,11 @@
 
 <script>
 export default {
-  props: ["id", "avatar", "name", "time", "content"],
+  props: ["id", "avatar", "name", "time", "content", "newMessageNum", "hidden"],
   data: function() {
     return {};
+  },
+  methods: {
   }
 };
 </script>
