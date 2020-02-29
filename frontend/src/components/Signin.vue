@@ -14,12 +14,16 @@
             <el-input show-password name="pwd" v-model="ruleForm.pwd"></el-input>
           </el-form-item>
           <el-form-item style="margin-left: 10px;">
-            <el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button>
-            <router-link
-              to="/Signup"
-              tag="el-button"
-              style="width: 100px; height: 50px; margin-left: 50px;"
-            >Signup</router-link>
+            <el-row>
+              <el-col :span="4"><el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button></el-col>
+              <el-col offset="4" :span="4">
+                <router-link
+                  to="/Signup"
+                  tag="el-button"
+                  style="width: 100px; height: 50px; margin-left: 50px;"
+              >Signup</router-link>
+              </el-col>
+            </el-row>
           </el-form-item>
         </el-form>
       </div>
@@ -72,12 +76,16 @@
     <div v-show="searchUserForm.display">
       <div id="mask"></div>
       <div id="searchUserPanel">
-        <el-input
-          v-model="searchUserForm.searchField"
-          placeholder="Please input user name"
-          style="margin-left: 160px; margin-top: 50px; width: 400px;"
-        ></el-input>
-        <el-button icon="el-icon-search" type="primary" @click="searchUsers()"></el-button>
+        <el-row>
+          <el-col :span="10" offset="6">
+            <el-input
+              v-model="searchUserForm.searchField"
+              placeholder="Please input user name"
+              style="margin-top: 50px;">
+            </el-input>
+          </el-col>
+          <el-col :span="2"><el-button icon="el-icon-search" type="primary" @click="searchUsers()" style="margin-top: 50px;"></el-button></el-col>
+        </el-row>
         <div id="searchResults">
           <label>Search results are as follows:</label>
           <single-user-info
@@ -90,7 +98,7 @@
             :isloggedin="userdata.IsLoggedIn"
           ></single-user-info>
         </div>
-        <el-button style="margin-left: 350px; margin-top: 10px;" @click="closeSearchPanel">Cancel</el-button>
+        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchPanel">Cancel</el-button></el-col></el-row>
       </div>
     </div>
   </div>

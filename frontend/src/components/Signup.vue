@@ -22,9 +22,6 @@
         <router-link to="/Signin" tag="el-button">Signin</router-link>
       </el-form-item>
     </el-form>
-    <div>{{request}}</div>
-    <div>{{response}}</div>
-    <div>{{parsed_response}}</div>
   </div>
 </template>
 
@@ -189,21 +186,21 @@ export default {
 
     submitForm: function() {
       if (true) {
-        const dh = crypto.createDiffieHellman(256);
-        dh.generateKeys();
-        let key_exchange_arguments = {
-          prime_number: null, //which is q in our notation
-          primitive_root: null, //which is t in our notation
-          x_of_a: null, //the only secret parameter for each of its participant
-          y_of_a: null //the public key which each of participant exchange with other part
-        };
-        key_exchange_arguments.prime_number = dh.getPrime().toString("base64");
-        key_exchange_arguments.primitive_root = dh
-          .getGenerator()
-          .toString("base64");
-        key_exchange_arguments.x_of_a = dh.getPrivateKey().toString("base64");
-        key_exchange_arguments.y_of_a = dh.getPublicKey().toString("base64");
-        console.log(key_exchange_arguments);
+        // const dh = crypto.createDiffieHellman(256);
+        // dh.generateKeys();
+        // let key_exchange_arguments = {
+        //   prime_number: null, //which is q in our notation
+        //   primitive_root: null, //which is t in our notation
+        //   x_of_a: null, //the only secret parameter for each of its participant
+        //   y_of_a: null //the public key which each of participant exchange with other part
+        // };
+        // key_exchange_arguments.prime_number = dh.getPrime().toString("base64");
+        // key_exchange_arguments.primitive_root = dh
+        //   .getGenerator()
+        //   .toString("base64");
+        // key_exchange_arguments.x_of_a = dh.getPrivateKey().toString("base64");
+        // key_exchange_arguments.y_of_a = dh.getPublicKey().toString("base64");
+        // console.log(key_exchange_arguments);
         //Todo: determine if connection is successful
         this.request =
           "{\n" +
@@ -224,7 +221,7 @@ export default {
           this.ruleForm.picture +
           '",\n' +
           'publicKey:"' +
-          key_exchange_arguments.y_of_a +
+          //key_exchange_arguments.y_of_a +
           '"\n' +
           "}";
         this.send();
