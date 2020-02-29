@@ -7,18 +7,20 @@
       </el-header>
       <el-main id="chatting-panel">
         <div v-for="message in chat.messages">
-          <single-message-from-object
-            v-if="message.objectflag"
-            :avatar="message.avatar"
-            :time="message.time"
-            :content="message.content"
-          ></single-message-from-object>
-          <single-message-from-self
-            v-else
-            :avatar="message.avatar"
-            :time="message.time"
-            :content="message.content"
-          ></single-message-from-self>
+          <div v-if="message.time !== ''">
+              <single-message-from-object
+                      v-if="message.objectflag"
+                      :avatar="message.avatar"
+                      :time="message.time"
+                      :content="message.content"
+              ></single-message-from-object>
+              <single-message-from-self
+                      v-else
+                      :avatar="message.avatar"
+                      :time="message.time"
+                      :content="message.content"
+              ></single-message-from-self>
+          </div>
         </div>
       </el-main>
       <el-footer id="text-panel">

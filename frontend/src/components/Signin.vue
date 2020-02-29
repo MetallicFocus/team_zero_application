@@ -50,7 +50,7 @@
           </el-header>
           <el-main id="chat-list-panel">
             <single-chat
-              v-on:click-id="showchat(chat.id, false)"
+              v-on:click-id="showchat(chat.id)"
               v-for="chat in chatlist"
               v-bind:key="chat.id"
               :id="chat.id"
@@ -152,6 +152,7 @@ export default {
           show: 1,
           new_message_num: 0,
           badge_hidden: true,
+          has_got_history: false,
           messages: [
             {
               avatar: "/img/avatar.jpg",
@@ -286,12 +287,13 @@ export default {
     send() {
       this.websocket.send(this.request);
     },
-    showchat: function(id, is_first_click) {
+    showchat: function(id) {
       for (var chat_key of Object.keys(this.chatlist)) {
         if (this.chatlist[chat_key].id !== id) {
           this.chatlist[chat_key].show = 0;
         } else {
-          if(is_first_click) this.getChatHistory(this.chatlist[chat_key].name);
+          this.getChatHistory(this.chatlist[chat_key].name, chat_key);
+          this.chatlist[chat_key].has_got_history = true;
           this.chatlist[chat_key].show = 1;
           this.chatlist[chat_key].badge_hidden = true;
         }
@@ -324,7 +326,10 @@ export default {
     },
     getNewText: function(sender, message) {
         var chat_key = this.isContactExist(sender);
-        if (chat_key === false) chat_key = this.createNewChat(sender);
+        if (chat_key === false) {
+            chat_key = this.createNewChat(sender);
+            this.getChatHistory(sender, chat_key);
+        }
 
         var time = new Date();
         this.updateChat(
@@ -401,7 +406,7 @@ export default {
                   if(this.chatlist[chat_key].badge_hidden) this.chatlist[chat_key].new_message_num = 0;
                   this.chatlist[chat_key].new_message_num++;
                   this.chatlist[chat_key].badge_hidden = false;
-                  this.chatlist[chat_key].messages.sort(time);//Todo: sort messages
+                  this.chatlist[chat_key].messages.time.sort();//Todo: sort messages
               }
               if (!this.isChatRedundant(chat_key, message_info)) {
                   message_key = this.chatlist[chat_key].messages.length;
@@ -430,13 +435,19 @@ export default {
         var chat_key = this.chat_num;
         Vue.set(this.chatlist, this.chat_num, {
             id: ++this.chat_num,
-            avatar: "/img/avatar.jpg",
+            avatar: "",
             name: username,
-            time: "",
-            content: "",
             show: 0,
             new_message_num: 0,
-            messages: []
+            badge_hidden: true,
+            has_got_history: false,
+            messages: [
+                {
+                    avatar: "",
+                    time: "",
+                    content: "",
+                    objectflag: 0
+                }]
         });
         return chat_key;
     },
@@ -447,13 +458,13 @@ export default {
           //check if chat is already existed
           //Todo: to correct: chat panel dispears for a while
           this.closeSearchPanel();
-          this.showchat(++chat_key, false);
+          this.showchat(++chat_key);
           return;
         }
       }
       this.createNewChat(username);
       this.closeSearchPanel();
-      this.showchat(this.chat_num, true);
+      this.showchat(this.chat_num);
     },
     searchUsers: function() {
       this.request =
@@ -520,7 +531,11 @@ export default {
         str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
       return str;
     },
-    getChatHistory: function(contact_name) {
+    hasGotHistory(chat_key) {
+      return this.chatlist[chat_key].has_got_history;
+    },
+    getChatHistory: function(contact_name, chat_key) {
+      if (this.hasGotHistory(chat_key)) return;
       this.request =
         "{\n" +
         'type: "GETCHATHISTORY",\n' +
