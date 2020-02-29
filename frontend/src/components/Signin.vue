@@ -395,7 +395,7 @@ export default {
                 message_key = this.chatlist[chat_key].messages.length;
                 Vue.set(this.chatlist[chat_key].messages, message_key,message_info);
             }
-
+            this.chatlist[chat_key].messages.sort(this.sortCompareFunction);
           }
         }
       } else {
@@ -406,13 +406,13 @@ export default {
                   if(this.chatlist[chat_key].badge_hidden) this.chatlist[chat_key].new_message_num = 0;
                   this.chatlist[chat_key].new_message_num++;
                   this.chatlist[chat_key].badge_hidden = false;
-                  this.chatlist[chat_key].messages.time.sort();//Todo: sort messages
               }
               if (!this.isChatRedundant(chat_key, message_info)) {
                   message_key = this.chatlist[chat_key].messages.length;
                   message_info.objectflag = 1;
                   Vue.set(this.chatlist[chat_key].messages, message_key, message_info);
               }
+              this.chatlist[chat_key].messages.sort(this.sortCompareFunction);
           }
         }
       }
@@ -563,6 +563,11 @@ export default {
         var chat = this.chatlist[chat_key];
         this.chatlist.splice(chat_key, chat_key+1);
         this.chatlist.unshift(chat);
+    },
+    sortCompareFunction: function (message_a, message_b) {
+        let time_a = message_a.time;
+        let time_b = message_b.time;
+        return time_a.localeCompare(time_b);
     }
   }
 };
