@@ -14,12 +14,16 @@
             <el-input show-password name="pwd" v-model="ruleForm.pwd"></el-input>
           </el-form-item>
           <el-form-item style="margin-left: 10px;">
-            <el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button>
-            <router-link
-              to="/Signup"
-              tag="el-button"
-              style="width: 100px; height: 50px; margin-left: 50px;"
-            >Signup</router-link>
+            <el-row>
+              <el-col :span="4"><el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button></el-col>
+              <el-col offset="4" :span="4">
+                <router-link
+                  to="/Signup"
+                  tag="el-button"
+                  style="width: 100px; height: 50px; margin-left: 50px;"
+              >Signup</router-link>
+              </el-col>
+            </el-row>
           </el-form-item>
         </el-form>
       </div>
@@ -42,7 +46,7 @@
           </el-header>
           <el-header id="search-bar">
             <el-input v-model="search" placeholder="Search for history" style="width: 195px;"></el-input>
-            <el-button icon="el-icon-search" type="primary" @click="searchHistory(searchField)"></el-button>
+            <el-button icon="el-icon-search" type="primary" @click="searchHistory()"></el-button>
           </el-header>
           <el-main id="chat-list-panel">
             <single-chat
@@ -52,8 +56,11 @@
               :id="chat.id"
               :avatar="chat.avatar"
               :name="chat.name"
-              :time="chat.time"
-              :content="chat.content"
+              :time="chat.messages[chat.messages.length-1].time"
+              :content="chat.messages[chat.messages.length-1].content"
+              :lastSender="chat.messages[chat.messages.length-1].objectflag"
+              :newMessageNum="chat.new_message_num"
+              :hidden="chat.badge_hidden"
             ></single-chat>
           </el-main>
         </el-aside>
@@ -69,12 +76,16 @@
     <div v-show="searchUserForm.display">
       <div id="mask"></div>
       <div id="searchUserPanel">
-        <el-input
-          v-model="searchUserForm.searchField"
-          placeholder="Please input user name"
-          style="margin-left: 160px; margin-top: 50px; width: 400px;"
-        ></el-input>
-        <el-button icon="el-icon-search" type="primary" @click="searchUsers()"></el-button>
+        <el-row>
+          <el-col :span="10" offset="6">
+            <el-input
+              v-model="searchUserForm.searchField"
+              placeholder="Please input user name"
+              style="margin-top: 50px;">
+            </el-input>
+          </el-col>
+          <el-col :span="2"><el-button icon="el-icon-search" type="primary" @click="searchUsers()" style="margin-top: 50px;"></el-button></el-col>
+        </el-row>
         <div id="searchResults">
           <label>Search results are as follows:</label>
           <single-user-info
@@ -87,7 +98,7 @@
             :isloggedin="userdata.IsLoggedIn"
           ></single-user-info>
         </div>
-        <el-button style="margin-left: 350px; margin-top: 10px;" @click="closeSearchPanel">Cancel</el-button>
+        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchPanel">Cancel</el-button></el-col></el-row>
       </div>
     </div>
   </div>
@@ -138,20 +149,21 @@ export default {
           id: "1",
           avatar: "/img/avatar.jpg",
           name: "Template",
-          time: "00:00",
-          content: "Me: test!",
           show: 1,
+          new_message_num: 0,
+          badge_hidden: true,
+          has_got_history: false,
           messages: [
             {
               avatar: "/img/avatar.jpg",
-              time: "00:00",
-              content: "11111111111!",
+              time: "2020-02-29 00:00",
+              content: "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
               objectflag: 1
             },
             {
               avatar: "/img/avatar.jpg",
-              time: "00:00",
-              content: "22222222222!",
+              time: "2020-02-29 00:01",
+              content: "2222fffffffffffffffff!",
               objectflag: 0
             }
           ]
@@ -185,16 +197,8 @@ export default {
           case "TEXT":
             if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
             var sender = this.parsed_response.sender;
-            var message = this.parsed_response.message;
-            this.chatwith(sender);
-            //Todo: retrieve time instead of creating
-            var time = new Date();
-            this.updateChat(
-              sender,
-              this.self.name,
-              this.decrypt(message),
-              time
-            );
+            var message = this.decrypt(this.parsed_response.message);
+            this.getNewText(sender, message);
             break;
           case "REPLY":
             switch (this.parsed_response.REPLY) {
@@ -208,7 +212,6 @@ export default {
                 for (let i in contacts) {
                   if (contacts[i].username !== this.self.name) {
                     this.chatwith(contacts[i].username);
-                    //this.getChatHistory(contacts[i].username);
                   }
                 }
                 break;
@@ -235,7 +238,8 @@ export default {
                     sender,
                     recipient,
                     this.decrypt(message),
-                    new Date(time)
+                    new Date(time),
+                    false
                   );
                 }
                 break;
@@ -288,7 +292,10 @@ export default {
         if (this.chatlist[chat_key].id !== id) {
           this.chatlist[chat_key].show = 0;
         } else {
+          this.getChatHistory(this.chatlist[chat_key].name, chat_key);
+          this.chatlist[chat_key].has_got_history = true;
           this.chatlist[chat_key].show = 1;
+          this.chatlist[chat_key].badge_hidden = true;
         }
       }
     },
@@ -315,9 +322,44 @@ export default {
       // } else {
       //     console.log(this.parsed_response.message);
       // }
-      this.updateChat(this.self.name, recipient, message, time);
+      this.updateChat(this.self.name, recipient, message, time, false);
     },
-    updateChat: function(sender, recipient, message, time) {
+    getNewText: function(sender, message) {
+        var chat_key = this.isContactExist(sender);
+        if (chat_key === false) {
+            chat_key = this.createNewChat(sender);
+            this.getChatHistory(sender, chat_key);
+        }
+
+        var time = new Date();
+        this.updateChat(
+            sender,
+            this.self.name,
+            message,
+            time,
+            true
+        );
+        this.popUpChat(chat_key);
+        // Todo: onclick: turn to concerned chat panel
+        const h = this.$createElement;
+
+        this.$notify({
+            title: 'New message!',
+            message: h('i', { style: 'color: teal'}, sender + ': ' + message)
+        });
+    },
+    isContactExist: function(username) {
+      var exist = false;
+        for (var chat_key in this.chatlist) {
+          if (this.chatlist[chat_key].name === username) {
+            //check if chat is already existed
+                //Todo: to correct: chat panel dispears for a while
+            exist = chat_key;
+          }
+      }
+      return exist;
+    },
+    updateChat: function(sender, recipient, message, time, is_new_message) {
       let hour = time.getHours();
       let paddingHour = hour > 9 ? "" : "0";
       let minute = time.getMinutes();
@@ -337,43 +379,77 @@ export default {
         ":" +
         paddingMinute +
         minute;
+        var message_info = {
+            avatar: "/img/avatar.jpg",
+            time: time,
+            content: message,
+            objectflag: 0
+        };
+        var message_key = '';
 
       if (sender === this.self.name) {
         //message out
         for (var chat_key in this.chatlist) {
           if (this.chatlist[chat_key].name === recipient) {
-            var message_key = this.chatlist[chat_key].messages.length;
-            Vue.set(this.chatlist[chat_key].messages, message_key, {
-              avatar: "/img/avatar.jpg",
-              time: time,
-              content: message,
-              objectflag: 0
-            });
+            if (!this.isChatRedundant(chat_key, message_info)) {
+                message_key = this.chatlist[chat_key].messages.length;
+                Vue.set(this.chatlist[chat_key].messages, message_key,message_info);
+            }
+
           }
         }
       } else {
-        for (chat_key in this.chatlist) {
+        for (var chat_key in this.chatlist) {
           //message in
           if (this.chatlist[chat_key].name === sender) {
-            message_key = this.chatlist[chat_key].messages.length;
-            Vue.set(this.chatlist[chat_key].messages, message_key, {
-              avatar: "/img/avatar.jpg",
-              time: time,
-              content: message,
-              objectflag: 1
-            });
+              if (is_new_message) {
+                  if(this.chatlist[chat_key].badge_hidden) this.chatlist[chat_key].new_message_num = 0;
+                  this.chatlist[chat_key].new_message_num++;
+                  this.chatlist[chat_key].badge_hidden = false;
+                  this.chatlist[chat_key].messages.time.sort();//Todo: sort messages
+              }
+              if (!this.isChatRedundant(chat_key, message_info)) {
+                  message_key = this.chatlist[chat_key].messages.length;
+                  message_info.objectflag = 1;
+                  Vue.set(this.chatlist[chat_key].messages, message_key, message_info);
+              }
           }
         }
       }
 
       //Todo: animation: slide down to the new message
     },
-    searchHistory: function(searchField) {},
+    searchHistory: function() {
+        var search = this.search;
+    }, //Todo: implement history search
     showSearchPanel: function() {
       this.searchUserForm.display = true;
     },
     closeSearchPanel: function() {
       this.searchUserForm.display = false;
+    },
+    closeSearchPanel: function() {
+      this.searchUserForm.display = false;
+    },
+    createNewChat: function(username) {
+        var chat_key = this.chat_num;
+        Vue.set(this.chatlist, this.chat_num, {
+            id: ++this.chat_num,
+            avatar: "",
+            name: username,
+            show: 0,
+            new_message_num: 0,
+            badge_hidden: true,
+            has_got_history: false,
+            messages: [
+                {
+                    avatar: "",
+                    time: "",
+                    content: "",
+                    objectflag: 0
+                }]
+        });
+        return chat_key;
     },
     chatwith: function(username) {
       if (username === this.self.name) return; //Todo: chat with oneself
@@ -386,15 +462,7 @@ export default {
           return;
         }
       }
-      Vue.set(this.chatlist, this.chat_num, {
-        id: ++this.chat_num,
-        avatar: "/img/avatar.jpg",
-        name: username,
-        time: "",
-        content: "",
-        show: 0,
-        messages: []
-      });
+      this.createNewChat(username);
       this.closeSearchPanel();
       this.showchat(this.chat_num);
     },
@@ -411,8 +479,8 @@ export default {
       //Todo: fail to search
     },
     initPost: function() {
-      this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
-      this.send();
+      // this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
+      // this.send();
       this.initCrypto();
     },
     onSignIn: function() {
@@ -463,7 +531,11 @@ export default {
         str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
       return str;
     },
-    getChatHistory: function(contact_name) {
+    hasGotHistory(chat_key) {
+      return this.chatlist[chat_key].has_got_history;
+    },
+    getChatHistory: function(contact_name, chat_key) {
+      if (this.hasGotHistory(chat_key)) return;
       this.request =
         "{\n" +
         'type: "GETCHATHISTORY",\n' +
@@ -478,6 +550,19 @@ export default {
         '"\n' +
         "}";
       this.send();
+    },
+    isChatRedundant: function (chat_key, message) {
+      var redundant = false;
+      var chat = this.chatlist[chat_key];
+      for (var message_key in chat.messages) {
+        if (chat.messages[message_key].content === message.content && chat.messages[message_key].time === message.time) redundant = true;
+      }
+      return redundant;
+    },
+    popUpChat: function (chat_key) {
+        var chat = this.chatlist[chat_key];
+        this.chatlist.splice(chat_key, chat_key+1);
+        this.chatlist.unshift(chat);
     }
   }
 };
