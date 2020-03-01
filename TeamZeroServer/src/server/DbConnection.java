@@ -141,9 +141,10 @@ public class DbConnection {
 	public Client authenticateUser(String userName, String password) {
 		Connection conn = this.connect();
 		try {
-			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? AND password = ?;");
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? AND password = ? AND unregistered = ?;");
 			ps.setString(1, userName);
 			ps.setString(2, getMd5(password));
+			ps.setBoolean(3,false);
 
 			ResultSet rs = ps.executeQuery();
 
