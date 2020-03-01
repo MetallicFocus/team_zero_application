@@ -25,18 +25,3 @@ export default {
   }
 };
 </script>
-
-<style>
-.single-user-info {
-  border-radius: 10px;
-  margin-top: 5px;
-  height: 60px;
-  padding-top: 30px;
-  text-align: center;
-}
-
-.single-user-info:hover {
-  background: #d5f3ef;
-  cursor: pointer;
-}
-</style>

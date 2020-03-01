@@ -40,7 +40,16 @@
                 <label style="font-size: 30px; text-align: left;">{{self.name}}</label>
               </el-col>
               <el-col :span="2">
-                <i id="add" class="el-icon-circle-plus-outline" @click="showSearchPanel"></i>
+                <el-dropdown trigger="click" @command="handleCommand">
+                  <i class="more el-icon-more el-dropdown-link" style="color: #D5F3EF;"></i>
+                    <el-dropdown-menu slot="dropdown">
+                      <el-dropdown-item icon="el-icon-s-custom" command="profile">Profile</el-dropdown-item>
+                      <el-dropdown-item icon="el-icon-user" command="searchUsers">Search Users</el-dropdown-item>
+                      <el-dropdown-item icon="el-icon-chat-dot-round" command="searchGroups">Search Groups</el-dropdown-item>
+                      <el-dropdown-item icon="el-icon-s-tools" command="setting">Setting</el-dropdown-item>
+                      <el-dropdown-item icon="el-icon-close" command="logout">Log out</el-dropdown-item>
+                  </el-dropdown-menu>
+                </el-dropdown>
               </el-col>
             </el-row>
           </el-header>
@@ -74,8 +83,8 @@
       </el-container>
     </div>
     <div v-show="searchUserForm.display">
-      <div id="mask"></div>
-      <div id="searchUserPanel">
+      <div class="mask"></div>
+      <div class="searchPanel">
         <el-row>
           <el-col :span="10" offset="6">
             <el-input
@@ -86,7 +95,7 @@
           </el-col>
           <el-col :span="2"><el-button icon="el-icon-search" type="primary" @click="searchUsers()" style="margin-top: 50px;"></el-button></el-col>
         </el-row>
-        <div id="searchResults">
+        <div class="searchResults">
           <label>Search results are as follows:</label>
           <single-user-info
             @chat="chatwith(userdata.username)"
@@ -98,7 +107,30 @@
             :isloggedin="userdata.IsLoggedIn"
           ></single-user-info>
         </div>
-        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchPanel">Cancel</el-button></el-col></el-row>
+        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchUserPanel">Cancel</el-button></el-col></el-row>
+      </div>
+    </div>
+    <div v-show="searchGroupForm.display">
+      <div class="mask"></div>
+      <div class="searchPanel">
+        <el-row>
+          <el-col :span="10" offset="6">
+            <el-input
+              v-model="searchGroupForm.searchField"
+              placeholder="Please input group name"
+              style="margin-top: 50px;">
+            </el-input>
+          </el-col>
+          <el-col :span="2"><el-button icon="el-icon-search" type="primary" @click="searchGroups()" style="margin-top: 50px;"></el-button></el-col>
+        </el-row>
+        <div class="searchResults">
+          <label>Search results are as follows:</label>
+          <single-group-info
+            class="single-user-info"
+            v-for="groupdata in searchGroupForm.groupsdata"
+          ></single-group-info>
+        </div>
+        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchGroupPanel">Cancel</el-button></el-col></el-row> <!--Todo: click fails to work-->
       </div>
     </div>
   </div>
@@ -108,6 +140,7 @@ import singleUserInfo from "./single-user-info.vue";
 import singleChat from "./single-chat.vue";
 import singleChatPanel from "./single-chat-panel.vue";
 import Vue from "vue";
+import SingleGroupInfo from "./single-group-info";
 //TODO: Encryption
 const CryptoJS = require("crypto-js");
 const crypto = require("crypto");
@@ -132,6 +165,11 @@ export default {
         display: false,
         searchField: "",
         usersdata: []
+      },
+      searchGroupForm: {
+        display: false,
+        searchField: "",
+        groupsdata: []
       },
       websocket: null,
       request: "",
@@ -172,6 +210,7 @@ export default {
     };
   },
   components: {
+      SingleGroupInfo,
     singleUserInfo,
     singleChat,
     singleChatPanel
@@ -302,7 +341,13 @@ export default {
     text2: function(args) {
       let recipient = args[0];
       let message = args[1];
-      let time = new Date(); //Todo: formalize date
+      let time = new Date();
+
+      // Todo: bug to fix: a blank message popup created in text field
+      if (message === '') {
+          alert('Please type sth. before sending!');
+          return;
+      }
 
       this.request =
         '{"type": "TEXT"' +
@@ -422,11 +467,17 @@ export default {
     searchHistory: function() {
         var search = this.search;
     }, //Todo: implement history search
-    showSearchPanel: function() {
+    showSearchUserPanel: function() {
       this.searchUserForm.display = true;
     },
-    closeSearchPanel: function() {
+    showSearchGroupPanel: function() {
+      this.searchGroupForm.display = true;
+    },
+    closeSearchUserPanel: function() {
       this.searchUserForm.display = false;
+    },
+    closeSearchGroupPanel: function() {
+      this.searchGroupForm.display = false;
     },
     closeSearchPanel: function() {
       this.searchUserForm.display = false;
@@ -477,6 +528,9 @@ export default {
       this.send();
 
       //Todo: fail to search
+    },
+    searchGroups: function() {
+        // Todo: search groups
     },
     initPost: function() {
       // this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
@@ -568,6 +622,25 @@ export default {
         let time_a = message_a.time;
         let time_b = message_b.time;
         return time_a.localeCompare(time_b);
+    },
+    handleCommand: function(command) {
+        switch (command) {
+            // Todo: personal profile (not in the project scope)
+            case "profile":
+                break;
+            case "searchUsers":
+                this.showSearchUserPanel();
+                break;
+            case "searchGroups":
+                this.showSearchGroupPanel();
+                break;
+            // Todo: setting (not in the project scope)
+            case "setting":
+                break;
+            case "logout":
+                this.websocket.close();
+                location.reload();
+        }
     }
   }
 };

@@ -32,14 +32,14 @@
     margin-top: 20px;
 }
 
-#add {
+.more {
     margin-top: 10px;
     text-align: center;
     font-size: 40px;
     color: #F0F0F0;
 }
 
-#add:hover {
+.more:hover {
     color: #FFFFFF;
     cursor: pointer;
 }
@@ -114,7 +114,7 @@
     margin-bottom: 40px;
 }
 
-#mask {
+.mask {
     position: absolute;
         top: 0px;
         left: 0px;
@@ -124,7 +124,7 @@
         opacity: 0.5;
 }
 
-#searchUserPanel {
+.searchPanel {
     border-radius: 10px;
     position: absolute;
     left: 50%;
@@ -135,7 +135,7 @@
     background-color: #FFFFFF;
 }
 
-#searchResults {
+.searchResults {
     border-radius: 5px;
     overflow: auto;
     margin-top: 20px;
@@ -157,4 +157,8 @@
 .single-user-info:hover {
     background: #D5F3EF;
     cursor: pointer;
+}
+
+.emoji-panel {
+
 }
