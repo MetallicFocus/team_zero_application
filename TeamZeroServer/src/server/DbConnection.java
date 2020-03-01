@@ -84,11 +84,12 @@ public class DbConnection {
 					throw new SQLException("Email already exists");
 				}
 			} else {
-				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password, public_key) VALUES (?, ?, ?, ?)");
+				ps = conn.prepareStatement("INSERT INTO USERS (username,email,password, public_key,unregistered) VALUES (?, ?, ?, ?, ?)");
 				ps.setString(1, userName);
 				ps.setString(2, email);
 				ps.setString(3, getMd5(password));
 				ps.setString(4, publicKey);
+				ps.setBoolean(5, false);
 				ps.executeUpdate();
 
 				LOGGER.log(Level.FINE, "Added user {0}", userName);
@@ -114,7 +115,7 @@ public class DbConnection {
 		Connection conn = connect();
 		PreparedStatement ps = null;
 		try {
-			ps = conn.prepareStatement("DELETE FROM USERS WHERE username = ? AND password = ?;");
+			ps = conn.prepareStatement("UPDATE USERS SET unregistered = true WHERE username = ? AND password = ?;");
 			ps.setString(1, userName);
 			ps.setString(2, getMd5(password));
 			ps.executeUpdate();
@@ -140,9 +141,10 @@ public class DbConnection {
 	public Client authenticateUser(String userName, String password) {
 		Connection conn = this.connect();
 		try {
-			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? AND password = ?;");
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE username = ? AND password = ? AND unregistered = ?;");
 			ps.setString(1, userName);
 			ps.setString(2, getMd5(password));
+			ps.setBoolean(3,false);
 
 			ResultSet rs = ps.executeQuery();
 
@@ -176,7 +178,7 @@ public class DbConnection {
 		ArrayList<Client> allClients = new ArrayList<Client>();
 		Connection conn = this.connect();
 		try {
-			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS;");
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE unregistered = false;");
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				int clientId = rs.getInt(COLUMN_ID);
@@ -208,7 +210,7 @@ public class DbConnection {
 		ArrayList<Client> searchedClients = new ArrayList<Client>();
 		Connection conn = this.connect();
 		try {
-			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE lower(username) LIKE ?;");
+			PreparedStatement ps = conn.prepareStatement("SELECT * FROM USERS WHERE lower(username) LIKE ? AND unregistered = false;");
 			
 			ps.setString(1, "%" + query.toLowerCase() + "%");
 			ResultSet rs = ps.executeQuery();
@@ -368,9 +370,10 @@ public class DbConnection {
 				// insert the userId and groupId into user_groups table as well
 				// this user is also a member of the group they created
 					 LOGGER.log(Level.FINE, "Adding group creator {0} to group", creatingUser);
-					 ps1 = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
+					 ps1 = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id,left_group) VALUES (?, ?,?)");
 					 ps1.setInt(1, getUserIDFromUsername(creatingUser));
 					 ps1.setInt(2, groupId);
+					 ps1.setBoolean(3, false);
 					 ps1.executeUpdate();
 					 LOGGER.log(Level.FINE, "Added group {0}", groupName);
 					 success = true;
@@ -468,13 +471,14 @@ public class DbConnection {
 			
 			// check that the sender is a member of the group
 			PreparedStatement ps = conn.prepareStatement(
-					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ?");
+					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ? AND left_group = ?");
 
 			int senderId = getUserIDFromUsername(sender);
 			int groupId = getGroupIDFromGroupName(groupName);
 			
 			ps.setInt(1, groupId);
 			ps.setInt(2, senderId);
+			ps.setBoolean(3, false);
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				
@@ -547,9 +551,10 @@ public class DbConnection {
 				if (!rs.next()) {
 					// TODO check number of users with group_id is not more than MAX_NUMBER_OF_MEMBERS
 					//add user to user groups table
-					ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id) VALUES (?, ?)");
+					ps = conn.prepareStatement("INSERT INTO user_groups (user_id,group_id,left_group) VALUES (?, ?,?)");
 					ps.setInt(1, getUserIDFromUsername(username));
 					ps.setInt(2, groupId);
+					ps.setBoolean(3, false);
 
 					ps.executeUpdate();
 					LOGGER.log(Level.FINE, "Added user to group {0}", groupName);
