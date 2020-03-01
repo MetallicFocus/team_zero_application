@@ -15,13 +15,15 @@
           </el-form-item>
           <el-form-item style="margin-left: 10px;">
             <el-row>
-              <el-col :span="4"><el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button></el-col>
+              <el-col :span="4">
+                <el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button>
+              </el-col>
               <el-col offset="4" :span="4">
                 <router-link
                   to="/Signup"
                   tag="el-button"
                   style="width: 100px; height: 50px; margin-left: 50px;"
-              >Signup</router-link>
+                >Signup</router-link>
               </el-col>
             </el-row>
           </el-form-item>
@@ -42,12 +44,19 @@
               <el-col :span="2">
                 <el-dropdown trigger="click" @command="handleCommand">
                   <i class="more el-icon-more el-dropdown-link" style="color: #D5F3EF;"></i>
-                    <el-dropdown-menu slot="dropdown">
-                      <el-dropdown-item icon="el-icon-s-custom" command="profile">Profile</el-dropdown-item>
-                      <el-dropdown-item icon="el-icon-user" command="searchUsers">Search Users</el-dropdown-item>
-                      <el-dropdown-item icon="el-icon-chat-dot-round" command="searchGroups">Search Groups</el-dropdown-item>
-                      <el-dropdown-item icon="el-icon-s-tools" command="setting">Setting</el-dropdown-item>
-                      <el-dropdown-item icon="el-icon-close" command="logout">Log out</el-dropdown-item>
+                  <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item icon="el-icon-s-custom" command="profile">Profile</el-dropdown-item>
+                    <el-dropdown-item icon="el-icon-user" command="searchUsers">Search Users</el-dropdown-item>
+                    <el-dropdown-item
+                      icon="el-icon-circle-plus-outline"
+                      command="createGroup"
+                    >Create Group</el-dropdown-item>
+                    <el-dropdown-item
+                      icon="el-icon-chat-dot-round"
+                      command="searchGroups"
+                    >Search Groups</el-dropdown-item>
+                    <el-dropdown-item icon="el-icon-s-tools" command="setting">Setting</el-dropdown-item>
+                    <el-dropdown-item icon="el-icon-close" command="logout">Log out</el-dropdown-item>
                   </el-dropdown-menu>
                 </el-dropdown>
               </el-col>
@@ -90,10 +99,17 @@
             <el-input
               v-model="searchUserForm.searchField"
               placeholder="Please input user name"
-              style="margin-top: 50px;">
-            </el-input>
+              style="margin-top: 50px;"
+            ></el-input>
           </el-col>
-          <el-col :span="2"><el-button icon="el-icon-search" type="primary" @click="searchUsers()" style="margin-top: 50px;"></el-button></el-col>
+          <el-col :span="2">
+            <el-button
+              icon="el-icon-search"
+              type="primary"
+              @click="searchUsers()"
+              style="margin-top: 50px;"
+            ></el-button>
+          </el-col>
         </el-row>
         <div class="searchResults">
           <label>Search results are as follows:</label>
@@ -107,7 +123,33 @@
             :isloggedin="userdata.IsLoggedIn"
           ></single-user-info>
         </div>
-        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchUserPanel">Cancel</el-button></el-col></el-row>
+        <el-row>
+          <el-col offset="10" :span="4">
+            <el-button style="margin-top: 10px;" @click="closeSearchUserPanel">Cancel</el-button>
+          </el-col>
+        </el-row>
+      </div>
+    </div>
+    <div v-show="createGroupForm.display">
+      <div class="mask"></div>
+      <div class="searchPanel">
+        <el-row>
+          <el-col :span="10" offset="6">
+            <el-input
+              v-model="createGroupForm.groupName"
+              placeholder="Please input group name"
+              style="margin-top: 10px;"
+            ></el-input>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col offset="5" :span="2">
+            <el-button style="margin-top: 10px;" @click="createGroup(self.name)">Create Group</el-button>
+          </el-col>
+          <el-col offset="10" :span="4">
+            <el-button style="margin-top: 10px;" @click="closeSearchUserPanel">Cancel</el-button>
+          </el-col>
+        </el-row>
       </div>
     </div>
     <div v-show="searchGroupForm.display">
@@ -118,19 +160,33 @@
             <el-input
               v-model="searchGroupForm.searchField"
               placeholder="Please input group name"
-              style="margin-top: 50px;">
-            </el-input>
+              style="margin-top: 50px;"
+            ></el-input>
           </el-col>
-          <el-col :span="2"><el-button icon="el-icon-search" type="primary" @click="searchGroups()" style="margin-top: 50px;"></el-button></el-col>
+          <el-col :span="2">
+            <el-button
+              icon="el-icon-search"
+              type="primary"
+              @click="searchGroups()"
+              style="margin-top: 50px;"
+            ></el-button>
+          </el-col>
         </el-row>
         <div class="searchResults">
           <label>Search results are as follows:</label>
           <single-group-info
             class="single-user-info"
+            :key="groupdata.groupName"
             v-for="groupdata in searchGroupForm.groupsdata"
+            :groupname="groupdata.groupName"
           ></single-group-info>
         </div>
-        <el-row><el-col offset="10" :span="4"><el-button style="margin-top: 10px;" @click="closeSearchGroupPanel">Cancel</el-button></el-col></el-row> <!--Todo: click fails to work-->
+        <el-row>
+          <el-col offset="10" :span="4">
+            <el-button style="margin-top: 10px;" @click="closeSearchGroupPanel">Cancel</el-button>
+          </el-col>
+        </el-row>
+        <!--Todo: click fails to work-->
       </div>
     </div>
   </div>
@@ -166,6 +222,10 @@ export default {
         searchField: "",
         usersdata: []
       },
+      createGroupForm: {
+        display: false,
+        groupName: ""
+      },
       searchGroupForm: {
         display: false,
         searchField: "",
@@ -195,7 +255,8 @@ export default {
             {
               avatar: "/img/avatar.jpg",
               time: "2020-02-29 00:00",
-              content: "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
+              content:
+                "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
               objectflag: 1
             },
             {
@@ -210,7 +271,7 @@ export default {
     };
   },
   components: {
-      SingleGroupInfo,
+    SingleGroupInfo,
     singleUserInfo,
     singleChat,
     singleChatPanel
@@ -260,6 +321,14 @@ export default {
                 else
                   this.searchUserForm.usersdata = [
                     this.parsed_response.contacts
+                  ];
+                break;
+              case "SEARCHGROUPS: SUCCESS":
+                if (this.parsed_response.groups.length > 1)
+                  this.searchGroupForm.groupsdata = this.parsed_response.groups;
+                else
+                  this.searchGroupForm.groupsdata = [
+                    this.parsed_response.groups
                   ];
                 break;
               case "GETCHATHISTORY: SUCCESS":
@@ -344,9 +413,9 @@ export default {
       let time = new Date();
 
       // Todo: bug to fix: a blank message popup created in text field
-      if (message === '') {
-          alert('Please type sth. before sending!');
-          return;
+      if (message === "") {
+        alert("Please type sth. before sending!");
+        return;
       }
 
       this.request =
@@ -370,37 +439,31 @@ export default {
       this.updateChat(this.self.name, recipient, message, time, false);
     },
     getNewText: function(sender, message) {
-        var chat_key = this.isContactExist(sender);
-        if (chat_key === false) {
-            chat_key = this.createNewChat(sender);
-            this.getChatHistory(sender, chat_key);
-        }
+      var chat_key = this.isContactExist(sender);
+      if (chat_key === false) {
+        chat_key = this.createNewChat(sender);
+        this.getChatHistory(sender, chat_key);
+      }
 
-        var time = new Date();
-        this.updateChat(
-            sender,
-            this.self.name,
-            message,
-            time,
-            true
-        );
-        this.popUpChat(chat_key);
-        // Todo: onclick: turn to concerned chat panel
-        const h = this.$createElement;
+      var time = new Date();
+      this.updateChat(sender, this.self.name, message, time, true);
+      this.popUpChat(chat_key);
+      // Todo: onclick: turn to concerned chat panel
+      const h = this.$createElement;
 
-        this.$notify({
-            title: 'New message!',
-            message: h('i', { style: 'color: teal'}, sender + ': ' + message)
-        });
+      this.$notify({
+        title: "New message!",
+        message: h("i", { style: "color: teal" }, sender + ": " + message)
+      });
     },
     isContactExist: function(username) {
       var exist = false;
-        for (var chat_key in this.chatlist) {
-          if (this.chatlist[chat_key].name === username) {
-            //check if chat is already existed
-                //Todo: to correct: chat panel dispears for a while
-            exist = chat_key;
-          }
+      for (var chat_key in this.chatlist) {
+        if (this.chatlist[chat_key].name === username) {
+          //check if chat is already existed
+          //Todo: to correct: chat panel dispears for a while
+          exist = chat_key;
+        }
       }
       return exist;
     },
@@ -424,21 +487,25 @@ export default {
         ":" +
         paddingMinute +
         minute;
-        var message_info = {
-            avatar: "/img/avatar.jpg",
-            time: time,
-            content: message,
-            objectflag: 0
-        };
-        var message_key = '';
+      var message_info = {
+        avatar: "/img/avatar.jpg",
+        time: time,
+        content: message,
+        objectflag: 0
+      };
+      var message_key = "";
 
       if (sender === this.self.name) {
         //message out
         for (var chat_key in this.chatlist) {
           if (this.chatlist[chat_key].name === recipient) {
             if (!this.isChatRedundant(chat_key, message_info)) {
-                message_key = this.chatlist[chat_key].messages.length;
-                Vue.set(this.chatlist[chat_key].messages, message_key,message_info);
+              message_key = this.chatlist[chat_key].messages.length;
+              Vue.set(
+                this.chatlist[chat_key].messages,
+                message_key,
+                message_info
+              );
             }
             this.chatlist[chat_key].messages.sort(this.sortCompareFunction);
           }
@@ -447,17 +514,22 @@ export default {
         for (var chat_key in this.chatlist) {
           //message in
           if (this.chatlist[chat_key].name === sender) {
-              if (is_new_message) {
-                  if(this.chatlist[chat_key].badge_hidden) this.chatlist[chat_key].new_message_num = 0;
-                  this.chatlist[chat_key].new_message_num++;
-                  this.chatlist[chat_key].badge_hidden = false;
-              }
-              if (!this.isChatRedundant(chat_key, message_info)) {
-                  message_key = this.chatlist[chat_key].messages.length;
-                  message_info.objectflag = 1;
-                  Vue.set(this.chatlist[chat_key].messages, message_key, message_info);
-              }
-              this.chatlist[chat_key].messages.sort(this.sortCompareFunction);
+            if (is_new_message) {
+              if (this.chatlist[chat_key].badge_hidden)
+                this.chatlist[chat_key].new_message_num = 0;
+              this.chatlist[chat_key].new_message_num++;
+              this.chatlist[chat_key].badge_hidden = false;
+            }
+            if (!this.isChatRedundant(chat_key, message_info)) {
+              message_key = this.chatlist[chat_key].messages.length;
+              message_info.objectflag = 1;
+              Vue.set(
+                this.chatlist[chat_key].messages,
+                message_key,
+                message_info
+              );
+            }
+            this.chatlist[chat_key].messages.sort(this.sortCompareFunction);
           }
         }
       }
@@ -465,10 +537,13 @@ export default {
       //Todo: animation: slide down to the new message
     },
     searchHistory: function() {
-        var search = this.search;
+      var search = this.search;
     }, //Todo: implement history search
     showSearchUserPanel: function() {
       this.searchUserForm.display = true;
+    },
+    showCreateGroupPanel: function() {
+      this.createGroupForm.display = true;
     },
     showSearchGroupPanel: function() {
       this.searchGroupForm.display = true;
@@ -483,24 +558,25 @@ export default {
       this.searchUserForm.display = false;
     },
     createNewChat: function(username) {
-        var chat_key = this.chat_num;
-        Vue.set(this.chatlist, this.chat_num, {
-            id: ++this.chat_num,
+      var chat_key = this.chat_num;
+      Vue.set(this.chatlist, this.chat_num, {
+        id: ++this.chat_num,
+        avatar: "",
+        name: username,
+        show: 0,
+        new_message_num: 0,
+        badge_hidden: true,
+        has_got_history: false,
+        messages: [
+          {
             avatar: "",
-            name: username,
-            show: 0,
-            new_message_num: 0,
-            badge_hidden: true,
-            has_got_history: false,
-            messages: [
-                {
-                    avatar: "",
-                    time: "",
-                    content: "",
-                    objectflag: 0
-                }]
-        });
-        return chat_key;
+            time: "",
+            content: "",
+            objectflag: 0
+          }
+        ]
+      });
+      return chat_key;
     },
     chatwith: function(username) {
       if (username === this.self.name) return; //Todo: chat with oneself
@@ -530,7 +606,14 @@ export default {
       //Todo: fail to search
     },
     searchGroups: function() {
-        // Todo: search groups
+      this.request =
+        "{\n" +
+        'type: "SEARCHGROUPS",\n' +
+        'search:"' +
+        this.searchGroupForm.searchField +
+        '",\n' +
+        "}";
+      this.send();
     },
     initPost: function() {
       // this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
@@ -605,42 +688,78 @@ export default {
         "}";
       this.send();
     },
-    isChatRedundant: function (chat_key, message) {
+    isChatRedundant: function(chat_key, message) {
       var redundant = false;
       var chat = this.chatlist[chat_key];
       for (var message_key in chat.messages) {
-        if (chat.messages[message_key].content === message.content && chat.messages[message_key].time === message.time) redundant = true;
+        if (
+          chat.messages[message_key].content === message.content &&
+          chat.messages[message_key].time === message.time
+        )
+          redundant = true;
       }
       return redundant;
     },
-    popUpChat: function (chat_key) {
-        var chat = this.chatlist[chat_key];
-        this.chatlist.splice(chat_key, chat_key+1);
-        this.chatlist.unshift(chat);
+    popUpChat: function(chat_key) {
+      var chat = this.chatlist[chat_key];
+      this.chatlist.splice(chat_key, chat_key + 1);
+      this.chatlist.unshift(chat);
     },
-    sortCompareFunction: function (message_a, message_b) {
-        let time_a = message_a.time;
-        let time_b = message_b.time;
-        return time_a.localeCompare(time_b);
+    sortCompareFunction: function(message_a, message_b) {
+      let time_a = message_a.time;
+      let time_b = message_b.time;
+      return time_a.localeCompare(time_b);
     },
     handleCommand: function(command) {
-        switch (command) {
-            // Todo: personal profile (not in the project scope)
-            case "profile":
-                break;
-            case "searchUsers":
-                this.showSearchUserPanel();
-                break;
-            case "searchGroups":
-                this.showSearchGroupPanel();
-                break;
-            // Todo: setting (not in the project scope)
-            case "setting":
-                break;
-            case "logout":
-                this.websocket.close();
-                location.reload();
-        }
+      switch (command) {
+        // Todo: personal profile (not in the project scope)
+        case "profile":
+          break;
+        case "searchUsers":
+          this.showSearchUserPanel();
+          break;
+        case "createGroup":
+          this.showCreateGroupPanel();
+          break;
+        case "searchGroups":
+          this.showSearchGroupPanel();
+          break;
+        // Todo: setting (not in the project scope)
+        case "setting":
+          break;
+        case "logout":
+          this.websocket.close();
+          location.reload();
+      }
+    },
+    createGroup(username) {
+      this.request =
+        "{\n" +
+        'type: "CREATEGROUP",\n' +
+        'username: "' +
+        username +
+        '",\n' +
+        'groupName: "' +
+        this.createGroupForm.groupName +
+        '",\n' +
+        "picture:null\n" +
+        "}";
+      this.send();
+    },
+    addMembersToGroup(groupName, members) {
+      for (let i = 0; i < members.length; i++) {
+        this.request =
+          "{\n" +
+          'type: "JOINGROUP",\n' +
+          'username: "' +
+          members[i] +
+          '",\n' +
+          'groupName: "' +
+          groupName +
+          '",\n' +
+          "}";
+        this.send();
+      }
     }
   }
 };
