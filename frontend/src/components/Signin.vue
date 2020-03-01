@@ -178,7 +178,8 @@ export default {
       onmessage_flag: false,
       self: {
         avatar: "/img/avatar.jpg",
-        name: "User1"
+        name: "User1",
+        private_key: "",
       },
       search: "",
       chat_num: 1,
@@ -191,6 +192,7 @@ export default {
           new_message_num: 0,
           badge_hidden: true,
           has_got_history: false,
+          public_key: "",
           messages: [
             {
               avatar: "/img/avatar.jpg",
@@ -242,9 +244,8 @@ export default {
           case "REPLY":
             switch (this.parsed_response.REPLY) {
               case "LOGIN: SUCCESS":
-                // console.log("LOGIN: SUCCESS");
                 this.signinState = false;
-                this.initPost(this.self.name);
+                this.initPost();
                 break;
               case "GETALLCONTACTS: SUCCESS":
                 var contacts = this.parsed_response.contacts;
@@ -537,9 +538,20 @@ export default {
       // this.send();
       this.initCrypto();
     },
+    isDeviceAuthorised() {
+        const item_name = this.self.name+"_private_key";
+        const private_key = localStorage.getItem(item_name);
+        if(!private_key) {
+            alert("Please log in with an authorised device!");
+            return false;
+        } else {
+            this.self.private_key = private_key;
+            return true;
+        }
+    },
     onSignIn: function() {
-      this.self = { avatar: "/img/avatar.jpg", name: this.ruleForm.name };
-      if (true) {
+      this.self.name = this.ruleForm.name;
+      if (this.isDeviceAuthorised()) {
         //Todo: determine if connection is successful
         this.request =
           "{\n" +
