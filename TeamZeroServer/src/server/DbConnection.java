@@ -405,7 +405,7 @@ public class DbConnection {
 					+ "SELECT u.username "
 					+ "FROM users u "
 					+ "JOIN user_groups ug ON ug.user_id=u.user_id "
-					+ "WHERE ug.group_id=g.group_id) AS members ) u;");
+					+ "WHERE ug.group_id=g.group_id AND u.unregistered=false) AS members ) u;");
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				int groupId = rs.getInt(COLUMN_GROUP_ID);
@@ -434,7 +434,7 @@ public class DbConnection {
 					+ "SELECT u.username "
 					+ "FROM users u "
 					+ "JOIN user_groups ug ON ug.user_id=u.user_id "
-					+ "WHERE ug.group_id=g.group_id ) AS members ) u WHERE lower(group_name) LIKE ?;");
+					+ "WHERE ug.group_id=g.group_id AND u.unregistered=false) AS members ) u WHERE lower(group_name) LIKE ?;");
 			
 			ps.setString(1, "%" + search.toLowerCase() + "%");
 			ResultSet rs = ps.executeQuery();
