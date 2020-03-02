@@ -207,6 +207,7 @@ export default {
     return {
       crypto: {
         dh_prime: null,
+        dh_generator: null,
         key: null,
         iv: null
       },
@@ -288,7 +289,7 @@ export default {
       this.websocket = new WebSocket("ws://localhost:1234");
       this.initWebSocket();
       // test: to delete
-      this.ruleForm.name = "a020320";
+      this.ruleForm.name = "a2020";
       this.ruleForm.pwd = "Aa1111!!";
     } else {
       alert("Websocket is not supported by this browser!");
@@ -342,6 +343,7 @@ export default {
                 break;
               case "GETCHATHISTORY: SUCCESS":
                 var messages = this.parsed_response.messages;
+                var object_name = '';
                 if (messages === undefined) break;
                 else if (messages.length === undefined) {
                   messages = [messages];
@@ -349,12 +351,16 @@ export default {
                 for (let i in messages) {
                   var sender = messages[i].sender;
                   var recipient = messages[i].recipient;
+                  if (i == 0) {
+                    object_name = sender;
+                    if (sender === this.self.name) object_name = recipient;
+                  }
                   var message = messages[i].message;
                   var time = messages[i].timestamp;
                   this.updateChat(
                     sender,
                     recipient,
-                    this.decrypt(message),
+                    this.decrypt(message, this.getSharedSecret(object_name)),
                     new Date(time),
                     2
                   );
@@ -484,11 +490,12 @@ export default {
     },
     updatePublicKey(username, public_key) {
       var chat_key = this.isContactExist(username);
+      var public_key_hex = Buffer.from(public_key, "base64").toString("hex");
       if (chat_key !== false) {
-        this.chatlist[chat_key].public_key = Buffer.from(public_key, "base64").toString("hex");
+        this.chatlist[chat_key].public_key = public_key_hex;
         return;
       }
-      chat_key = this.createNewChat(username, public_key);
+      chat_key = this.createNewChat(username, public_key_hex);
       this.getChatHistory(username, chat_key);
     },
     checkNewSentMessage: function(username) {
@@ -628,6 +635,8 @@ export default {
     createNewChat: function(username, public_key) {
       let chat_key = this.chat_num;
       let shared_key = this.self.dh.computeSecret(this.fromHex2Array(public_key)).toString('hex');
+      console.log(this.self.name+" private_key: "+this.self.private_key);
+      console.log(username+" public_key: "+public_key);
       console.log("shared_key: "+shared_key);
       Vue.set(this.chatlist, this.chat_num, {
         id: ++this.chat_num,
@@ -727,22 +736,35 @@ export default {
       this.crypto.key = CryptoJS.enc.Utf8.parse(this.hex2a(key_hex));
       const iv_str = "0123456789abcdef";
       this.crypto.iv = CryptoJS.enc.Utf8.parse(iv_str);
-      const prime_number = "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece65381ffffffffffffffff";
+      const prime_number = "B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6" +
+            "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0" +
+            "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70" +
+            "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0" +
+            "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708" +
+            "DF1FB2BC2E4A4371";
       this.crypto.dh_prime = prime_number;
+      const generator = "A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F" +
+            "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213" +
+            "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1" +
+            "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A" +
+            "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24" +
+            "855E6EEB22B3B2E5";
+      this.crypto.dh_generator = generator;
 
-      let dh_prime = this.fromHex2Array(this.crypto.dh_prime);
-      let dh = crypto.createDiffieHellman(dh_prime, "hex");
+      let dh = crypto.createDiffieHellman(prime_number, "hex", generator, "hex");
       dh.setPrivateKey(this.fromHex2Array(this.self.private_key));
       this.self.dh = dh;
     },
-    encrypt: function(message) {
-      return CryptoJS.AES.encrypt(message, this.crypto.key, {
-        iv: this.crypto.iv,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7
-      }).toString();
-    },
+    // encrypt: function(message) {
+    //   return CryptoJS.AES.encrypt(message, this.crypto.key, {
+    //     iv: this.crypto.iv,
+    //     mode: CryptoJS.mode.CBC,
+    //     padding: CryptoJS.pad.Pkcs7
+    //   }).toString();
+    // },
     decrypt: function(ciphertext, passphrase) {
+      console.log("ciphertext: "+ciphertext);
+      console.log("passphrase: "+passphrase);
       return CryptoJS.AES.decrypt(ciphertext, passphrase, {
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
@@ -754,13 +776,13 @@ export default {
         padding: CryptoJS.pad.Pkcs7
       }).toString();
     },
-    decrypt: function(ciphertext) {
-      return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {
-              iv: this.crypto.iv,
-              mode: CryptoJS.mode.CBC,
-              padding: CryptoJS.pad.Pkcs7
-          }).toString(CryptoJS.enc.Utf8);
-    },
+    // decrypt: function(ciphertext) {
+    //   return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {
+    //           iv: this.crypto.iv,
+    //           mode: CryptoJS.mode.CBC,
+    //           padding: CryptoJS.pad.Pkcs7
+    //       }).toString(CryptoJS.enc.Utf8);
+    // },
     hex2a: function(hex) {
       var str = "";
       for (var i = 0; i < hex.length && hex.substr(i, 2) !== "00"; i += 2)

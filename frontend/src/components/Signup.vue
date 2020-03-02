@@ -166,25 +166,35 @@ export default {
     send() {
       this.websocket.send(this.request);
     },
-    generateKeys: function(private_key) {
+    generateKeys: function() {
         // (1024 bits = 128 bytes) same as const dh = crypto.getDiffieHellman('modp2');
-        const prime_number = "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece65381ffffffffffffffff";
+        const prime_number = "B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6" +
+            "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0" +
+            "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70" +
+            "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0" +
+            "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708" +
+            "DF1FB2BC2E4A4371";
+
+        const generator = "A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F" +
+            "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213" +
+            "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1" +
+            "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A" +
+            "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24" +
+            "855E6EEB22B3B2E5";
+
 
         // 256 bits = 32 bytes
         // const prime_number = "f2f0cd410c64e9d30d4a00deb81ad28450ef3c909ebf69975d87d54056043883";
 
-        const dh = crypto.createDiffieHellman(prime_number, 'hex'); //1024 bits
-
-        if (private_key === undefined) dh.generateKeys();
-        else {
-            dh.setPrivateKey(private_key);
-        }
+        const dh = crypto.createDiffieHellman(prime_number, 'hex', generator, 'hex'); //1024 bits
+        dh.generateKeys();
         return dh;
     },
     fromHex2Array: function(hexString) {
         return new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
     },
     submitForm: function(formName) {
+        // this.dhExample();
         this.$refs[formName].validate((valid) => {
             if (valid && (this.websocket.readyState === 1)) {
               this.dh = this.generateKeys();
@@ -205,7 +215,6 @@ export default {
                 alert('Please follow rules!');
             }
         });
-
     },
     onSignIn() {
       this.$router.push("/Signin");
@@ -225,25 +234,41 @@ export default {
     },
     dhExample() {
         // test example
-        const alice_private_key = "4a7d656b2ee3bcc668e0880f91a078ef5889141ada0a4706371e7cb085ac292dd6cb79c9763df132f6235b413b0aabdcd21e7f969a154311472a89e929230b9fbf4ae9ff3a04f10af6cc0880a1411a6346116eaa4e966e138eb80a611c8e96051c45abda6ef1333af26bb1117a331ace7abd7061430a7a136801a627c5686d0c";
-        const alice_public_key = "32307adb6647d7fa1c406bc5bab4c9fa2d5b2769d640a768028cf39146109ea8fcbbdd5d713e22b23e7fabe9d3ad3c3e396f4b3ad5dedb9a4c64a7e880275661f42bb8a1594e8341575e9f8b347276569a5c12b561f3f70ed13f2435bdd89dc6bc98b51038a45e5de2b260c72a989dbb5df985b53e2bf4bb6f3493decc3a4fa4";
-        const alice = this.generateKeys(this.fromHex2Array(alice_private_key));
+        let alice_private_key = "776a030aa40ad618deeebd7c0711b2d73f2823b88740dabbfa5d7fb414cc9b93bde3ed117ef0e3a8bd3ae10c111be64dd8ccfcc6f524c3f23ff32d838cedc20255ef0bbdbf8b8de01c7030560301413518b1e593a913b4c758ea67e14cd60e85f54d64700d01e4b43c1fb1cef8bca86ec0c42de18cadf1ffe7f0e463b876f4ac";
+        let alice_public_key = "78aaa8ca01fe27ccadeee693fda07350ddbf09c9f893b8141610cc0971d7597b2a83163c7c0e8f7aa059de8f54b8c4afcd8153eab3d5f93fb908faa03c412b15e98394454ed1ca75211d014f30067f2f3e8fe79d80d63a31355302a97d949e2e9c89d123ff116da65cf405cf2d487be92981e91f5b9ed45f980cef1fe8e04e5d";
+        let alice = this.generateKeys();
+        alice.setPublicKey(this.fromHex2Array(alice_public_key));
+        alice.setPrivateKey(this.fromHex2Array(alice_private_key));
 
-        const bob_private_key = "e26d39766b2001f0f7fbf3157cb6020d8a2e271445ca0ca0d14473e76d7ab88ec85eef6b4d1d69ae88198ab9550d246075b4799c5522a694b4e7e8211c7e41091b7af9a6aa5d1e2b5b4281f3528dbefbb81f1216dd2cf6f51028fdfc053ad7f81877bcc2bdee029d9a0c215c133ca5fb4b4c274d27f43db52ba31f1a11e077de";
-        const bob_public_key = "14a85284dfaabffb07cb09931ef47354c70f8d05096979695ccab0d58fd803ff6282f6a976f1b542bb4a00b9b29c57e263e8a3e804a7f05e782cdaf02bdfabea0082d84fd1185a09bda33a50a64c3d1c7aba30b11cc832fd8542fd65835b45c6f2b3f136a5dbaa947d9c9518d03ab7da775e4d4d24f575bfdce748fa591e939f";
-        const bob = this.generateKeys(this.fromHex2Array(bob_private_key));
+        console.log(Buffer.from(alice_private_key, 'hex').toString('base64'));
+
+        let bob_private_key =  "3d3ed89888faad1b9cff073a5119fc6e81f1586246237203f85e7cf2671340cbe84fba53e05e0e8cbc8db6b1c2a58e3d97b58e1c43ab0523b4d5d5433bb3e317dfbc6d447c05e4153cca6227f6c68f167462894d0ac8d336ffe39561ebc0d6ae19f04c2c18cdd45b3b79e9fe2de5c7d2bbec44b0150c92ec2efb7de065f62f1a";
+        let bob_public_key = "4a57ecb42f37f223d640c183c92398947ea3636cd5a8918448b7f71893fcaf9bbee439c0d6c37e293a6f89333315cfc74c6c0c688fb2d2777a6e739aa37c71c561213c647d01f29cfe1e2d09ef0675fab4628c15a94c1c50940be35c59a6caaeae2bd052b13f6bbb0233fbafc20bd9869ce51a5e9cd3cde3283b162ce05867d0";
+        let bob = this.generateKeys();
+        bob.setPublicKey(this.fromHex2Array(bob_public_key));
+        bob.setPrivateKey(this.fromHex2Array(bob_private_key));
+
+        // bob_private_key = Buffer.from(bob_private_key, 'hex').toString('base4');
+        // bob_public_key = Buffer.from(public_key, 'hex').toString('base64');
+
+        console.log(Buffer.from(bob_public_key, 'hex').toString('base64'));
 
         const alice_public_unit8arr = this.fromHex2Array(alice_public_key);
         const bob_public_unit8arr = this.fromHex2Array(bob_public_key);
         const aliceSecret = alice.computeSecret(bob_public_unit8arr).toString('hex');
         const bobSecret = bob.computeSecret(alice_public_unit8arr).toString('hex');
 
+        const sharedSecret = "aa42bd363092256fe032e754887c647c92e922a359ecda132b7b8c1a2bc8422aa3133f88234bc538c84d40f3a9181e93a7cf1c127824d5d109243c5db4f7ffa686bd0196bc1d06ebd2dfad6272589fa3736da660446c672835bb02d6911015f97c1f0d9da74596152937bb99bb068d677de4f41a8a2fb343840a59d09a241502";
+        console.log(aliceSecret);
+        console.log(bobSecret);
+        console.log(aliceSecret === bobSecret);
+
         const plaintext = "hello world!";
         const ciphertext_by_alice =  CryptoJS.AES.encrypt(plaintext, aliceSecret, {
             mode: CryptoJS.mode.CBC,
             padding: CryptoJS.pad.Pkcs7
         }).toString();
-        const decipheredtext_by_bob = CryptoJS.AES.decrypt(ciphertext_by_alice, bobSecret, {
+        const decipheredtext_by_bob = CryptoJS.AES.decrypt("U2FsdGVkX19KM+mtatFEeduIbZEvJogXSaCJBaB5GFI=", bobSecret, {
             mode: CryptoJS.mode.CBC,
             padding: CryptoJS.pad.Pkcs7
         }).toString(CryptoJS.enc.Utf8);
