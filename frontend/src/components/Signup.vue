@@ -110,10 +110,6 @@ export default {
     if ("WebSocket" in window) {
       this.websocket = new WebSocket("ws://localhost:1234");
       this.initWebSocket();
-        //to delete:
-        this.ruleForm.email = "010320@gmail.com";
-        this.ruleForm.name = "a010320";
-        this.ruleForm.pwd = "Aa1111!!";
     } else {
       alert("Websocket is not supported by this browser!");
       return null;
@@ -190,7 +186,6 @@ export default {
     },
     submitForm: function(formName) {
         this.$refs[formName].validate((valid) => {
-            console.log(this.websocket.readyState);
             if (valid && (this.websocket.readyState === 1)) {
               this.dh = this.generateKeys();
               const public_key = Buffer.from(this.dh.getPublicKey(),'binary').toString('base64');
@@ -207,7 +202,7 @@ export default {
                 "}";
               this.send();
             } else {
-                console.log('Please follow rules!');
+                alert('Please follow rules!');
             }
         });
 

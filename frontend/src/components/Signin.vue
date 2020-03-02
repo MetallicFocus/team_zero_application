@@ -23,7 +23,7 @@
                   to="/Signup"
                   tag="el-button"
                   style="width: 100px; height: 50px; margin-left: 50px;"
-                >Signup</router-link>
+                >Sign Up</router-link>
               </el-col>
             </el-row>
           </el-form-item>
@@ -114,7 +114,7 @@
         <div class="searchResults">
           <label>Search results are as follows:</label>
           <single-user-info
-            @chat="chatwith(userdata.username)"
+            @chat="chatwith(userdata.username, userdata.publicKey)"
             :key="userdata.username"
             class="single-user-info"
             v-for="userdata in searchUserForm.usersdata"
@@ -206,6 +206,7 @@ export default {
   data: function() {
     return {
       crypto: {
+        dh_prime: null,
         key: null,
         iv: null
       },
@@ -240,6 +241,7 @@ export default {
         avatar: "/img/avatar.jpg",
         name: "User1",
         private_key: "",
+        dh: null,
       },
       search: "",
       chat_num: 1,
@@ -253,6 +255,7 @@ export default {
           badge_hidden: true,
           has_got_history: false,
           public_key: "",
+          shared_key: "",
           messages: [
             {
               avatar: "/img/avatar.jpg",
@@ -282,6 +285,9 @@ export default {
     if ("WebSocket" in window) {
       this.websocket = new WebSocket("ws://localhost:1234");
       this.initWebSocket();
+      // test: to delete
+      this.ruleForm.name = "a020320";
+      this.ruleForm.pwd = "Aa1111!!";
     } else {
       alert("Websocket is not supported by this browser!");
       return null;
@@ -312,7 +318,7 @@ export default {
                 var contacts = this.parsed_response.contacts;
                 for (let i in contacts) {
                   if (contacts[i].username !== this.self.name) {
-                    this.chatwith(contacts[i].username);
+                    this.chatwith(contacts[i].username, contacts[i].publicKey);
                   }
                 }
                 break;
@@ -351,6 +357,11 @@ export default {
                     false
                   );
                 }
+                break;
+              case "GETPUBLICKEY: SUCCESS":
+                var username = this.parsed_response.username;
+                var public_key = this.parsed_response.publicKey;
+                this.updatePublicKey(username, public_key);
                 break;
             }
             break;
@@ -439,11 +450,30 @@ export default {
       // }
       this.updateChat(this.self.name, recipient, message, time, false);
     },
+    getPublicKeyof(username) {
+        this.request =
+            "{\n" +
+            'type: "GETPUBLICKEY",\n' +
+            'username:"' +
+            username +
+            '",\n' +
+            "}";
+        this.send();
+    },
+    updatePublicKey(username, public_key) {
+      for (var chat_key in this.chatlist) {
+          if (this.chatlist[chat_key].username === username) {
+              this.chatlist[chat_key].public_key = Buffer.from(public_key, "base64").toString("hex");
+              return;
+          }
+      }
+      chat_key = this.createNewChat(username, public_key);
+      this.getChatHistory(sender, chat_key);
+    },
     getNewText: function(sender, message) {
       var chat_key = this.isContactExist(sender);
       if (chat_key === false) {
-        chat_key = this.createNewChat(sender);
-        this.getChatHistory(sender, chat_key);
+        this.getPublicKeyof(sender);
       }
 
       var time = new Date();
@@ -558,8 +588,13 @@ export default {
     closeSearchPanel: function() {
       this.searchUserForm.display = false;
     },
-    createNewChat: function(username) {
-      var chat_key = this.chat_num;
+    fromHex2Array: function(hexString) {
+      return new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    },
+    createNewChat: function(username, public_key) {
+      let chat_key = this.chat_num;
+      let shared_key = this.self.dh.computeSecret(this.fromHex2Array(public_key)).toString('hex');
+      console.log("shared_key: "+shared_key);
       Vue.set(this.chatlist, this.chat_num, {
         id: ++this.chat_num,
         avatar: "",
@@ -568,6 +603,8 @@ export default {
         new_message_num: 0,
         badge_hidden: true,
         has_got_history: false,
+        public_key: public_key,
+        shared_key: shared_key,
         messages: [
           {
             avatar: "",
@@ -579,7 +616,7 @@ export default {
       });
       return chat_key;
     },
-    chatwith: function(username) {
+    chatwith: function(username, public_key_base64) {
       if (username === this.self.name) return; //Todo: chat with oneself
       for (var chat_key in this.chatlist) {
         if (this.chatlist[chat_key].name === username) {
@@ -590,7 +627,8 @@ export default {
           return;
         }
       }
-      this.createNewChat(username);
+      let public_key = Buffer.from(public_key_base64, "base64").toString("hex");
+      this.createNewChat(username, public_key);
       this.closeSearchPanel();
       this.showchat(this.chat_num);
     },
@@ -603,8 +641,6 @@ export default {
         '",\n' +
         "}";
       this.send();
-
-      //Todo: fail to search
     },
     searchGroups: function() {
       this.request =
@@ -625,7 +661,7 @@ export default {
         const item_name = this.self.name+"_private_key";
         const private_key = localStorage.getItem(item_name);
         if(!private_key) {
-            alert("Please log in with an authorised device!");
+            alert("Please check your username, or you may be logging in on an unauthorised device!");
             return false;
         } else {
             this.self.private_key = private_key;
@@ -650,15 +686,20 @@ export default {
           '"\n' +
           "}";
         this.send();
-      } else {
-        alert("Error: " + this.response);
       }
     },
     initCrypto: function() {
-      let key_hex = "2646294A404E635266556A576E5A7234";
+      const key_hex = "2646294A404E635266556A576E5A7234";
       this.crypto.key = CryptoJS.enc.Utf8.parse(this.hex2a(key_hex));
-      let iv_str = "0123456789abcdef";
+      const iv_str = "0123456789abcdef";
       this.crypto.iv = CryptoJS.enc.Utf8.parse(iv_str);
+      const prime_number = "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece65381ffffffffffffffff";
+      this.crypto.dh_prime = prime_number;
+
+      let dh_prime = this.fromHex2Array(this.crypto.dh_prime);
+      let dh = crypto.createDiffieHellman(dh_prime, "hex");
+      dh.setPrivateKey(this.fromHex2Array(this.self.private_key));
+      this.self.dh = dh;
     },
     encrypt: function(message) {
       return CryptoJS.AES.encrypt(message, this.crypto.key, {
