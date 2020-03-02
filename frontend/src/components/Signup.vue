@@ -23,7 +23,7 @@
 //import HelloWorld from "./components/HelloWorld.vue";
 
 //TODO: Encryption
-
+const CryptoJS = require("crypto-js");
 const crypto = require("crypto");
 
 export default {
@@ -238,10 +238,20 @@ export default {
         const aliceSecret = alice.computeSecret(bob_public_unit8arr).toString('hex');
         const bobSecret = bob.computeSecret(alice_public_unit8arr).toString('hex');
 
-        /* aliceSecret and bobSecret should be the same */
-        console.log(aliceSecret);
-        console.log(bobSecret);
-        console.log(aliceSecret === bobSecret);
+        const plaintext = "hello world!";
+        const ciphertext_by_alice =  CryptoJS.AES.encrypt(plaintext, aliceSecret, {
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        }).toString();
+        const decipheredtext_by_bob = CryptoJS.AES.decrypt(ciphertext_by_alice, bobSecret, {
+            mode: CryptoJS.mode.CBC,
+            padding: CryptoJS.pad.Pkcs7
+        }).toString(CryptoJS.enc.Utf8);
+
+        console.log("plaintext: "+plaintext);
+        console.log("cipher text: "+ciphertext_by_alice);
+        console.log("deciphered text: "+decipheredtext_by_bob);
+
     }
   }
 };

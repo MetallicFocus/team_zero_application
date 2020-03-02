@@ -262,13 +262,15 @@ export default {
               time: "2020-02-29 00:00",
               content:
                 "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
-              objectflag: 1
+              objectflag: 1,
+              status: 2 // new: 0; unread: 1; read: 2
             },
             {
               avatar: "/img/avatar.jpg",
               time: "2020-02-29 00:01",
               content: "2222fffffffffffffffff!",
-              objectflag: 0
+              objectflag: 0,
+              status: 2 // new: 0; unread: 1; read: 2
             }
           ]
         }
@@ -305,7 +307,7 @@ export default {
           case "TEXT":
             if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
             var sender = this.parsed_response.sender;
-            var message = this.decrypt(this.parsed_response.message);
+            var message = this.parsed_response.message;
             this.getNewText(sender, message);
             break;
           case "REPLY":
@@ -354,7 +356,7 @@ export default {
                     recipient,
                     this.decrypt(message),
                     new Date(time),
-                    false
+                    2
                   );
                 }
                 break;
@@ -362,6 +364,7 @@ export default {
                 var username = this.parsed_response.username;
                 var public_key = this.parsed_response.publicKey;
                 this.updatePublicKey(username, public_key);
+                this.checkNewSentMessage(username);
                 break;
             }
             break;
@@ -416,13 +419,26 @@ export default {
           this.chatlist[chat_key].has_got_history = true;
           this.chatlist[chat_key].show = 1;
           this.chatlist[chat_key].badge_hidden = true;
+          this.readAllMessagesByChatkey(chat_key);
         }
+      }
+    },
+    readAllMessagesByChatkey: function(chat_key) {
+      for (var message_key in this.chatlist[chat_key].messages) {
+          this.chatlist[chat_key].messages[message_key].status = 1; // read
+      }
+    },
+    readAllMessagesByUsername: function(username) {
+      var chat_key = this.isContactExist(username);
+      for (var message_key in this.chatlist[chat_key].messages) {
+          this.chatlist[chat_key].messages[message_key].status = 1; // read
       }
     },
     text2: function(args) {
       let recipient = args[0];
       let message = args[1];
       let time = new Date();
+      let shared_key = this.getSharedSecret(recipient);
 
       // Todo: bug to fix: a blank message popup created in text field
       if (message === "") {
@@ -437,9 +453,8 @@ export default {
         '", "recipient":"' +
         recipient +
         '", "message":"' +
-        this.encrypt(message) +
+        this.encrypt(message, shared_key) +
         '"}';
-      console.log(this.request);
       this.send();
 
       //Todo: determine text successful
@@ -448,7 +463,14 @@ export default {
       // } else {
       //     console.log(this.parsed_response.message);
       // }
-      this.updateChat(this.self.name, recipient, message, time, false);
+      this.updateChat(this.self.name, recipient, message, time, 2);
+    },
+    getSharedSecret(username) {
+      for (var chat_key in this.chatlist) {
+          if (this.chatlist[chat_key].name === username) {
+              return this.chatlist[chat_key].shared_key;
+          }
+      }
     },
     getPublicKeyof(username) {
         this.request =
@@ -461,23 +483,33 @@ export default {
         this.send();
     },
     updatePublicKey(username, public_key) {
-      for (var chat_key in this.chatlist) {
-          if (this.chatlist[chat_key].username === username) {
-              this.chatlist[chat_key].public_key = Buffer.from(public_key, "base64").toString("hex");
-              return;
-          }
+      var chat_key = this.isContactExist(username);
+      if (chat_key !== false) {
+        this.chatlist[chat_key].public_key = Buffer.from(public_key, "base64").toString("hex");
+        return;
       }
       chat_key = this.createNewChat(username, public_key);
-      this.getChatHistory(sender, chat_key);
+      this.getChatHistory(username, chat_key);
+    },
+    checkNewSentMessage: function(username) {
+        var chat_key = this.isContactExist(username);
+        for (var message_key in this.chatlist[chat_key].messages) {
+            if (this.chatlist[chat_key].messages[message_key].status === 0) {
+                this.getNewText(username, this.chatlist[chat_key].messages[message_key].content);
+            }
+        }
     },
     getNewText: function(sender, message) {
       var chat_key = this.isContactExist(sender);
       if (chat_key === false) {
         this.getPublicKeyof(sender);
+        return;
       }
 
+      var shared_key = this.getSharedSecret(sender);
+      message = this.decrypt(message, shared_key);
       var time = new Date();
-      this.updateChat(sender, this.self.name, message, time, true);
+      this.updateChat(sender, this.self.name, message, time, 0);
       this.popUpChat(chat_key);
       // Todo: onclick: turn to concerned chat panel
       const h = this.$createElement;
@@ -498,7 +530,7 @@ export default {
       }
       return exist;
     },
-    updateChat: function(sender, recipient, message, time, is_new_message) {
+    updateChat: function(sender, recipient, message, time, message_status) {
       let hour = time.getHours();
       let paddingHour = hour > 9 ? "" : "0";
       let minute = time.getMinutes();
@@ -522,7 +554,8 @@ export default {
         avatar: "/img/avatar.jpg",
         time: time,
         content: message,
-        objectflag: 0
+        objectflag: 0,
+        status: message_status
       };
       var message_key = "";
 
@@ -545,13 +578,14 @@ export default {
         for (var chat_key in this.chatlist) {
           //message in
           if (this.chatlist[chat_key].name === sender) {
-            if (is_new_message) {
+            if (message_status !== 2) {
               if (this.chatlist[chat_key].badge_hidden)
                 this.chatlist[chat_key].new_message_num = 0;
               this.chatlist[chat_key].new_message_num++;
               this.chatlist[chat_key].badge_hidden = false;
             }
             if (!this.isChatRedundant(chat_key, message_info)) {
+              if (message_status === 0) message_info.status = 1; //suggest message loaded to panel
               message_key = this.chatlist[chat_key].messages.length;
               message_info.objectflag = 1;
               Vue.set(
@@ -708,12 +742,24 @@ export default {
         padding: CryptoJS.pad.Pkcs7
       }).toString();
     },
-    decrypt: function(ciphertext) {
-      return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {
-        iv: this.crypto.iv,
+    decrypt: function(ciphertext, passphrase) {
+      return CryptoJS.AES.decrypt(ciphertext, passphrase, {
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
       }).toString(CryptoJS.enc.Utf8);
+    },
+    encrypt: function(message, passphrase) {
+      return CryptoJS.AES.encrypt(message, passphrase, {
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }).toString();
+    },
+    decrypt: function(ciphertext) {
+      return CryptoJS.AES.decrypt(ciphertext, this.crypto.key, {
+              iv: this.crypto.iv,
+              mode: CryptoJS.mode.CBC,
+              padding: CryptoJS.pad.Pkcs7
+          }).toString(CryptoJS.enc.Utf8);
     },
     hex2a: function(hex) {
       var str = "";
