@@ -1,6 +1,7 @@
 package teamzero.chat.mobile;
 
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.os.Handler;
@@ -25,13 +26,10 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +39,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import database.AppDatabaseClient;
+import tools.AES256Cryptor;
 import tools.AESUtilities;
 import tools.JSONConstructor;
 
@@ -50,6 +50,7 @@ public class Chat extends AppCompatActivity {
     ScrollView scrollView;
     EditText messageToSend;
     Button sendMsgButton;
+    String sharedSecret = "";
 
     // Use the handler with a runnable in order to recognize fetched messages from the onMessage event of the WS
     // Once the messages are recognized, display them onto the chat screen using addMessageBox
@@ -81,6 +82,14 @@ public class Chat extends AppCompatActivity {
         // If it is, display a back button on the action bar
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        getSharedSecretKey();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("SHARED SECRET = " + sharedSecret);
+
         if(!UserDetails.historyIsHidden)
             showHistoryOfMessages(UserDetails.username, UserDetails.chatWith, "1");
 
@@ -96,7 +105,9 @@ public class Chat extends AppCompatActivity {
 
                     // encrypt message sent to other user
                     String unencryptedText = messageToSend.getText().toString();
-                    String encryptedText = AESUtilities.encrypt(unencryptedText);
+                    // TODO: Previous method to encrypt
+                    //String encryptedText = AESUtilities.encrypt(unencryptedText);
+                    String encryptedText = AES256Cryptor.encrypt(unencryptedText, sharedSecret);
 
                     WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructTextJSON(UserDetails.username, UserDetails.chatWith, encryptedText));
 
@@ -104,7 +115,7 @@ public class Chat extends AppCompatActivity {
 
                     //Thread.sleep(2000);
 
-                } catch (JSONException | GeneralSecurityException e) {
+                } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
@@ -131,8 +142,12 @@ public class Chat extends AppCompatActivity {
                 String receivedMessage = "[encrypted]";
 
                 try {
-                    receivedMessage = AESUtilities.decrypt(UserDetails.messages.get(UserDetails.chatWith).get(i));
-                    //System.out.println("decrypt = " + AESUtilities.decrypt("WE1JGWEelHWyWCL0l+CsHggW+KN9eiIZXL7cR5Jcotmpzj1N1mmhjdz3eYFUbJdT8KpjSJ2dBWOMqjX+tXW/1A=="));
+                    // TODO: Previous method of decrypting with AES
+                    //receivedMessage = AESUtilities.decrypt(UserDetails.messages.get(UserDetails.chatWith).get(i));
+                    System.out.println("decrypt = " + AESUtilities.decrypt("xgMHrdWVlsyDve3Pg8S1Ww=="));
+
+                    receivedMessage = AES256Cryptor.decrypt(UserDetails.messages.get(UserDetails.chatWith).get(i), sharedSecret);
+
                 } catch (NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
                         InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException |
                         IllegalBlockSizeException e) {
@@ -239,12 +254,16 @@ public class Chat extends AppCompatActivity {
                             JSONObject x = jsonArr.getJSONObject(i);
 
                             // If message at iteration i was send by this user, display it on the left side with appropriate color
-                            if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
-                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(), 1);
+                            if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username)) {
+                                //addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(), 1);
+                                addMessageBox(AES256Cryptor.decrypt(x.get("message").toString(), sharedSecret), x.get("timestamp").toString(), 1);
+                            }
 
                             // If message at iteration i was send by the other user, display it on the right side with appropriate color
-                            if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
-                                addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),2);
+                            if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username)) {
+                                //addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),2);
+                                addMessageBox(AES256Cryptor.decrypt(x.get("message").toString(), sharedSecret), x.get("timestamp").toString(),2);
+                            }
                         }
 
                     } catch(JSONException e) {
@@ -253,18 +272,21 @@ public class Chat extends AppCompatActivity {
                         JSONObject x = responseJSON.getJSONObject("messages");
 
                         // If message at iteration i was send by this user, display it on the left side with appropriate color
-                        if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username))
-                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),1);
+                        if (x.get("sender").toString().equalsIgnoreCase(UserDetails.username)) {
+                            //addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(), 1);
+                            addMessageBox(AES256Cryptor.decrypt(x.get("message").toString(), sharedSecret), x.get("timestamp").toString(), 1);
+                        }
 
                         // If message at iteration i was send by the other user, display it on the right side with appropriate color
-                        if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username))
-                            addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(),2);
+                        if (x.get("recipient").toString().equalsIgnoreCase(UserDetails.username)) {
+                            //addMessageBox(AESUtilities.decrypt(x.get("message").toString()), x.get("timestamp").toString(), 2);
+                            addMessageBox(AES256Cryptor.decrypt(x.get("message").toString(), sharedSecret), x.get("timestamp").toString(), 2);
+                        }
                     }
                 }
 
             }
-        } catch (JSONException | NoSuchPaddingException | NoSuchAlgorithmException | NoSuchProviderException |
-                InvalidAlgorithmParameterException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
@@ -284,6 +306,33 @@ public class Chat extends AppCompatActivity {
                 scrollView.fullScroll(ScrollView.FOCUS_DOWN);
             }
         });
+    }
+
+    private void getSharedSecretKey() {
+        class GetSharedSecretKey extends AsyncTask<Void, Void, Void> {
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+                // SELECT shared_secret_key FROM storedchatlist WHERE username LIKE :userToSearchFor AND chat_belongs_to LIKE :myself
+                System.out.println("Getting secret shared key (doInBackground)");
+                sharedSecret = AppDatabaseClient
+                        .getInstance(getApplicationContext())
+                        .getAppDatabase()
+                        .storedChatListDao()
+                        .getSharedKeyFromChatList(UserDetails.chatWith, UserDetails.username);
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                // Refresh
+                System.out.println("Getting secret shared key (onPostExecute)");
+            }
+        }
+
+        GetSharedSecretKey gt = new GetSharedSecretKey();
+        gt.execute();
     }
 
     // Finishes current activity (dismisses dialogs, closes search, etc.) and goes to the parent activity

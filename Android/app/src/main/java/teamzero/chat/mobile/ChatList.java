@@ -188,12 +188,18 @@ public class ChatList extends AppCompatActivity {
 
                                 /*end shared secret key compute */
 
+                                // TODO: This part directly takes the hardcoded DH key
+                                String sharedPassphrase = DHUtilities.generateSharedKey(publicKey, myPrivateKeyStr);
+
+                                System.out.println("sharedPassphrase = " + sharedPassphrase);
 
                                 //test
                                 System.out.println(new String(sharedKey));
 
                                 // set the shared key in stored chat list details as a String
-                                scl.setSharedSecretKey(new String(sharedKey));
+                                // TODO: Set to sharedKey instead (use next line to the following one)
+                                scl.setSharedSecretKey(sharedPassphrase);
+                                //scl.setSharedSecretKey(new String(sharedKey));
                             }
                             else scl.setSharedSecretKey("2646294A404E635266556A576E5A7234");
 
