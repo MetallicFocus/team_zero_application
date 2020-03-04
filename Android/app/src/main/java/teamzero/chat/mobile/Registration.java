@@ -90,14 +90,15 @@ public class Registration extends AppCompatActivity {
             System.out.println("-- PRE-ENCODING --");
             System.out.println("public key = " + publicPrivateKeys.getPublic());
             System.out.println(publicPrivateKeys.getPublic().getEncoded());
-            System.out.println(Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded()));
+            System.out.println("public Base64 = " + Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded()));
 
             System.out.println("private key = " + publicPrivateKeys.getPrivate());
             System.out.println(publicPrivateKeys.getPrivate().getEncoded());
-            System.out.println(Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
+            System.out.println("private Base64 = " + Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
 
             // Send register JSON request to server
-            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded())));
+            //WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, Base64.toBase64String(publicPrivateKeys.getPublic().getEncoded())));
+            WebSocketHandler.getSocket().sendMessageAndWait(new JSONConstructor().constructRegisterJSON(username, password, email, picture, "eKqoygH+J8yt7uaT/aBzUN2/Ccn4k7gUFhDMCXHXWXsqgxY8fA6PeqBZ3o9UuMSvzYFT6rPV+T+5CPqgPEErFemDlEVO0cp1IR0BTzAGfy8+j+edgNY6MTVTAql9lJ4unInRI/8RbaZc9AXPLUh76SmB6R9bntRfmAzvH+jgTl0="));
 
             //Thread.sleep(500);
 
@@ -110,7 +111,8 @@ public class Registration extends AppCompatActivity {
 
                 UsersOnDevice UOD = new UsersOnDevice();
                 UOD.setUsername(username);
-                UOD.setPrivateKey(Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
+                //UOD.setPrivateKey(Base64.toBase64String(publicPrivateKeys.getPrivate().getEncoded()));
+                UOD.setPrivateKey("d2oDCqQK1hje7r18BxGy1z8oI7iHQNq7+l1/tBTMm5O94+0RfvDjqL064QwRG+ZN2Mz8xvUkw/I/8y2DjO3CAlXvC72/i43gHHAwVgMBQTUYseWTqRO0x1jqZ+FM1g6F9U1kcA0B5LQ8H7HO+LyobsDELeGMrfH/5/DkY7h29Kw=");
 
                 System.out.println("UOD.getUsername = " + UOD.getUsername());
                 System.out.println("UOD.getPrivateKey = " + UOD.getPrivateKey());

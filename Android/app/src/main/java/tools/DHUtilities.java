@@ -1,9 +1,11 @@
 package tools;
 
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -20,6 +22,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 
 public class DHUtilities {
@@ -41,6 +44,33 @@ public class DHUtilities {
         }
 
         return kp;
+    }
+
+    public static void createSpecificKey(BigInteger p, BigInteger g) throws Exception {
+
+        System.out.println("prime = " + p);
+        System.out.println("generator = " + g);
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH");
+
+        DHParameterSpec param = new DHParameterSpec(p, g, 0);
+        kpg.initialize(param);
+        KeyPair kp = kpg.generateKeyPair();
+
+        System.out.println("get P = " + param.getP());
+        System.out.println("get G = " + param.getG());
+        System.out.println("get L = " + param.getL());
+
+        KeyFactory kfactory = KeyFactory.getInstance("DH");
+
+        DHPublicKeySpec kspec = (DHPublicKeySpec) kfactory.getKeySpec(kp.getPublic(),
+                DHPublicKeySpec.class);
+
+        System.out.println("BASE64 public test = " + Base64.toBase64String(kp.getPublic().getEncoded()));
+        System.out.println("BASE64 private test = " + Base64.toBase64String(kp.getPrivate().getEncoded()));
+
+        System.out.println("HEX public test = " + Hex.toHexString(kp.getPublic().getEncoded()));
+        System.out.println("HEX private test = " + Hex.toHexString(kp.getPrivate().getEncoded()));
     }
 
     public static byte[] initiatorAgreementBasic(PrivateKey initiatorPrivate, PublicKey recipientPublic) throws GeneralSecurityException {
@@ -96,6 +126,29 @@ public class DHUtilities {
             }
         }
         return privateKey;
+    }
+
+    public static String generateSharedKey(String pubKey, String privKey) {
+        PublicKey publicKeyOfUser = DHUtilities.computeDHPublicKeyfromBase64String(pubKey);
+        PrivateKey myPrivateKey = DHUtilities.computeDHPrivateKeyfromBase64String(privKey);
+        KeyAgreement keyAgreement;
+        byte[] sharedsecret = new byte[]{};
+
+        try {
+            keyAgreement = KeyAgreement.getInstance("DH");
+            keyAgreement.init(myPrivateKey);
+            keyAgreement.doPhase(publicKeyOfUser, true);
+            sharedsecret = keyAgreement.generateSecret();
+            System.out.println("Result = ");
+            //System.out.println(Base64.toBase64String(new SecretKeySpec(sharedsecret, "AES").getEncoded()));
+            System.out.println(Hex.toHexString(new SecretKeySpec(sharedsecret, "AES").getEncoded()));
+
+            return Hex.toHexString(new SecretKeySpec(sharedsecret, "AES").getEncoded());
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        return null;
+        //return new SecretKeySpec(sharedsecret, "AES");
     }
 
 }

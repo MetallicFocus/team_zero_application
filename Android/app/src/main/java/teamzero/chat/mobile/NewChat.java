@@ -272,13 +272,20 @@ public class NewChat extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
+                    // TODO: This part directly takes the hardcoded DH key
+                    String sharedPassphrase = DHUtilities.generateSharedKey(publicKeyb64OfUser, myPrivateKeyStr);
+
+                    System.out.println("sharedPassphrase = " + sharedPassphrase);
+
                     //test
                     System.out.println(new String(sharedKey));
 
                     /*end shared secret key compute */
 
                     // set the shared key in stored chat list details as a String
-                    scl.setSharedSecretKey(new String(sharedKey));
+                    // TODO: Set to sharedKey instead (use next line to the following one)
+                    scl.setSharedSecretKey(sharedPassphrase);
+                    //scl.setSharedSecretKey(new String(sharedKey));
                 }
 
                 scl.setChatBelongsTo(UserDetails.username);
