@@ -11,8 +11,6 @@ public class Client {
 	private boolean isLoggedIn;
 	private String publicKey;
 	
-
-	// TODO add an image object for profile pics 
 	public Client(String username, String email, int id, boolean isLoggedIn) {
 		this.username = username;
 		this.email = email;
