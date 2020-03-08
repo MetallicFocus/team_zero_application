@@ -10,7 +10,6 @@ public class GroupTest extends WebSocketClient{
 
 	public GroupTest(URI serverURI) {
 		super(serverURI);
-		// TODO Auto-generated constructor stub
 	}
 	
 

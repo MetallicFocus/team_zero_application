@@ -148,7 +148,6 @@ public class ServerMain extends WebSocketServer {
 			 fileHandler.setLevel(Level.ALL);
 			 LOGGER.addHandler(fileHandler);
 		} catch (SecurityException | IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			LOGGER.log(Level.WARNING, "Could not create Server Log file.");
 		} 
@@ -168,7 +167,7 @@ public class ServerMain extends WebSocketServer {
 	private static void startServer() throws UnknownHostException {
 		int port;
 		try {
-			// get port information on heroku
+			// get port information if deployed on heroku
 			port = Integer.parseInt(System.getenv("PORT"));
 		}catch(NumberFormatException e) {
 			port = LOCAL_PORT;

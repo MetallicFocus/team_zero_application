@@ -29,12 +29,23 @@ public class Client extends WebSocketClient {
 		c2.connect();
 
 		
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		c1.login();
+
+
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
+		c1.unregister();
 		
 		c1.register();
 		

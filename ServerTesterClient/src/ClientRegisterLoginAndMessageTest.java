@@ -10,11 +10,11 @@ public class ClientRegisterLoginAndMessageTest {
 	
 	private String publicKey1 = "testpublickey1";
 	
-	private String email2 = "t02@testclient.com";
+	private String email2 = "t04@testclient.com";
 	
-	private String username2 = "t02";
+	private String username2 = "t04";
 	
-	private String password2 = "testpassword2";
+	private String password2 = "testpassword4";
 	
 	private String publicKey2 = "testpublickey2";
 	
