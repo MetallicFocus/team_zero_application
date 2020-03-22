@@ -332,6 +332,60 @@ public class DbConnection {
 		return chatHistory;
 	}
 	
+	public ArrayList<ChatMessage> getGroupHistory(String thisUserName, String groupName, int daysOfHistory) throws SQLException {
+		ArrayList<ChatMessage> chatHistory = new ArrayList<ChatMessage>();
+		int thisUserId = getUserIDFromUsername(thisUserName);
+		int groupId = getGroupIDFromGroupName(groupName);
+		Connection conn = this.connect();
+		int chatId = 0;
+		try {
+			// check that the sender is a member of the group
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ? AND left_group = ?");
+			
+			ps.setInt(1, groupId);
+			ps.setInt(2, thisUserId);
+			ps.setBoolean(3, false);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				// determine history date constraints	
+			    Date now = Calendar.getInstance().getTime();
+			    Calendar historyLimit = Calendar.getInstance();
+			    historyLimit.setTime(now);
+			    historyLimit.add(Calendar.DAY_OF_YEAR, -(daysOfHistory));
+			    String nowStr = ServerMain.DATE_FORMAT.format(now);
+			    String limitStr = ServerMain.DATE_FORMAT.format(historyLimit.getTime());
+			    
+				ps = conn.prepareStatement(
+						"SELECT group_message.timesent, group_message.message_content, u1.username AS sender, g.group_name AS groupName"
+						+ " FROM group_message "
+						+ "INNER JOIN users AS u1 ON (u1.user_id=group_message.sender_id) "
+						+ "INNER JOIN groups AS g ON (g.group_id=group_message.group_id)"
+						+ " WHERE g.group_id = ? AND timesent between ? AND ? ORDER BY timesent ASC;");
+				ps.setInt(1, groupId);
+				ps.setTimestamp(2, Timestamp.valueOf(limitStr));
+				ps.setTimestamp(3, Timestamp.valueOf(nowStr));
+				rs = ps.executeQuery();
+
+				while (rs.next()) {
+					String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
+					String message = rs.getString(COLUMN_MESSAGE_CONTENT);
+					String sender = rs.getString("sender");
+					String groupname = rs.getString("groupName");
+					ChatMessage chatMessage = new ChatMessage(sender, groupname, message, timestamp);
+					chatHistory.add(chatMessage);
+				}
+				ps.close();
+				conn.close();
+			} 
+		}
+		catch (SQLException e) {
+			LOGGER.log(Level.SEVERE, "Could not retrieve messages got error: {0}", e.getMessage()); //debug
+				throw e;
+		}
+		return chatHistory;
+	}
+	
 	/**
 	 * Adds a new group (chat) to the database
 	 * @param groupName
@@ -421,6 +475,35 @@ public class DbConnection {
 			throw e;
 		}
 		LOGGER.log(Level.FINE, "Getting all groups: {0}", allGroups);
+		return allGroups;
+	}
+	
+	public ArrayList<Group> getAllUserGroups(String userName) throws SQLException{
+		ArrayList<Group> allGroups = new ArrayList<Group>();
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
+					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
+					+ "SELECT u.username "
+					+ "FROM users u "
+					+ "JOIN user_groups ug ON ug.user_id=u.user_id "
+					+ "WHERE ug.group_id=g.group_id AND u.unregistered=false) AS members ) u WHERE ? = ANY (u.members);");
+			ps.setString(1, userName);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				int groupId = rs.getInt(COLUMN_GROUP_ID);
+				String groupName = rs.getString(COLUMN_GROUPNAME);
+				String[] groupMembers = (String[]) rs.getArray("members").getArray();
+				Group group = new Group(groupId, groupName, groupMembers);
+				allGroups.add(group);
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		LOGGER.log(Level.FINE, "Getting all user groups: {0}", allGroups);
 		return allGroups;
 	}
 	

@@ -62,7 +62,8 @@ public class ServerMain extends WebSocketServer {
 	private static final String CASE_GROUP_TEXT = "GROUPTEXT"; // send text to a group
 	private static final String CASE_JOIN_GROUP = "JOINGROUP"; // join a group
 	private static final String CASE_CREATE_GROUP = "CREATEGROUP"; // create a new group
-
+	private static final String CASE_GET_GROUP_HISTORY = "GETGROUPHISTORY"; // get group history
+	private static final String CASE_GETALLUSERGROUPS = "GETALLUSERGROUPS"; // get all groups user is in
 	
 	private static final String MESSAGE_REPLY_SUCCESS = "SUCCESS"; //feedback reply to clients 
 	private static final String MESSAGE_REPLY_FAILED = "FAILED"; //feedback reply to clients 
@@ -512,6 +513,76 @@ public class ServerMain extends WebSocketServer {
 									MESSAGE_REPLY_FAILED, 	
 										"User is not logged in"));
 					}			
+					break;
+				case CASE_GETALLUSERGROUPS:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						String myUserName = json.getString(JSON_KEY_MY_USERNAME);
+						ArrayList<Group> allGroups = dbConnection.getAllUserGroups(myUserName);
+						JSONObject allGroupsReply = new JSONObject();
+						allGroupsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						allGroupsReply.put(MESSAGE_REPLY, CASE_GETALLUSERGROUPS + ": SUCCESS");
+						for(Group g : allGroups) {
+							JSONObject group = new JSONObject();
+							group.put(JSON_KEY_GROUPNAME, g.getGroupName());
+							
+							String[] members = g.getMembers();
+							JSONArray groupMembersJson = new JSONArray();
+							
+							// keep member usernames in a json array within the individual group object
+							for (int i = 0; i < members.length; i++) {
+								groupMembersJson.put(members[i]);
+							}
+							
+							group.put(JSON_KEY_GROUP_MEMBERS, groupMembersJson);
+							allGroupsReply.accumulate("groups", group);
+						}
+						// send the list of groups 
+						websocket.send(allGroupsReply.toString());
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot get all groups - requesting user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_GETALLGROUPS,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}			
+					break;
+				case CASE_GET_GROUP_HISTORY:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						String myUserName = json.getString(JSON_KEY_MY_USERNAME);
+						String groupName = json.getString(JSON_KEY_GROUPNAME);
+						int historyDays = json.getInt(JSON_KEY_HISTORY_DAYS);
+						
+						// prepare the reply message
+						JSONObject messageHistoryReply = new JSONObject();
+						messageHistoryReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						ArrayList<ChatMessage> messages = dbConnection.getGroupHistory(myUserName, groupName, historyDays);			
+						messageHistoryReply.put(MESSAGE_REPLY, CASE_GET_GROUP_HISTORY + ": SUCCESS");
+						for(ChatMessage m : messages) {
+							JSONObject messageData = new JSONObject();
+							messageData.put(JSON_KEY_SENDER, m.getSenderUsername());
+							messageData.put(JSON_KEY_GROUPNAME, m.getRecipientUsername());
+							messageData.put(JSON_KEY_MESSAGE, m.getMessage());
+							messageData.put(JSON_KEY_TIMESTAMP, m.getTimestamp());
+							messageHistoryReply.accumulate("messages", messageData);
+						}
+						// send the list of messages 
+						websocket.send(messageHistoryReply.toString());
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot get message history - user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_GET_GROUP_HISTORY,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}
+					
 					break;
 				case CASE_SEARCHGROUPS:
 					// check if user is authenticated
