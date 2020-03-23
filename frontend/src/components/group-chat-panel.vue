@@ -15,6 +15,7 @@
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item icon="el-icon-circle-plus-outline" command="addMember">Add Member</el-dropdown-item>
                 <el-dropdown-item icon="el-icon-s-custom" command="members">Members</el-dropdown-item>
+                <el-dropdown-item icon="el-icon-s-custom" command="exitGroup">Exit Group</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </el-col>
@@ -89,6 +90,12 @@ export default {
       switch (command) {
         case "addMember":
           this.$emit("add-members");
+          break;
+        case "members":
+          this.$emit("view-members");
+          break;
+        case "exitGroup":
+          this.$emit("exit-group");
           break;
       }
     }

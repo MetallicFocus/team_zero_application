@@ -101,6 +101,8 @@
           v-for="group in grouplist"
           v-on:send-message="sendGroupMessage($event, args)"
           v-on:add-members="addMembers()"
+          v-on:view-members="viewMembers()"
+          v-on:exit-group="exitGroup()"
           v-bind:key="group.id"
           :group="group"
           v-show="group.show"
@@ -245,6 +247,23 @@
         </el-row>
       </div>
     </div>
+    <div v-show="viewMembersForm.display">
+      <div class="mask"></div>
+      <div class="searchPanel">
+        <div class="searchResults">
+          <el-row>
+            <el-col v-for="member in selectedMembers" :key="member">
+              <label>{{member}}</label>
+            </el-col>
+          </el-row>
+        </div>
+        <el-row>
+          <el-col offset="10" :span="4">
+            <el-button style="margin-top: 10px;" @click="closeviewMembersPanel">Cancel</el-button>
+          </el-col>
+        </el-row>
+      </div>
+    </div>
     <div v-show="searchGroupForm.display">
       <div class="mask"></div>
       <div class="searchPanel">
@@ -334,6 +353,9 @@ export default {
       addMembersForm: {
         display: false,
         groupName: ""
+      },
+      viewMembersForm: {
+        display: false
       },
       websocket: null,
       request: "",
@@ -776,6 +798,12 @@ export default {
     closeaddMembersPanel: function() {
       this.addMembersForm.display = false;
     },
+    showviewMembersPanel: function() {
+      this.viewMembersForm.display = true;
+    },
+    closeviewMembersPanel: function() {
+      this.viewMembersForm.display = false;
+    },
     fromHex2Array: function(hexString) {
       return new Uint8Array(
         hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
@@ -1122,6 +1150,9 @@ export default {
     addMembers() {
       this.showaddMembersPanel();
     },
+    viewMembers() {
+      this.showviewMembersPanel();
+    },
     getGroupHistory(groupName) {
       this.request =
         "{\n" +
@@ -1133,7 +1164,7 @@ export default {
         groupName +
         '",\n' +
         'historyDays: "' +
-        1 +
+        10 +
         '"\n' +
         "}";
       this.send();
