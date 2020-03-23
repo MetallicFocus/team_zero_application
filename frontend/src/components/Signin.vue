@@ -439,6 +439,12 @@ export default {
             var message = this.parsed_response.message;
             this.getNewText(sender, message);
             break;
+          case "GROUPTEXT":
+            var sender = this.parsed_response.sender;
+            var groupName = this.parsed_response.groupName;
+            var message = this.parsed_response.message;
+            this.getNewGroupText(sender, groupName, message);
+            break;
           case "REPLY":
             switch (this.parsed_response.REPLY) {
               case "LOGIN: SUCCESS":
@@ -685,6 +691,10 @@ export default {
         title: "New message!",
         message: h("i", { style: "color: teal" }, sender + ": " + message)
       });
+    },
+    getNewGroupText(sender, groupName, message) {
+      var time = new Date();
+      this.updateGroupChat(sender, groupName, message, time, 0);
     },
     isContactExist: function(username) {
       var exist = false;
