@@ -80,6 +80,14 @@
               :newMessageNum="chat.new_message_num"
               :hidden="chat.badge_hidden"
             ></single-chat>
+            <group-chat
+              v-on:click-id="showGroupChat(group.id)"
+              v-for="group in grouplist"
+              v-bind:key="group.id"
+              :name="group.name"
+              :time="group.messages[group.messages.length-1].time"
+              :content="group.messages[group.messages.length-1].content"
+            ></group-chat>
           </el-main>
         </el-aside>
         <single-chat-panel
@@ -89,6 +97,16 @@
           :chat="chat"
           v-show="chat.show"
         ></single-chat-panel>
+        <group-chat-panel
+          v-for="group in grouplist"
+          v-on:send-message="sendGroupMessage($event, args)"
+          v-on:add-members="addMembers()"
+          v-on:view-members="viewMembers()"
+          v-on:exit-group="exitGroup()"
+          v-bind:key="group.id"
+          :group="group"
+          v-show="group.show"
+        ></group-chat-panel>
       </el-container>
     </div>
     <div v-show="searchUserForm.display">
@@ -136,6 +154,35 @@
         <el-row>
           <el-col :span="10" offset="6">
             <el-input
+              v-model="searchUserForm.searchField"
+              placeholder="Type user name"
+              style="margin-top: 10px;"
+            ></el-input>
+          </el-col>
+          <el-col :span="2">
+            <el-button
+              icon="el-icon-search"
+              type="primary"
+              @click="searchUsers()"
+              style="margin-top: 10px;"
+            ></el-button>
+          </el-col>
+        </el-row>
+        <div class="searchResults">
+          <span>Selected users: {{ selectedGroupUserNames }}</span>
+          <div v-for="userdata in searchUserForm.usersdata" :key="userdata.username">
+            <input
+              type="checkbox"
+              :id="userdata.username"
+              :value="userdata.username"
+              v-model="selectedGroupUserNames"
+            />
+            <label for="userdata.username">{{userdata.username}}</label>
+          </div>
+        </div>
+        <el-row>
+          <el-col :span="10" offset="6">
+            <el-input
               v-model="createGroupForm.groupName"
               placeholder="Please input group name"
               style="margin-top: 10px;"
@@ -144,10 +191,75 @@
         </el-row>
         <el-row>
           <el-col offset="5" :span="2">
-            <el-button style="margin-top: 10px;" @click="createGroup(self.name)">Create Group</el-button>
+            <el-button
+              style="margin-top: 10px;"
+              @click="createGroupWithMembers(self.name, selectedGroupUserNames)"
+            >Create Group</el-button>
           </el-col>
           <el-col offset="10" :span="4">
-            <el-button style="margin-top: 10px;" @click="closeSearchUserPanel">Cancel</el-button>
+            <el-button style="margin-top: 10px;" @click="closeCreateGroupPanel">Cancel</el-button>
+          </el-col>
+        </el-row>
+      </div>
+    </div>
+    <div v-show="addMembersForm.display">
+      <div class="mask"></div>
+      <div class="searchPanel">
+        <el-row>
+          <el-col :span="10" offset="6">
+            <el-input
+              v-model="searchUserForm.searchField"
+              placeholder="Type user name"
+              style="margin-top: 10px;"
+            ></el-input>
+          </el-col>
+          <el-col :span="2">
+            <el-button
+              icon="el-icon-search"
+              type="primary"
+              @click="searchUsers()"
+              style="margin-top: 10px;"
+            ></el-button>
+          </el-col>
+        </el-row>
+        <div class="searchResults">
+          <span>Selected users: {{ selectedMembers }}</span>
+          <div v-for="userdata in searchUserForm.usersdata" :key="userdata.username">
+            <input
+              type="checkbox"
+              :id="userdata.username"
+              :value="userdata.username"
+              v-model="selectedMembers"
+            />
+            <label for="userdata.username">{{userdata.username}}</label>
+          </div>
+        </div>
+        <el-row>
+          <el-col offset="5" :span="2">
+            <el-button
+              style="margin-top: 10px;"
+              @click="addMembersToExistingGroup(selectedMembersGroupName,selectedMembers)"
+            >Add Members</el-button>
+          </el-col>
+          <el-col offset="10" :span="4">
+            <el-button style="margin-top: 10px;" @click="closeaddMembersPanel">Cancel</el-button>
+          </el-col>
+        </el-row>
+      </div>
+    </div>
+    <div v-show="viewMembersForm.display">
+      <div class="mask"></div>
+      <div class="searchPanel">
+        <div class="searchResults">
+          <el-row>
+            <el-col v-for="member in selectedMembers" :key="member">
+              <label>{{member}}</label>
+            </el-col>
+          </el-row>
+        </div>
+        <el-row>
+          <el-col offset="10" :span="4">
+            <el-button style="margin-top: 10px;" @click="closeviewMembersPanel">Cancel</el-button>
           </el-col>
         </el-row>
       </div>
@@ -195,6 +307,8 @@
 import singleUserInfo from "./single-user-info.vue";
 import singleChat from "./single-chat.vue";
 import singleChatPanel from "./single-chat-panel.vue";
+import groupChatPanel from "./group-chat-panel.vue";
+import groupChat from "./group-chat.vue";
 import Vue from "vue";
 import SingleGroupInfo from "./single-group-info";
 //TODO: Encryption
@@ -219,6 +333,9 @@ export default {
         pwd: ""
       },
       args: [],
+      selectedGroupUserNames: [],
+      selectedMembers: [],
+      selectedMembersGroupName: "",
       searchUserForm: {
         display: false,
         searchField: "",
@@ -233,6 +350,13 @@ export default {
         searchField: "",
         groupsdata: []
       },
+      addMembersForm: {
+        display: false,
+        groupName: ""
+      },
+      viewMembersForm: {
+        display: false
+      },
       websocket: null,
       request: "",
       response: "",
@@ -242,10 +366,12 @@ export default {
         avatar: "/img/avatar.jpg",
         name: "User1",
         private_key: "",
-        dh: null,
+        dh: null
       },
       search: "",
       chat_num: 1,
+      groupChat_num: 0,
+      grouplist: [],
       chatlist: [
         {
           id: "1",
@@ -263,7 +389,7 @@ export default {
               time: "2020-02-29 00:00",
               content:
                 "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
-              objectflag: 1,
+              objectflag: 1, //0 from me, 1 to me
               status: 2 // new: 0; unread: 1; read: 2
             },
             {
@@ -282,15 +408,17 @@ export default {
     SingleGroupInfo,
     singleUserInfo,
     singleChat,
-    singleChatPanel
+    singleChatPanel,
+    groupChat,
+    groupChatPanel
   },
   mounted() {
     if ("WebSocket" in window) {
       this.websocket = new WebSocket("ws://localhost:1234");
       this.initWebSocket();
       // test: to delete
-      this.ruleForm.name = "a2020";
-      this.ruleForm.pwd = "Aa1111!!";
+      // this.ruleForm.name = "a2020";
+      // this.ruleForm.pwd = "Aa1111!!";
     } else {
       alert("Websocket is not supported by this browser!");
       return null;
@@ -310,6 +438,12 @@ export default {
             var sender = this.parsed_response.sender;
             var message = this.parsed_response.message;
             this.getNewText(sender, message);
+            break;
+          case "GROUPTEXT":
+            var sender = this.parsed_response.sender;
+            var groupName = this.parsed_response.groupName;
+            var message = this.parsed_response.message;
+            this.getNewGroupText(sender, groupName, message);
             break;
           case "REPLY":
             switch (this.parsed_response.REPLY) {
@@ -343,7 +477,7 @@ export default {
                 break;
               case "GETCHATHISTORY: SUCCESS":
                 var messages = this.parsed_response.messages;
-                var object_name = '';
+                var object_name = "";
                 if (messages === undefined) break;
                 else if (messages.length === undefined) {
                   messages = [messages];
@@ -371,6 +505,32 @@ export default {
                 var public_key = this.parsed_response.publicKey;
                 this.updatePublicKey(username, public_key);
                 this.checkNewSentMessage(username);
+                break;
+              case "GETALLUSERGROUPS: SUCCESS":
+                var groups = this.parsed_response.groups;
+                groups.forEach(group => {
+                  this.creatNewGroupChat(group.groupName, group.members);
+                });
+                break;
+              case "GETGROUPHISTORY: SUCCESS":
+                var messages = this.parsed_response.messages;
+                if (messages === undefined) break;
+                else if (messages.length === undefined) {
+                  messages = [messages];
+                }
+                for (let i in messages) {
+                  var sender = messages[i].sender;
+                  var groupName = messages[i].groupName;
+                  var message = messages[i].message;
+                  var time = messages[i].timestamp;
+                  this.updateGroupChat(
+                    sender,
+                    groupName,
+                    message,
+                    new Date(time),
+                    2
+                  );
+                }
                 break;
             }
             break;
@@ -417,6 +577,9 @@ export default {
       this.websocket.send(this.request);
     },
     showchat: function(id) {
+      for (var groupId of Object.keys(this.grouplist)) {
+        this.grouplist[groupId].show = 0;
+      }
       for (var chat_key of Object.keys(this.chatlist)) {
         if (this.chatlist[chat_key].id !== id) {
           this.chatlist[chat_key].show = 0;
@@ -431,13 +594,13 @@ export default {
     },
     readAllMessagesByChatkey: function(chat_key) {
       for (var message_key in this.chatlist[chat_key].messages) {
-          this.chatlist[chat_key].messages[message_key].status = 1; // read
+        this.chatlist[chat_key].messages[message_key].status = 1; // read
       }
     },
     readAllMessagesByUsername: function(username) {
       var chat_key = this.isContactExist(username);
       for (var message_key in this.chatlist[chat_key].messages) {
-          this.chatlist[chat_key].messages[message_key].status = 1; // read
+        this.chatlist[chat_key].messages[message_key].status = 1; // read
       }
     },
     text2: function(args) {
@@ -473,20 +636,20 @@ export default {
     },
     getSharedSecret(username) {
       for (var chat_key in this.chatlist) {
-          if (this.chatlist[chat_key].name === username) {
-              return this.chatlist[chat_key].shared_key;
-          }
+        if (this.chatlist[chat_key].name === username) {
+          return this.chatlist[chat_key].shared_key;
+        }
       }
     },
     getPublicKeyof(username) {
-        this.request =
-            "{\n" +
-            'type: "GETPUBLICKEY",\n' +
-            'username:"' +
-            username +
-            '",\n' +
-            "}";
-        this.send();
+      this.request =
+        "{\n" +
+        'type: "GETPUBLICKEY",\n' +
+        'username:"' +
+        username +
+        '",\n' +
+        "}";
+      this.send();
     },
     updatePublicKey(username, public_key) {
       var chat_key = this.isContactExist(username);
@@ -499,12 +662,15 @@ export default {
       this.getChatHistory(username, chat_key);
     },
     checkNewSentMessage: function(username) {
-        var chat_key = this.isContactExist(username);
-        for (var message_key in this.chatlist[chat_key].messages) {
-            if (this.chatlist[chat_key].messages[message_key].status === 0) {
-                this.getNewText(username, this.chatlist[chat_key].messages[message_key].content);
-            }
+      var chat_key = this.isContactExist(username);
+      for (var message_key in this.chatlist[chat_key].messages) {
+        if (this.chatlist[chat_key].messages[message_key].status === 0) {
+          this.getNewText(
+            username,
+            this.chatlist[chat_key].messages[message_key].content
+          );
         }
+      }
     },
     getNewText: function(sender, message) {
       var chat_key = this.isContactExist(sender);
@@ -525,6 +691,10 @@ export default {
         title: "New message!",
         message: h("i", { style: "color: teal" }, sender + ": " + message)
       });
+    },
+    getNewGroupText(sender, groupName, message) {
+      var time = new Date();
+      this.updateGroupChat(sender, groupName, message, time, 0);
     },
     isContactExist: function(username) {
       var exist = false;
@@ -626,18 +796,37 @@ export default {
     closeSearchGroupPanel: function() {
       this.searchGroupForm.display = false;
     },
+    closeCreateGroupPanel: function() {
+      this.createGroupForm.display = false;
+    },
     closeSearchPanel: function() {
       this.searchUserForm.display = false;
     },
+    showaddMembersPanel: function() {
+      this.addMembersForm.display = true;
+    },
+    closeaddMembersPanel: function() {
+      this.addMembersForm.display = false;
+    },
+    showviewMembersPanel: function() {
+      this.viewMembersForm.display = true;
+    },
+    closeviewMembersPanel: function() {
+      this.viewMembersForm.display = false;
+    },
     fromHex2Array: function(hexString) {
-      return new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+      return new Uint8Array(
+        hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+      );
     },
     createNewChat: function(username, public_key) {
       let chat_key = this.chat_num;
-      let shared_key = this.self.dh.computeSecret(this.fromHex2Array(public_key)).toString('hex');
-      console.log(this.self.name+" private_key: "+this.self.private_key);
-      console.log(username+" public_key: "+public_key);
-      console.log("shared_key: "+shared_key);
+      let shared_key = this.self.dh
+        .computeSecret(this.fromHex2Array(public_key))
+        .toString("hex");
+      console.log(this.self.name + " private_key: " + this.self.private_key);
+      console.log(username + " public_key: " + public_key);
+      console.log("shared_key: " + shared_key);
       Vue.set(this.chatlist, this.chat_num, {
         id: ++this.chat_num,
         avatar: "",
@@ -698,18 +887,21 @@ export default {
     initPost: function() {
       // this.request = "{\n" + 'type: "GETALLCONTACTS",\n' + "}";
       // this.send();
+      this.getAllgroups();
       this.initCrypto();
     },
     isDeviceAuthorised() {
-        const item_name = this.self.name+"_private_key";
-        const private_key = localStorage.getItem(item_name);
-        if(!private_key) {
-            alert("Please check your username, or you may be logging in on an unauthorised device!");
-            return false;
-        } else {
-            this.self.private_key = private_key;
-            return true;
-        }
+      const item_name = this.self.name + "_private_key";
+      const private_key = localStorage.getItem(item_name);
+      if (!private_key) {
+        alert(
+          "Please check your username, or you may be logging in on an unauthorised device!"
+        );
+        return false;
+      } else {
+        this.self.private_key = private_key;
+        return true;
+      }
     },
     onSignIn: function() {
       this.self.name = this.ruleForm.name;
@@ -736,22 +928,29 @@ export default {
       this.crypto.key = CryptoJS.enc.Utf8.parse(this.hex2a(key_hex));
       const iv_str = "0123456789abcdef";
       this.crypto.iv = CryptoJS.enc.Utf8.parse(iv_str);
-      const prime_number = "B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6" +
-            "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0" +
-            "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70" +
-            "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0" +
-            "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708" +
-            "DF1FB2BC2E4A4371";
+      const prime_number =
+        "B10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6" +
+        "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0" +
+        "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70" +
+        "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0" +
+        "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708" +
+        "DF1FB2BC2E4A4371";
       this.crypto.dh_prime = prime_number;
-      const generator = "A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F" +
-            "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213" +
-            "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1" +
-            "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A" +
-            "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24" +
-            "855E6EEB22B3B2E5";
+      const generator =
+        "A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F" +
+        "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213" +
+        "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1" +
+        "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A" +
+        "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24" +
+        "855E6EEB22B3B2E5";
       this.crypto.dh_generator = generator;
 
-      let dh = crypto.createDiffieHellman(prime_number, "hex", generator, "hex");
+      let dh = crypto.createDiffieHellman(
+        prime_number,
+        "hex",
+        generator,
+        "hex"
+      );
       dh.setPrivateKey(this.fromHex2Array(this.self.private_key));
       this.self.dh = dh;
     },
@@ -763,8 +962,8 @@ export default {
     //   }).toString();
     // },
     decrypt: function(ciphertext, passphrase) {
-      console.log("ciphertext: "+ciphertext);
-      console.log("passphrase: "+passphrase);
+      console.log("ciphertext: " + ciphertext);
+      console.log("passphrase: " + passphrase);
       return CryptoJS.AES.decrypt(ciphertext, passphrase, {
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
@@ -853,7 +1052,7 @@ export default {
           location.reload();
       }
     },
-    createGroup(username) {
+    createGroup(username, groupName) {
       this.request =
         "{\n" +
         'type: "CREATEGROUP",\n' +
@@ -861,7 +1060,7 @@ export default {
         username +
         '",\n' +
         'groupName: "' +
-        this.createGroupForm.groupName +
+        groupName +
         '",\n' +
         "picture:null\n" +
         "}";
@@ -880,6 +1079,185 @@ export default {
           '",\n' +
           "}";
         this.send();
+      }
+    },
+    addMembersToExistingGroup(groupName, members) {
+      this.addMembersToGroup(groupName, members);
+      this.closeaddMembersPanel();
+    },
+    createGroupWithMembers(userName, members) {
+      this.createGroup(userName, this.createGroupForm.groupName);
+      this.addMembersToGroup(this.createGroupForm.groupName, members);
+      this.closeCreateGroupPanel();
+      this.creatNewGroupChat(this.createGroupForm.groupName, members);
+    },
+    getAllgroups() {
+      this.request =
+        "{\n" +
+        'type: "GETALLUSERGROUPS",\n' +
+        'myUsername: "' +
+        this.self.name +
+        '",\n' +
+        "}";
+      this.send();
+    },
+    creatNewGroupChat(groupName, members) {
+      this.grouplist.push({
+        id: this.groupChat_num++,
+        avatar: "",
+        name: groupName,
+        members: members,
+        show: 0,
+        new_message_num: 0,
+        badge_hidden: true,
+        has_got_history: false,
+        messages: [
+          {
+            avatar: "",
+            time: "",
+            content: "",
+            objectflag: 0
+          }
+        ]
+      });
+    },
+    showGroupChat(id) {
+      for (var chatId of Object.keys(this.chatlist)) {
+        this.chatlist[chatId].show = 0;
+      }
+      for (var groupId of Object.keys(this.grouplist)) {
+        if (id == groupId) {
+          this.grouplist[id].show = 1;
+        } else {
+          this.grouplist[groupId].show = 0;
+        }
+      }
+      this.selectedMembers = this.grouplist[id].members;
+      this.selectedMembersGroupName = this.grouplist[id].name;
+      this.getGroupHistory(this.grouplist[id].name);
+    },
+    sendGroupMessage(args) {
+      let groupName = args[0];
+      let message = args[1];
+      let time = new Date();
+
+      if (message === "") {
+        alert("Please type sth. before sending!");
+        return;
+      }
+      this.request =
+        '{"type": "GROUPTEXT"' +
+        ', "sender":"' +
+        this.self.name +
+        '", "groupName":"' +
+        groupName +
+        '", "message":"' +
+        message +
+        '"}';
+      this.send();
+      this.updateGroupChat(this.self.name, groupName, message, time, 2);
+    },
+    addMembers() {
+      this.showaddMembersPanel();
+    },
+    viewMembers() {
+      this.showviewMembersPanel();
+    },
+    getGroupHistory(groupName) {
+      this.request =
+        "{\n" +
+        'type: "GETGROUPHISTORY",\n' +
+        'myUsername: "' +
+        this.self.name +
+        '",\n' +
+        'groupName: "' +
+        groupName +
+        '",\n' +
+        'historyDays: "' +
+        10 +
+        '"\n' +
+        "}";
+      this.send();
+    },
+    isGroupChatRedundant(groupId, message) {
+      var redundant = false;
+      var chat = this.grouplist[groupId];
+      for (var message_key in chat.messages) {
+        if (
+          chat.messages[message_key].content === message.content &&
+          chat.messages[message_key].time === message.time
+        )
+          redundant = true;
+      }
+      return redundant;
+    },
+    updateGroupChat(sender, groupName, message, time, message_status) {
+      let hour = time.getHours();
+      let paddingHour = hour > 9 ? "" : "0";
+      let minute = time.getMinutes();
+      let paddingMinute = minute > 9 ? "" : "0";
+      let year = time.getYear() + 1900;
+      let month = time.getMonth() + 1;
+      let day = time.getDate();
+      time =
+        year +
+        "-" +
+        month +
+        "-" +
+        day +
+        " " +
+        paddingHour +
+        hour +
+        ":" +
+        paddingMinute +
+        minute;
+      var message_info = {
+        avatar: "/img/avatar.jpg",
+        time: time,
+        content: message,
+        objectflag: 0, //0 from me, 1 to me
+        status: message_status,
+        sender: sender
+      };
+      var message_key = "";
+      if (sender === this.self.name) {
+        //message out
+        for (var groupId in this.grouplist) {
+          if (this.grouplist[groupId].name === groupName) {
+            if (!this.isGroupChatRedundant(groupId, message_info)) {
+              message_key = this.grouplist[groupId].messages.length;
+              Vue.set(
+                this.grouplist[groupId].messages,
+                message_key,
+                message_info
+              );
+              this.grouplist[groupId].messages.sort(this.sortCompareFunction);
+            }
+          }
+        }
+      } else {
+        for (var groupId in this.grouplist) {
+          //message in
+          if (this.grouplist[groupId].name === groupName) {
+            if (message_status !== 2) {
+              if (this.grouplist[groupId].badge_hidden)
+                this.grouplist[groupId].new_message_num = 0;
+              this.grouplist[groupId].new_message_num++;
+              this.grouplist[groupId].badge_hidden = false;
+            }
+            if (!this.isGroupChatRedundant(groupId, message_info)) {
+              if (message_status === 0) message_info.status = 1;
+              message_key = this.grouplist[groupId].messages.length;
+              message_info.objectflag = 1;
+              Vue.set(
+                this.grouplist[groupId].messages,
+                message_key,
+                message_info
+              );
+            }
+            this.grouplist[groupId].messages.sort(this.sortCompareFunction);
+          }
+        }
       }
     }
   }
