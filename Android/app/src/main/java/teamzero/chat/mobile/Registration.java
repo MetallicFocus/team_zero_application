@@ -176,4 +176,18 @@ public class Registration extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
+        /*
+         *  Disable the back button in the current screen by not calling super
+         *
+         *  This is important in order to not allow the user to see sensitive information
+         *  from other users that we're previously logged into this device
+         *
+         *  We are calling onSupportNavigateUp method instead
+         */
+        onSupportNavigateUp();
+    }
+
 }

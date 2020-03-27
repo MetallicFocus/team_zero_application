@@ -105,4 +105,16 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
+        /*
+         *  Disable the back button in the current screen by not calling super
+         *
+         *  This is important in order to not allow the user to see sensitive information
+         *  from other users that we're previously logged into this device
+         */
+        Toast.makeText(getApplicationContext(), "For the privacy and security of your data, the back button has been disabled", Toast.LENGTH_SHORT).show();
+    }
+
 }

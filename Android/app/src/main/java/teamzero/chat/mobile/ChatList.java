@@ -371,7 +371,6 @@ public class ChatList extends AppCompatActivity {
                     try {
                         WebSocketHandler.getSocket().sendMessage(new JSONConstructor().constructUnregisterJSON(UserDetails.username, UserDetails.password));
 
-                        // TODO: Deal with the case when unregistering is unsuccessful
 
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -487,7 +486,9 @@ public class ChatList extends AppCompatActivity {
          *  This is important in order to not allow the user to see sensitive information
          *  from other users that we're previously logged into this device
          */
-        // TODO: Give the user feedback regarding the default back button
+        Toast.makeText(getApplicationContext(), "For the privacy and security of your data, the back button has been disabled\n\n" +
+                "If you wish to sign out, please click on the three dots (...) on the upper-right corner" +
+                "and select 'Sign Out' ", Toast.LENGTH_LONG).show();
     }
 
 }
