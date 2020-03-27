@@ -7,15 +7,23 @@
             <el-avatar class="avatar" :src="group.avatar" style="margin-top: 5px;"></el-avatar>
           </el-col>
           <el-col :span="20">
-            <label style="font-size: 30px">{{group.name}}</label>
+            <label style="font-size: 30px">{{group.name}} {{group.userLeft}}</label>
           </el-col>
           <el-col :span="2">
             <el-dropdown trigger="click" @command="handleCommand">
               <i class="more el-icon-more el-dropdown-link" style="color: #D5F3EF;"></i>
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item icon="el-icon-circle-plus-outline" command="addMember">Add Member</el-dropdown-item>
+                <el-dropdown-item
+                  icon="el-icon-circle-plus-outline"
+                  command="addMember"
+                  v-if="!group.userLeft"
+                >Add Member</el-dropdown-item>
                 <el-dropdown-item icon="el-icon-s-custom" command="members">Members</el-dropdown-item>
-                <el-dropdown-item icon="el-icon-s-custom" command="exitGroup">Exit Group</el-dropdown-item>
+                <el-dropdown-item
+                  icon="el-icon-s-custom"
+                  command="exitGroup"
+                  v-if="!group.userLeft"
+                >Exit Group</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </el-col>
@@ -41,7 +49,12 @@
         </div>
       </el-main>
       <el-footer id="text-panel">
-        <el-row>
+        <el-row v-if="group.userLeft">
+          <el-col :span="24">
+            <h1>You exited the group, you can't send or receive messages</h1>
+          </el-col>
+        </el-row>
+        <el-row v-else>
           <el-col :span="2">
             <el-button class="el-icon-star-off" style="border-color: #8c939d;"></el-button>
           </el-col>
@@ -96,6 +109,7 @@ export default {
           break;
         case "exitGroup":
           this.$emit("exit-group");
+          this.group.userLeft = true;
           break;
       }
     }

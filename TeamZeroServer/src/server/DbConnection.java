@@ -236,6 +236,44 @@ public class DbConnection {
 		return searchedClients;
 	} 
 	
+	public ArrayList<Client> getUsersNotInGroup(String query,String groupName) throws SQLException {
+		ArrayList<Client> searchedClients = new ArrayList<Client>();
+		int groupId = getGroupIDFromGroupName(groupName);
+		Connection conn = this.connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement("select * from (select *\n" + 
+					"from users u\n" + 
+					"where not exists(\n" + 
+					"select username\n" + 
+					"from  user_groups\n" + 
+					"where u.user_id = user_groups.user_id and user_groups.group_id = ?\n" + 
+					") )q2\n" + 
+					"where lower(username) LIKE ?");
+			ps.setInt(1, groupId);
+			ps.setString(2, "%" + query.toLowerCase() + "%");
+			ResultSet rs = ps.executeQuery();
+			LOGGER.log(Level.INFO, "getSearchedUsers prepared statement is:  {0}", ps); //debug
+			
+			while (rs.next()) {
+				int clientId = rs.getInt(COLUMN_ID);
+				String clientEmail = rs.getString(COLUMN_EMAIL);
+				String clientUsername = rs.getString(COLUMN_USERNAME);
+				String clientPublicKey = rs.getString(COLUMN_PUBLIC_KEY);
+
+				// if the user is also in the client manager, set them to logged in
+				boolean isLoggedIn = ClientManager.getInstance().getClientById(clientId) != null;
+				Client client = new Client(clientUsername, clientEmail, clientId, clientPublicKey, isLoggedIn);
+				searchedClients.add(client);
+			}
+			ps.close();
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return searchedClients;
+	} 
+	
 
 	/**
 	 * returns the public encryption key of the client with the given username
@@ -337,15 +375,15 @@ public class DbConnection {
 		int thisUserId = getUserIDFromUsername(thisUserName);
 		int groupId = getGroupIDFromGroupName(groupName);
 		Connection conn = this.connect();
-		int chatId = 0;
+		
 		try {
 			// check that the sender is a member of the group
 			PreparedStatement ps = conn.prepareStatement(
-					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ? AND left_group = ?");
+					"SELECT * FROM user_groups WHERE group_id = ? AND user_id = ?");
 			
 			ps.setInt(1, groupId);
 			ps.setInt(2, thisUserId);
-			ps.setBoolean(3, false);
+			
 			ResultSet rs = ps.executeQuery();
 			if (rs.next()) {
 				// determine history date constraints	
@@ -356,25 +394,50 @@ public class DbConnection {
 			    String nowStr = ServerMain.DATE_FORMAT.format(now);
 			    String limitStr = ServerMain.DATE_FORMAT.format(historyLimit.getTime());
 			    
-				ps = conn.prepareStatement(
-						"SELECT group_message.timesent, group_message.message_content, u1.username AS sender, g.group_name AS groupName"
-						+ " FROM group_message "
-						+ "INNER JOIN users AS u1 ON (u1.user_id=group_message.sender_id) "
-						+ "INNER JOIN groups AS g ON (g.group_id=group_message.group_id)"
-						+ " WHERE g.group_id = ? AND timesent between ? AND ? ORDER BY timesent ASC;");
-				ps.setInt(1, groupId);
-				ps.setTimestamp(2, Timestamp.valueOf(limitStr));
-				ps.setTimestamp(3, Timestamp.valueOf(nowStr));
-				rs = ps.executeQuery();
+			    Boolean leftGroup = rs.getBoolean("left_group");
+			    if(!leftGroup) {
+			    	ps = conn.prepareStatement(
+							"SELECT group_message.timesent, group_message.message_content, u1.username AS sender, g.group_name AS groupName"
+							+ " FROM group_message "
+							+ "INNER JOIN users AS u1 ON (u1.user_id=group_message.sender_id) "
+							+ "INNER JOIN groups AS g ON (g.group_id=group_message.group_id)"
+							+ " WHERE g.group_id = ? AND timesent between ? AND ? ORDER BY timesent ASC;");
+					ps.setInt(1, groupId);
+					ps.setTimestamp(2, Timestamp.valueOf(limitStr));
+					ps.setTimestamp(3, Timestamp.valueOf(nowStr));
+					rs = ps.executeQuery();
 
-				while (rs.next()) {
-					String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
-					String message = rs.getString(COLUMN_MESSAGE_CONTENT);
-					String sender = rs.getString("sender");
-					String groupname = rs.getString("groupName");
-					ChatMessage chatMessage = new ChatMessage(sender, groupname, message, timestamp);
-					chatHistory.add(chatMessage);
-				}
+					while (rs.next()) {
+						String timestamp = ServerMain.DATE_FORMAT.format(rs.getTimestamp(COLUMN_TIMESENT));
+						String message = rs.getString(COLUMN_MESSAGE_CONTENT);
+						String sender = rs.getString("sender");
+						String groupname = rs.getString("groupName");
+						ChatMessage chatMessage = new ChatMessage(sender, groupname, message, timestamp);
+						chatHistory.add(chatMessage);
+					}
+			    } else {
+			    	System.out.println("there");
+			    	PreparedStatement ps1 = conn.prepareStatement(
+							"SELECT group_message.timesent, group_message.message_content, u1.username AS sender, g.group_name AS groupName"
+							+ " FROM group_message "
+							+ "INNER JOIN users AS u1 ON (u1.user_id=group_message.sender_id) "
+							+ "INNER JOIN groups AS g ON (g.group_id=group_message.group_id)"
+							+ " INNER JOIN user_groups AS ug ON (g.group_id=ug.group_id)"
+							+ " WHERE g.group_id = ? AND timesent < ug.time_left_group ORDER BY timesent ASC;");
+					ps1.setInt(1, groupId);
+					ResultSet rs1 = ps1.executeQuery();
+
+					while (rs1.next()) {
+						String timestamp = ServerMain.DATE_FORMAT.format(rs1.getTimestamp(COLUMN_TIMESENT));
+						String message = rs1.getString(COLUMN_MESSAGE_CONTENT);
+						String sender = rs1.getString("sender");
+						String groupname = rs1.getString("groupName");
+						ChatMessage chatMessage = new ChatMessage(sender, groupname, message, timestamp);
+						chatHistory.add(chatMessage);
+					}
+					ps1.close();
+			    }
+				
 				ps.close();
 				conn.close();
 			} 
@@ -482,19 +545,20 @@ public class DbConnection {
 		ArrayList<Group> allGroups = new ArrayList<Group>();
 		Connection conn = this.connect();
 		try {
-			PreparedStatement ps = conn.prepareStatement("SELECT g.group_id as group_id, g.group_name as group_name, u.members"
-					+ " FROM groups g, LATERAL ( SELECT ARRAY ( "
-					+ "SELECT u.username "
-					+ "FROM users u "
-					+ "JOIN user_groups ug ON ug.user_id=u.user_id "
-					+ "WHERE ug.group_id=g.group_id AND u.unregistered=false) AS members ) u WHERE ? = ANY (u.members);");
+			PreparedStatement ps = conn.prepareStatement("SELECT groups.group_id,groups.group_name,ARRAY_AGG(users.username) members,ARRAY_AGG(user_groups.left_group) leftgroup"
+					+ " FROM groups,users,user_groups "
+					+ " WHERE user_groups.user_id = users.user_id "
+					+ " AND user_groups.group_id = groups.group_id "
+					+ "GROUP BY groups.group_id,groups.group_name "
+					+ "HAVING ? = ANY(ARRAY_AGG(users.username));");
 			ps.setString(1, userName);
 			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				int groupId = rs.getInt(COLUMN_GROUP_ID);
 				String groupName = rs.getString(COLUMN_GROUPNAME);
 				String[] groupMembers = (String[]) rs.getArray("members").getArray();
-				Group group = new Group(groupId, groupName, groupMembers);
+				Boolean[] leftGroup = (Boolean[]) rs.getArray("leftgroup").getArray();
+				Group group = new Group(groupId, groupName, groupMembers,leftGroup);
 				allGroups.add(group);
 			}
 			ps.close();
@@ -602,8 +666,30 @@ public class DbConnection {
 	}
 	
 	// TODO
-	public boolean removeGroupMember(String groupName, String username) throws SQLException{
-			return false;
+	public boolean removeGroupMember(String groupName, String userName) throws SQLException{
+		Connection conn = connect();
+		PreparedStatement ps = null;
+		int groupId = getGroupIDFromGroupName(groupName);
+		int userId = getUserIDFromUsername(userName);
+		Date now = Calendar.getInstance().getTime();
+		String nowStr = ServerMain.DATE_FORMAT.format(now);
+		
+		try {
+			ps = conn.prepareStatement("UPDATE user_groups SET left_group = true,time_left_group = ? WHERE user_id = ? AND group_id = ?;");
+			ps.setTimestamp(1, Timestamp.valueOf(nowStr));
+			ps.setInt(2, userId);
+			ps.setInt(3, groupId);
+			
+			ps.executeUpdate();
+
+			LOGGER.log(Level.FINE, "Exited group {0}", groupName);
+			ps.close();
+			conn.close();
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 	
 	/**

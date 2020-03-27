@@ -208,7 +208,7 @@
         <el-row>
           <el-col :span="10" offset="6">
             <el-input
-              v-model="searchUserForm.searchField"
+              v-model="addMembersForm.searchField"
               placeholder="Type user name"
               style="margin-top: 10px;"
             ></el-input>
@@ -217,19 +217,19 @@
             <el-button
               icon="el-icon-search"
               type="primary"
-              @click="searchUsers()"
+              @click="searchUsersNotInGroup()"
               style="margin-top: 10px;"
             ></el-button>
           </el-col>
         </el-row>
         <div class="searchResults">
-          <span>Selected users: {{ selectedMembers }}</span>
-          <div v-for="userdata in searchUserForm.usersdata" :key="userdata.username">
+          <span>Selected users: {{ selectedMembersForAdd }}</span>
+          <div v-for="userdata in addMembersForm.usersdata" :key="userdata.username">
             <input
               type="checkbox"
               :id="userdata.username"
               :value="userdata.username"
-              v-model="selectedMembers"
+              v-model="selectedMembersForAdd"
             />
             <label for="userdata.username">{{userdata.username}}</label>
           </div>
@@ -238,7 +238,7 @@
           <el-col offset="5" :span="2">
             <el-button
               style="margin-top: 10px;"
-              @click="addMembersToExistingGroup(selectedMembersGroupName,selectedMembers)"
+              @click="addMembersToExistingGroup(selectedMembersGroupName,selectedMembersForAdd)"
             >Add Members</el-button>
           </el-col>
           <el-col offset="10" :span="4">
@@ -252,8 +252,8 @@
       <div class="searchPanel">
         <div class="searchResults">
           <el-row>
-            <el-col v-for="member in selectedMembers" :key="member">
-              <label>{{member}}</label>
+            <el-col v-for="member in membersWithLeft" :key="member.name">
+              <label v-if="!member.left">{{member.name}}</label>
             </el-col>
           </el-row>
         </div>
@@ -335,6 +335,9 @@ export default {
       args: [],
       selectedGroupUserNames: [],
       selectedMembers: [],
+      selectedMembersForAdd: [],
+      membersWithLeft: [],
+      groupName: "",
       selectedMembersGroupName: "",
       searchUserForm: {
         display: false,
@@ -352,7 +355,9 @@ export default {
       },
       addMembersForm: {
         display: false,
-        groupName: ""
+        groupName: "",
+        searchField: "",
+        usersdata: []
       },
       viewMembersForm: {
         display: false
@@ -443,7 +448,16 @@ export default {
             var sender = this.parsed_response.sender;
             var groupName = this.parsed_response.groupName;
             var message = this.parsed_response.message;
-            this.getNewGroupText(sender, groupName, message);
+            var userLeftGroup = false;
+            this.grouplist.forEach(group => {
+              if (group.name == groupName && group.userLeft == true) {
+                userLeftGroup = true;
+              }
+            });
+            if (userLeftGroup == false) {
+              this.getNewGroupText(sender, groupName, message);
+            }
+
             break;
           case "REPLY":
             switch (this.parsed_response.REPLY) {
@@ -464,6 +478,14 @@ export default {
                   this.searchUserForm.usersdata = this.parsed_response.contacts;
                 else
                   this.searchUserForm.usersdata = [
+                    this.parsed_response.contacts
+                  ];
+                break;
+              case "SEARCHUSERSNOTINGROUP: SUCCESS":
+                if (this.parsed_response.contacts.length > 1)
+                  this.addMembersForm.usersdata = this.parsed_response.contacts;
+                else
+                  this.addMembersForm.usersdata = [
                     this.parsed_response.contacts
                   ];
                 break;
@@ -508,8 +530,31 @@ export default {
                 break;
               case "GETALLUSERGROUPS: SUCCESS":
                 var groups = this.parsed_response.groups;
+                if (Array.isArray(groups)) {
+                  groups.forEach(group => {
+                    this.creatNewGroupChat(
+                      group.groupName,
+                      group.members,
+                      group.leftGroup
+                    );
+                  });
+                } else {
+                  this.creatNewGroupChat(
+                    groups.groupName,
+                    groups.members,
+                    groups.leftGroup
+                  );
+                }
+
+                break;
+              case "REMOVEGROUPMEMBER: SUCCESS":
+                var groups = this.parsed_response.groups;
                 groups.forEach(group => {
-                  this.creatNewGroupChat(group.groupName, group.members);
+                  this.creatNewGroupChat(
+                    group.groupName,
+                    group.members,
+                    group.leftGroup
+                  );
                 });
                 break;
               case "GETGROUPHISTORY: SUCCESS":
@@ -874,6 +919,19 @@ export default {
         "}";
       this.send();
     },
+    searchUsersNotInGroup() {
+      this.request =
+        "{\n" +
+        'type: "SEARCHUSERSNOTINGROUP",\n' +
+        'search:"' +
+        this.addMembersForm.searchField +
+        '",\n' +
+        'groupName:"' +
+        this.groupName +
+        '",\n' +
+        "}";
+      this.send();
+    },
     searchGroups: function() {
       this.request =
         "{\n" +
@@ -1101,12 +1159,21 @@ export default {
         "}";
       this.send();
     },
-    creatNewGroupChat(groupName, members) {
+    creatNewGroupChat(groupName, members, leftGroup) {
+      var userLeft = false;
+
+      for (var i = 0; i < members.length; i++) {
+        if (members[i] == this.self.name && leftGroup[i] == true) {
+          userLeft = true;
+        }
+      }
       this.grouplist.push({
         id: this.groupChat_num++,
         avatar: "",
         name: groupName,
         members: members,
+        leftGroup: leftGroup,
+        userLeft: userLeft,
         show: 0,
         new_message_num: 0,
         badge_hidden: true,
@@ -1132,6 +1199,7 @@ export default {
           this.grouplist[groupId].show = 0;
         }
       }
+      this.groupName = this.grouplist[id].name;
       this.selectedMembers = this.grouplist[id].members;
       this.selectedMembersGroupName = this.grouplist[id].name;
       this.getGroupHistory(this.grouplist[id].name);
@@ -1161,7 +1229,30 @@ export default {
       this.showaddMembersPanel();
     },
     viewMembers() {
+      var membersWithLeft = [];
+      for (var i = 0; i < this.grouplist.length; i++) {
+        if (this.grouplist[i].name == this.groupName) {
+          for (var j = 0; j < this.grouplist[i].members.length; j++) {
+            membersWithLeft.push({
+              name: this.grouplist[i].members[j],
+              left: this.grouplist[i].leftGroup[j]
+            });
+          }
+          break;
+        }
+      }
+      this.membersWithLeft = membersWithLeft;
       this.showviewMembersPanel();
+    },
+    exitGroup() {
+      this.request =
+        '{"type": "REMOVEGROUPMEMBER"' +
+        ', "username":"' +
+        this.self.name +
+        '", "groupName":"' +
+        this.selectedMembersGroupName +
+        '"}';
+      this.send();
     },
     getGroupHistory(groupName) {
       this.request =
