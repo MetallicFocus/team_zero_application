@@ -18,7 +18,11 @@
                   command="addMember"
                   v-if="!group.userLeft"
                 >Add Member</el-dropdown-item>
-                <el-dropdown-item icon="el-icon-s-custom" command="members">Members</el-dropdown-item>
+                <el-dropdown-item
+                  icon="el-icon-s-custom"
+                  command="members"
+                  v-if="!group.userLeft"
+                >Members</el-dropdown-item>
                 <el-dropdown-item
                   icon="el-icon-s-custom"
                   command="exitGroup"
