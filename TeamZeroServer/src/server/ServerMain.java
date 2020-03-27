@@ -64,6 +64,8 @@ public class ServerMain extends WebSocketServer {
 	private static final String CASE_CREATE_GROUP = "CREATEGROUP"; // create a new group
 	private static final String CASE_GET_GROUP_HISTORY = "GETGROUPHISTORY"; // get group history
 	private static final String CASE_GETALLUSERGROUPS = "GETALLUSERGROUPS"; // get all groups user is in
+	private static final String CASE_REMOVEGROUPMEMBER = "REMOVEGROUPMEMBER"; // remove member from group
+	private static final String CASE_SEARCHUSERSNOTINGROUP = "SEARCHUSERSNOTINGROUP"; // search contactable user information
 	
 	private static final String MESSAGE_REPLY_SUCCESS = "SUCCESS"; //feedback reply to clients 
 	private static final String MESSAGE_REPLY_FAILED = "FAILED"; //feedback reply to clients 
@@ -96,6 +98,8 @@ public class ServerMain extends WebSocketServer {
 	private static final String JSON_KEY_GROUPNAME = "groupName";
 	
 	private static final String JSON_KEY_GROUP_MEMBERS = "members";
+	
+	private static final String JSON_KEY_LEFT_GROUP = "leftGroup";
 	
 	private static final String JSON_KEY_PUBLIC_KEY = "publicKey";
 	
@@ -416,6 +420,36 @@ public class ServerMain extends WebSocketServer {
 										"User is not logged in"));
 					}			
 					break;
+				case CASE_SEARCHUSERSNOTINGROUP:
+					// check if user is authenticated
+					if (isAuthenticated(websocket)) {
+						String search = json.getString(JSON_KEY_SEARCH);
+						String groupName = json.getString(JSON_KEY_GROUPNAME);
+						ArrayList<Client> searchedClients = dbConnection.getUsersNotInGroup(search,groupName);
+						JSONObject searchedClientsReply = new JSONObject();
+						searchedClientsReply.put(JSON_KEY_MESSAGE_TYPE, MESSAGE_REPLY);
+						searchedClientsReply.put(MESSAGE_REPLY, CASE_SEARCHUSERSNOTINGROUP + ": SUCCESS");
+						for(Client c : searchedClients) {
+							JSONObject client = new JSONObject();
+							client.put("IsLoggedIn", c.isLoggedIn());
+							client.put(JSON_KEY_EMAIL, c.getEmail());
+							client.put(JSON_KEY_USERNAME, c.getUsername());
+							client.put(JSON_KEY_PUBLIC_KEY, c.getPublicKey());
+							searchedClientsReply.accumulate("contacts", client);
+						}
+						// send the list of clients 
+						websocket.send(searchedClientsReply.toString());
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot search contacts - requesting user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_SEARCHUSERSNOTINGROUP,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}			
+					break;
 				case CASE_CREATE_GROUP:
 					// check if user is authenticated
 					if (isAuthenticated(websocket)) {
@@ -525,16 +559,21 @@ public class ServerMain extends WebSocketServer {
 						for(Group g : allGroups) {
 							JSONObject group = new JSONObject();
 							group.put(JSON_KEY_GROUPNAME, g.getGroupName());
-							
 							String[] members = g.getMembers();
 							JSONArray groupMembersJson = new JSONArray();
-							
 							// keep member usernames in a json array within the individual group object
 							for (int i = 0; i < members.length; i++) {
 								groupMembersJson.put(members[i]);
 							}
+							group.put(JSON_KEY_GROUP_MEMBERS, groupMembersJson);
+							Boolean[] leftGroup = g.getLeftGroup();
+							JSONArray leftGroupJson = new JSONArray();
+							for (int i = 0; i < leftGroup.length; i++) {
+								leftGroupJson.put(leftGroup[i]);
+							}
 							
 							group.put(JSON_KEY_GROUP_MEMBERS, groupMembersJson);
+							group.put(JSON_KEY_LEFT_GROUP, leftGroupJson);
 							allGroupsReply.accumulate("groups", group);
 						}
 						// send the list of groups 
@@ -579,6 +618,26 @@ public class ServerMain extends WebSocketServer {
 						websocket.send(
 								generateReplyToClient(
 										CASE_GET_GROUP_HISTORY,
+									MESSAGE_REPLY_FAILED, 	
+										"User is not logged in"));
+					}
+					break;
+				case CASE_REMOVEGROUPMEMBER: 
+					if (isAuthenticated(websocket)) {
+						userName = json.getString(JSON_KEY_USERNAME);
+						String groupName = json.getString(JSON_KEY_GROUPNAME);
+						dbConnection = new DbConnection();
+						boolean success = dbConnection.removeGroupMember(groupName, userName);
+						if (success) {
+							websocket.send(generateReplyToClient(CASE_REMOVEGROUPMEMBER, MESSAGE_REPLY_SUCCESS, ""));		
+						}// exception handler will handle feedback in case of unsuccessful event
+					}
+					else {
+						LOGGER.log( Level.FINE, 
+								"Cannot leave group - user is not logged in. {0}", websocket.toString());	
+						websocket.send(
+								generateReplyToClient(
+										CASE_REMOVEGROUPMEMBER,
 									MESSAGE_REPLY_FAILED, 	
 										"User is not logged in"));
 					}
