@@ -1,0 +1,46 @@
+The Team Zero Chat Application consists of various parts, as determined in the Design section previous. These are the Server, PostgreSql database, Web client, and Android client, the implementation details of which are all described in their respective sections below. Each team member was in charge of one part of the system to implement, although we still worked on parts together as a team as well.
+
+The Team Zero Chat Application itself can be found on the GitHub repository at \\
+\url{https://github.com/MetallicFocus/team_zero_application.git}.
+
+Before delving into each individual section of the Team Zero Chat Application, it is important to note how the overall implementation has deviated from the requirements specification in section \ref{requirements}. 
+
+\subsubsection{Deviations from requirements in implementation}
+\label{deviations-from-requirements}
+
+Any deviations to priorities or order of implementation were due to various reasons such as previously unforeseen dependencies, and implementation or integration difficulties. Some requirements were not implemented due to time constraints.
+The requirements that were not implemented due to time constraints are the following:
+\begin{itemize}
+\item 2.2. To send an email on registration to validate email address - At present, there is only front-end validation of email address format.
+\item 4.1. User and group avatars/pictures
+\item 4.2. Multimedia messages (note: emoticon messages do send but this currently depends on whether the client device encoding allows for it)
+\item 4.4. QR code for adding new friends 
+\end{itemize}
+
+The requirements that were partially implemented are the following:
+\begin{itemize}
+\item 2.1. Group chat functionality
+\end{itemize}
+
+Group chat functionality was implemented in the server and the web client. 
+
+The server supports and provides an API for clients to create, search, join (or leave), and send messages in group chats. However, due to time constraints, and because we chose to prioritise implementation of a secure system with good encryption protocols, Android client does not yet implement the group chat functionalities. However, this is something that could be extended given some time as the API already exists.
+
+\section{Server}
+\input{implementation_server.tex}
+\label{server}
+
+\section{Web client}
+\input{implementation_web.tex}
+\label{web}
+
+
+
+\section{Android client}
+\input{implementation_android.tex}
+\label{android}
+
+
+\section{Encryption}
+\label{encryption}
+\input{implementation_encryption.tex}

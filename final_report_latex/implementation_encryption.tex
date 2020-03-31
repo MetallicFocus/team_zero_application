@@ -1,0 +1,44 @@
+The chat messages in Team Zero Chat Application that the clients sent each other are encrypted end-to-end using various protocols. We decided to use a public-key exchange protocol to allow clients to communicate securely without having been in direct contact with one another previously. However, as public-key cryptography is both resource intensive and asymmetric (therefore only allowing decryption of one-sided messages) we decided to use a symmetric key and algorithm for the encryption and decryption of the chat messages themselves. The entire encryption process is detailed below.
+
+\subsection{Diffie–Hellman key exchange}
+
+\subsubsection{Public and private key generation}
+
+Each client, before registering with the server, uses Diffie-Hellman key exchange protocol algorithms to generate a public and private key unique to the user\cite{rfc2631}. The public key is converted to a base64 string and sent to the server on registration, so that other clients can access it as well. The private key is stored locally for both of our implemented clients.
+
+\subsubsection{Key agreement protocol}
+
+When starting a new chat, the initiating client retrieves the public key of the receiving client from the server and converts it from base64 to the appropriate data type required by either Java (Android) or JavaScript (web client). After this step, the Diffie-Hellman Key agreement protocol's algorithm that generates the shared key\cite{rfc2631} is used with the \textbf{initiating client's private key} and \textbf{receiving client's public key} to compute a \textbf{shared secret}.
+
+The generated keys use the same prime numbers Q and P (base and modulus numbers) on both platforms. This is required because if the prime numbers are randomly generated, then the resulted keys will not produce the same shared secret when computed.
+
+Using the same algorithm of the Diffie-Hellman key exchange protocol, the receiving client will compute \textbf{the same shared secret key} with the initiating client's public key and their own private key, once they receive a message notification. After this, the generated shared secret is then used as input passphrase to the encryption and decryption of our end-to-end protocol (AES CBC on 256 bits).
+
+In regards to the actual implementation on the clients, we have encountered one problem. The \verb|KeyPairGenerator| object found in \verb|java.security| (used in the Android client) does not generate keys of the same size as in \verb|Crypto| (used in the Web client). Even though the prime numbers for the generator are the same in both clients and the algorithm generates the keys using 512 bits, the results are of different length in each platform. This results in the inability to generate the same shared secret between different platforms \textbf{but} can successfully generate the same shared secret between same client types. To overcome this issue, we have decided to temporarily select (hardcode) private and public keys according to the Web client's method, instead of using the cryptographic algorithms to generate them. While this decreases the security of the system, it allows for proof-of-concept implementation of the rest of the encryption protocols, until a solution can be found.
+
+\subsection{Advanced Encryption Standard CBC}
+
+Our algorithm of choice for the end-to-end encryption and decryption of messages is AES (Advanced Encryption Standard). The mode of operation that we have used for AES is CBC (Cipher Block Chaining). It was invented in 1976 by William F. Ehrsam, Carl H. W. Meyer, John L. Smith, and Walter L. Tuchman \cite{aes-cbc-patent}. This mode stands behind the classic Blockchain algorithm that is widely used in cryptocurrencies. Each block of plaintext is XOR-ed with the previous cipherblock before being encrypted. By using this mode, each new ciphertext block depends on \textbf{all the plaintext blocks processed up to that point}. In order to make each message unique, the first block that is constructed must use an initialization vector (IV), which is a fixed size random or pseudo-random number. 
+
+
+The computed shared secret by the Diffie-Hellman algorithm (called a "passphrase") is used as the key for the AES encryption and decryption. One important note is that we have used \textbf{256 bits} for both clients for encryption/decryption. An advantage to using AES CBC is that for the same message (plaintext), \textbf{a different encrypted text (ciphertext) is generated every time}. With this method, all chat messages between two parties can be securely sent.
+
+\subsection{Encryption in group chats}
+\label{encryption-groups}
+Group chats are currently not encrypted. However, two methods with which group chat encryption could be implemented are discussed here.
+
+\subsubsection{Method 1 - Multiple end-to-end messages}
+Currently when a user sends a message to a group chat, it is sent to the server as a single message, and sent from the server to recipients as multiple messages. 
+
+With this encryption method, the sending user would need to send \textit{n} number of separate encrypted text messages for a group message in a group of \textit{n} members. The message would need to be encrypted with the shared secret key derived with the above algorithms from each group member's public key. Thus sending a group message to a group of 10 users would be similar to sending 10 regular chat messages. This is similar to how group messages work in the Signal protocol\cite{signal_groups}, which is what WhatsApp and Facebook Messenger use.
+
+This method, while very secure, involves having to fetch client keys and encrypt the a message multiple times.
+
+\subsubsection{Method 2 - Group creator generates and shares key}
+
+This is a less computationally expensive method, but where there is more responsibility on one client than others.
+
+The client who creates the group chat would generate a 256 bit AES key that can be used as a shared secret key for encryption and decryption. This will become the group's key. Whenever a new member joins the group, the creator will securely send the secret key via asymmetric encryption methods (using the new member's public key to encrypt it, so only the new member's private key can decrypt it). Therefore, all joining members will have the shared key to encrypt and decrypt messages with, and members will only have to send a message once.
+
+However, a notification system will need to be implemented to notify the remaining members of a group once a user leaves a group, as the group creator would need to generate and distribute a new key.
+

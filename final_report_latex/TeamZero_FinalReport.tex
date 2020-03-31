@@ -1,0 +1,101 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[margin=1in,footskip=0.25in]{geometry}
+\usepackage[style=ieee]{biblatex} % Use IEEE style referencing
+\usepackage{nameref}
+\usepackage{enumitem}
+\usepackage{array}
+\setlength\extrarowheight{2pt}
+\setlength{\parskip}{3mm minus 1mm}
+\usepackage{pdfpages}
+\usepackage{float}
+\usepackage{hyperref}
+
+
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\chapter}{\if@openright\cleardoublepage\else\clearpage\fi}{}{}{}
+\makeatother
+
+
+
+\bibliography{references}
+\fussy
+
+
+
+\title{\textbf{Final Report of a Distributed Chat Application}}
+\author{\textbf{Team Zero members:} \\
+		\\Zulean, Tiberiu Iustin 
+		\\Darwish, Emad Mahmoud Nagui 
+		\\ Esener, Iris
+		\\ Li, Zhuoling
+}
+
+\date{March 31, 2020}
+
+
+\begin{document}
+
+\pagenumbering{roman}
+
+
+
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+
+\pagenumbering{arabic}
+
+
+\setcounter{page}{1}
+
+\chapter{Introduction}
+\label{introduction}
+\input{introduction.tex}
+
+
+\chapter{Literature Review}
+\label{lit-review}
+\input{literature_review.tex}
+
+
+\chapter{Requirements and Design}
+\label{requirements and design}
+\input{requirements.tex}
+\input{design.tex}
+
+
+\chapter{Implementation}
+\label{implementation}
+\input{implementation.tex}
+
+
+\chapter{Team Work}
+\label{teamwork}
+\input{teamwork.tex}
+
+
+\chapter{Evaluation}
+\label{evaluation}
+\input{evaluation.tex}
+
+
+\chapter{Peer Assessment}
+\label{peer assessment}
+\input{peer_assessment.tex}
+
+\newpage
+\printbibliography
+%\appendix
+
+%\chapter{JSON Request to Server Manual}
+%\label{requestToServerAppendix}
+%\input{appendices/A_requests_to_server.tex}
+%\chapter{Data Returned From Server Manual}
+%\label{dataReturnedFromServerAppendix}
+%\input{appendices/A_data_returned_from_server.tex}
+
+\end{document}

@@ -1,0 +1,57 @@
+\section{Requirements}
+\label{requirements}
+The requirements were, at the beginning of the project, divided into 4 priorities of aims to be achieved. Priority 4 would be optional and only implemented if there were to be time. Although these aims are not exactly the order in which the implementation proceeded, they were mostly adhered to and are a good representation of the tasks and aims that were undertaken. 
+
+\begin{enumerate}
+\item Priority 1
+\begin{enumerate}[label*=\arabic*.]
+\item Clients register with the server - client details are saved in the database. 
+
+\item Registered clients can login, and once authenticated can do the following:
+\begin{enumerate}[label*=\arabic*.]
+\item Clients can search for other clients in the system, also see the status of other clients (e.g. online, offline and busy).
+
+\item Clients can fetch their contact list (groups and friends) and chat list.
+
+\item Clients can initiate a chat with and send messages to other clients, via the server.
+
+\item Clients can receive messages from other clients, via the server. 
+\begin{enumerate}[label*=\arabic*.]
+\item If a client was to receive a message while they were offline, the message will be sent on login (queued messages).
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\item Priority 2
+\begin{enumerate}[label*=\arabic*.]
+\item  Group chat functionality - a client can initiate a chat and send messages to a group of more than one client.
+\begin{enumerate}[label*=\arabic*.]
+\item The recipients will automatically be placed in the group chat until they choose to leave.
+\end{enumerate}
+\item To send an email on registration to validate email address
+\end{enumerate}
+\item Priority 3 (implemented last)
+\begin{enumerate}[label*=\arabic*.]
+\item End to end encryption - to be implemented on the clients, so the server cannot intercept or decrypt messages.
+\begin{enumerate}[label*=\arabic*.]
+\item Public key encryption to determine shared keys between 2 clients.
+\item Symmetric encryption with shared keys to encrypt and decrypt messages between 2 clients.
+\item Keys to be kept in clients local storage only.
+\end{enumerate}
+\item Message storage and retrieval - chat information is stored in the database, and history can be retrieved on request.
+\begin{enumerate}[label*=\arabic*.]
+\item Text messages can be of arbitrary size.
+\item Recent messages (e.g. messages sent within the last week) cached locally for quick request.
+\end{enumerate}
+
+\end{enumerate}
+\item Priority 4 (optional)
+\begin{enumerate}[label*=\arabic*.]
+\item User and group avatars/pictures
+\item Multimedia messages - besides plain text, message such as pictures, emoji and voice record can be sent.
+\item Message status - clients can see if their messages are received or read and also see  typing status of other clients.
+\item QR code for adding new friends - rather than search by user name, clients can find another clients quickly after scanning their QR code.
+\end{enumerate}
+\end{enumerate}
+
+We chose to implement the requirements roughly by priority, however a month into implementation we switched priority 2 and priority 3 requirements around. 
+
