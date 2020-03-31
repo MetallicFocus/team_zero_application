@@ -1,0 +1,29 @@
+According to Statista, an online portal for data collection and market research statistics, the most used chat applications worldwide are the following, starting from most popular: WhatsApp (1600 million users ), Facebook Messenger (1300 m), WeChat (1113 m), QQ Mobile (818 m), SnapChat (314 m), and Telegram (200 m) \cite{Statista-chatusers}. This literature review investigates the features of of the top 3 applications and questions whether there are useful sets of features that may be missing from these applications.
+
+\subsubsection{WhatsApp}
+
+WhatsApp, the most popular chat application worldwide, as well as the application our project group used for communication purposes (as stated in section \ref{teamwork}), is very feature dense and available on almost any mobile platform as well as web and multiple desktop platforms. In addition to text messaging, voice and video calling, group chats, voice messages, multimedia messaging/editing, and document sharing, WhatsApp implements full end-to-end encryption \cite{whatsapp-main}.WhatsApp uses the Signal Protocol for its end-to-end encryption, which is an open source system using public key encryption with a combination of cryptography protocols including Elliptic Curve Diffie-Hellman for calculating shared secret keys between client users, 256 bit AES encryption for encrypting messages and media, SRTP (Secure Real-time Transport Protocol) for calls, and 512 bit SHA (Secure Hash Algorithms) for verifying client keys\cite{whatsapp-security}\cite{rastogi2017whatsapp}. This is said to ensure all communications are completely secure and no messages can be read by any outside party, including WhatsApp servers. 
+
+However, there are several issues with such a popular and free chat application having secure end-to-end encryption, one of which is that due to message meta-data (as well as additional metadata such as device, browser, OS, location) being stored, users may feel uncertain about their personal information being shared with third parties\cite{metadata-collection}. Users must sign up with their phone number, and therefore personal information is already collected without even messaging. Another issue that has come up in WhatsApp's history is that of the secure messaging being used for harmful purposes such as terrorism, leading to government requests for a backdoor to allow access to message content in certain situations\cite{whatsapp-backdoor}. Such a backdoor system could be appropriated and exploited for reasons beyond counter-terrorism, and leave users without a truly secure messaging app. 
+
+\subsubsection{Facebook Messenger}
+
+Facebook messenger is a messaging app connected to the social media platform Facebook. Users can either sign in with their Facebook social media account details, or using a phone number\cite{fb-phone}. Facebook Messenger is also available on most mobile platforms as well as browsers, and features include chats between individuals and groups, calls between individuals and groups, media messages, shared polls and bills (sending money), algorithms to detect spam messages, and location sharing\cite{fb-features}. It also has optional end-to-end encryption, which has to be turned on specifically by the user, as well as secret temporary messages which get ``destroyed" after a timeframe \cite{fb-encryption}.
+
+Facebook Messenger's end-to-end encryption also uses Signal protocol, similar to WhatsApp's implementation\cite{fb-security}.
+
+\subsubsection{WeChat}
+
+WeChat is a mobile messaging and social media application that is primarily used in China but also available internationally. Features include text, media, voice and video messages, voice and video calls, location sharing, sharing ``moments" on a personal page that connected friends can see, sharing temporary images on a personal page that connected friends can see, third party programs and games within the application, payments between friends, syncing with health kit, and encryption\cite{wechat-applestore}. However, WeChat encryption is not end-to-end encryption, but encryption between client and server\cite{wechat-security}. This has caused concern for users as evidence of surveillance and censoring for political reasons has come to light, such as blocking accounts for ``spreading malicious rumours"\cite{wechat-surveillance}.
+
+Therefore while the encryption protects the WeChat system overall from third party snoopers, it does not protect users from their messages being monitored from within the system via the server. 
+
+\subsubsection{Our Proposal}
+
+All messaging apps will have pros and cons, and it is clear that the top 3 applications have many features that make them incredibly appealing to their user base. 
+
+Due to the time frame and manpower available in our team, the variety of features that can be implemented have been narrowed down to prioritise user privacy and secrecy in our project.
+
+Based on our investigations, we see that end-to-end encryption is vital for users to feel secure in their privacy. In addition to end-to-end encryption of messages, to ensure complete privacy, metadata (such as who sends a message to whom and when) which is saved on the server database must not be shared with third-parties and must be kept solely for the purposes of running the system.
+
+In addition, to ensure anonymity and further privacy, we propose using email validation for registration instead of a phone number.
