@@ -23,7 +23,6 @@
 //import HelloWorld from "./components/HelloWorld.vue";
 
 //TODO: Encryption
-const CryptoJS = require("crypto-js");
 const crypto = require("crypto");
 
 export default {
@@ -108,7 +107,7 @@ export default {
     },
     mounted() {
     if ("WebSocket" in window) {
-      this.websocket = new WebSocket("ws://localhost:1234");
+      this.websocket = new WebSocket("ws://197.48.174.123:1234");
       this.initWebSocket();
     } else {
       alert("Websocket is not supported by this browser!");
@@ -182,12 +181,12 @@ export default {
             "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24" +
             "855E6EEB22B3B2E5";
 
-
-        // 256 bits = 32 bytes
-        // const prime_number = "f2f0cd410c64e9d30d4a00deb81ad28450ef3c909ebf69975d87d54056043883";
-
-        const dh = crypto.createDiffieHellman(prime_number, 'hex', generator, 'hex'); //1024 bits
+        var dh = crypto.createDiffieHellman(prime_number, 'hex', generator, 'hex'); //1024 bits
         dh.generateKeys();
+        var privateKey = "776a030aa40ad618deeebd7c0711b2d73f2823b88740dabbfa5d7fb414cc9b93bde3ed117ef0e3a8bd3ae10c111be64dd8ccfcc6f524c3f23ff32d838cedc20255ef0bbdbf8b8de01c7030560301413518b1e593a913b4c758ea67e14cd60e85f54d64700d01e4b43c1fb1cef8bca86ec0c42de18cadf1ffe7f0e463b876f4ac";
+        var publicKey = "78aaa8ca01fe27ccadeee693fda07350ddbf09c9f893b8141610cc0971d7597b2a83163c7c0e8f7aa059de8f54b8c4afcd8153eab3d5f93fb908faa03c412b15e98394454ed1ca75211d014f30067f2f3e8fe79d80d63a31355302a97d949e2e9c89d123ff116da65cf405cf2d487be92981e91f5b9ed45f980cef1fe8e04e5d";
+        dh.setPrivateKey(privateKey, "hex");
+        dh.setPublicKey(publicKey, "hex");
         return dh;
     },
     fromHex2Array: function(hexString) {
@@ -231,52 +230,6 @@ export default {
             // to delete:
             console.log(item_name+": " + localStorage.getItem(item_name));
         }
-    },
-    dhExample() {
-        // test example
-        let alice_private_key = "776a030aa40ad618deeebd7c0711b2d73f2823b88740dabbfa5d7fb414cc9b93bde3ed117ef0e3a8bd3ae10c111be64dd8ccfcc6f524c3f23ff32d838cedc20255ef0bbdbf8b8de01c7030560301413518b1e593a913b4c758ea67e14cd60e85f54d64700d01e4b43c1fb1cef8bca86ec0c42de18cadf1ffe7f0e463b876f4ac";
-        let alice_public_key = "78aaa8ca01fe27ccadeee693fda07350ddbf09c9f893b8141610cc0971d7597b2a83163c7c0e8f7aa059de8f54b8c4afcd8153eab3d5f93fb908faa03c412b15e98394454ed1ca75211d014f30067f2f3e8fe79d80d63a31355302a97d949e2e9c89d123ff116da65cf405cf2d487be92981e91f5b9ed45f980cef1fe8e04e5d";
-        let alice = this.generateKeys();
-        alice.setPublicKey(this.fromHex2Array(alice_public_key));
-        alice.setPrivateKey(this.fromHex2Array(alice_private_key));
-
-        console.log(Buffer.from(alice_private_key, 'hex').toString('base64'));
-
-        let bob_private_key =  "3d3ed89888faad1b9cff073a5119fc6e81f1586246237203f85e7cf2671340cbe84fba53e05e0e8cbc8db6b1c2a58e3d97b58e1c43ab0523b4d5d5433bb3e317dfbc6d447c05e4153cca6227f6c68f167462894d0ac8d336ffe39561ebc0d6ae19f04c2c18cdd45b3b79e9fe2de5c7d2bbec44b0150c92ec2efb7de065f62f1a";
-        let bob_public_key = "4a57ecb42f37f223d640c183c92398947ea3636cd5a8918448b7f71893fcaf9bbee439c0d6c37e293a6f89333315cfc74c6c0c688fb2d2777a6e739aa37c71c561213c647d01f29cfe1e2d09ef0675fab4628c15a94c1c50940be35c59a6caaeae2bd052b13f6bbb0233fbafc20bd9869ce51a5e9cd3cde3283b162ce05867d0";
-        let bob = this.generateKeys();
-        bob.setPublicKey(this.fromHex2Array(bob_public_key));
-        bob.setPrivateKey(this.fromHex2Array(bob_private_key));
-
-        // bob_private_key = Buffer.from(bob_private_key, 'hex').toString('base4');
-        // bob_public_key = Buffer.from(public_key, 'hex').toString('base64');
-
-        console.log(Buffer.from(bob_public_key, 'hex').toString('base64'));
-
-        const alice_public_unit8arr = this.fromHex2Array(alice_public_key);
-        const bob_public_unit8arr = this.fromHex2Array(bob_public_key);
-        const aliceSecret = alice.computeSecret(bob_public_unit8arr).toString('hex');
-        const bobSecret = bob.computeSecret(alice_public_unit8arr).toString('hex');
-
-        const sharedSecret = "aa42bd363092256fe032e754887c647c92e922a359ecda132b7b8c1a2bc8422aa3133f88234bc538c84d40f3a9181e93a7cf1c127824d5d109243c5db4f7ffa686bd0196bc1d06ebd2dfad6272589fa3736da660446c672835bb02d6911015f97c1f0d9da74596152937bb99bb068d677de4f41a8a2fb343840a59d09a241502";
-        console.log(aliceSecret);
-        console.log(bobSecret);
-        console.log(aliceSecret === bobSecret);
-
-        const plaintext = "hello world!";
-        const ciphertext_by_alice =  CryptoJS.AES.encrypt(plaintext, aliceSecret, {
-            mode: CryptoJS.mode.CBC,
-            padding: CryptoJS.pad.Pkcs7
-        }).toString();
-        const decipheredtext_by_bob = CryptoJS.AES.decrypt("U2FsdGVkX19KM+mtatFEeduIbZEvJogXSaCJBaB5GFI=", bobSecret, {
-            mode: CryptoJS.mode.CBC,
-            padding: CryptoJS.pad.Pkcs7
-        }).toString(CryptoJS.enc.Utf8);
-
-        console.log("plaintext: "+plaintext);
-        console.log("cipher text: "+ciphertext_by_alice);
-        console.log("deciphered text: "+decipheredtext_by_bob);
-
     }
   }
 };

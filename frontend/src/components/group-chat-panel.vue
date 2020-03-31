@@ -7,7 +7,7 @@
             <el-avatar class="avatar" :src="group.avatar" style="margin-top: 5px;"></el-avatar>
           </el-col>
           <el-col :span="20">
-            <label style="font-size: 30px">{{group.name}} {{group.userLeft}}</label>
+            <label style="font-size: 30px">{{group.name}}</label>
           </el-col>
           <el-col :span="2">
             <el-dropdown trigger="click" @command="handleCommand">

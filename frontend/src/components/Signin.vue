@@ -381,7 +381,7 @@ export default {
         {
           id: "1",
           avatar: "/img/avatar.jpg",
-          name: "Template",
+          name: "WebUser2",
           show: 1,
           new_message_num: 0,
           badge_hidden: true,
@@ -392,15 +392,14 @@ export default {
             {
               avatar: "/img/avatar.jpg",
               time: "2020-02-29 00:00",
-              content:
-                "11111111111ssssssssssssssssssssssssssssssssssssssssssssswfergthyujikujynhbgfdcsxdcerftgyjuikujhtrgefwdfwretryutecwvetyujkilouyjhngssssssssssssssssssss!",
+              content: "hiiiiiiiii!",
               objectflag: 1, //0 from me, 1 to me
               status: 2 // new: 0; unread: 1; read: 2
             },
             {
               avatar: "/img/avatar.jpg",
               time: "2020-02-29 00:01",
-              content: "2222fffffffffffffffff!",
+              content: "hello!",
               objectflag: 0,
               status: 2 // new: 0; unread: 1; read: 2
             }
@@ -419,7 +418,7 @@ export default {
   },
   mounted() {
     if ("WebSocket" in window) {
-      this.websocket = new WebSocket("ws://localhost:1234");
+      this.websocket = new WebSocket("ws://197.48.174.123:1234");
       this.initWebSocket();
       // test: to delete
       // this.ruleForm.name = "a2020";
