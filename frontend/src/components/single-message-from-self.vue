@@ -1,7 +1,7 @@
 <template>
   <div class="message-from-self">
     <el-row style="margin-top: 20px;">
-        <el-col :span="10" offset="12">
+        <el-col :span="10" :offset="12">
             <el-card shadow="always">
                 <el-row>
                     <el-col :span="24" style="text-align: left; word-break: break-word"><label style="float: left;">{{content}}</label></el-col>

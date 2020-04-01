@@ -18,7 +18,7 @@
               <el-col :span="4">
                 <el-button style="width: 100px; height: 50px;" v-on:click="onSignIn()">Sign In</el-button>
               </el-col>
-              <el-col offset="4" :span="4">
+              <el-col :offset="4" :span="4">
                 <router-link
                   to="/Signup"
                   tag="el-button"
@@ -70,6 +70,7 @@
             <single-chat
               v-on:click-id="showchat(chat.id)"
               v-for="chat in chatlist"
+              v-show="chat.show_contact"
               v-bind:key="chat.id"
               :id="chat.id"
               :avatar="chat.avatar"
@@ -113,7 +114,7 @@
       <div class="mask"></div>
       <div class="searchPanel">
         <el-row>
-          <el-col :span="10" offset="6">
+          <el-col :span="10" :offset="6">
             <el-input
               v-model="searchUserForm.searchField"
               placeholder="Please input user name"
@@ -142,7 +143,7 @@
           ></single-user-info>
         </div>
         <el-row>
-          <el-col offset="10" :span="4">
+          <el-col :offset="10" :span="4">
             <el-button style="margin-top: 10px;" @click="closeSearchUserPanel">Cancel</el-button>
           </el-col>
         </el-row>
@@ -152,7 +153,7 @@
       <div class="mask"></div>
       <div class="searchPanel">
         <el-row>
-          <el-col :span="10" offset="6">
+          <el-col :span="10" :offset="6">
             <el-input
               v-model="searchUserForm.searchField"
               placeholder="Type user name"
@@ -181,7 +182,7 @@
           </div>
         </div>
         <el-row>
-          <el-col :span="10" offset="6">
+          <el-col :span="10" :offset="6">
             <el-input
               v-model="createGroupForm.groupName"
               placeholder="Please input group name"
@@ -190,13 +191,13 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col offset="5" :span="2">
+          <el-col :offset="5" :span="2">
             <el-button
               style="margin-top: 10px;"
               @click="createGroupWithMembers(self.name, selectedGroupUserNames)"
             >Create Group</el-button>
           </el-col>
-          <el-col offset="10" :span="4">
+          <el-col :offset="10" :span="4">
             <el-button style="margin-top: 10px;" @click="closeCreateGroupPanel">Cancel</el-button>
           </el-col>
         </el-row>
@@ -206,7 +207,7 @@
       <div class="mask"></div>
       <div class="searchPanel">
         <el-row>
-          <el-col :span="10" offset="6">
+          <el-col :span="10" :offset="6">
             <el-input
               v-model="addMembersForm.searchField"
               placeholder="Type user name"
@@ -235,13 +236,13 @@
           </div>
         </div>
         <el-row>
-          <el-col offset="5" :span="2">
+          <el-col :offset="5" :span="2">
             <el-button
               style="margin-top: 10px;"
               @click="addMembersToExistingGroup(selectedMembersGroupName,selectedMembersForAdd)"
             >Add Members</el-button>
           </el-col>
-          <el-col offset="10" :span="4">
+          <el-col :offset="10" :span="4">
             <el-button style="margin-top: 10px;" @click="closeaddMembersPanel">Cancel</el-button>
           </el-col>
         </el-row>
@@ -258,7 +259,7 @@
           </el-row>
         </div>
         <el-row>
-          <el-col offset="10" :span="4">
+          <el-col :offset="10" :span="4">
             <el-button style="margin-top: 10px;" @click="closeviewMembersPanel">Cancel</el-button>
           </el-col>
         </el-row>
@@ -268,7 +269,7 @@
       <div class="mask"></div>
       <div class="searchPanel">
         <el-row>
-          <el-col :span="10" offset="6">
+          <el-col :span="10" :offset="6">
             <el-input
               v-model="searchGroupForm.searchField"
               placeholder="Please input group name"
@@ -294,7 +295,7 @@
           ></single-group-info>
         </div>
         <el-row>
-          <el-col offset="10" :span="4">
+          <el-col :offset="10" :span="4">
             <el-button style="margin-top: 10px;" @click="closeSearchGroupPanel">Cancel</el-button>
           </el-col>
         </el-row>
@@ -377,34 +378,28 @@ export default {
       chat_num: 1,
       groupChat_num: 0,
       grouplist: [],
-      chatlist: [
-        {
+      chatlist: [{
           id: "1",
           avatar: "/img/avatar.jpg",
-          name: "WebUser2",
+          name: "",
           show: 1,
+          show_contact: 0,
           new_message_num: 0,
           badge_hidden: true,
           has_got_history: false,
           public_key: "",
           shared_key: "",
           messages: [
-            {
-              avatar: "/img/avatar.jpg",
-              time: "2020-02-29 00:00",
-              content: "hiiiiiiiii!",
-              objectflag: 1, //0 from me, 1 to me
-              status: 2 // new: 0; unread: 1; read: 2
-            },
-            {
-              avatar: "/img/avatar.jpg",
-              time: "2020-02-29 00:01",
-              content: "hello!",
-              objectflag: 0,
-              status: 2 // new: 0; unread: 1; read: 2
-            }
+              {
+                  avatar: "/img/avatar.jpg",
+                  time: "2020-02-29 00:00",
+                  content: "hiiiiiiiii!",
+                  show: 0,
+                  objectflag: 1, //0 from me, 1 to me
+                  status: 2 // new: 0; unread: 1; read: 2
+              }
           ]
-        }
+      }
       ]
     };
   },
@@ -418,7 +413,7 @@ export default {
   },
   mounted() {
     if ("WebSocket" in window) {
-      this.websocket = new WebSocket("ws://197.48.174.123:1234");
+      this.websocket = new WebSocket("ws://localhost:1234");
       this.initWebSocket();
       // test: to delete
       // this.ruleForm.name = "a2020";
@@ -441,7 +436,8 @@ export default {
             if (this.parsed_response.recipient !== this.self.name) return; //error forwarded message
             var sender = this.parsed_response.sender;
             var message = this.parsed_response.message;
-            this.getNewText(sender, message);
+            var timestamp = this.parsed_response.timestamp;
+            this.getNewText(sender, message, timestamp);
             break;
           case "GROUPTEXT":
             var sender = this.parsed_response.sender;
@@ -716,7 +712,7 @@ export default {
         }
       }
     },
-    getNewText: function(sender, message) {
+    getNewText: function(sender, message, timestamp) {
       var chat_key = this.isContactExist(sender);
       if (chat_key === false) {
         this.getPublicKeyof(sender);
@@ -725,7 +721,7 @@ export default {
 
       var shared_key = this.getSharedSecret(sender);
       message = this.decrypt(message, shared_key);
-      var time = new Date();
+      var time = new Date(timestamp);
       this.updateChat(sender, this.self.name, message, time, 0);
       this.popUpChat(chat_key);
       // Todo: onclick: turn to concerned chat panel
@@ -776,6 +772,7 @@ export default {
         time: time,
         content: message,
         objectflag: 0,
+        show: 1,
         status: message_status
       };
       var message_key = "";
@@ -868,14 +865,12 @@ export default {
       let shared_key = this.self.dh
         .computeSecret(this.fromHex2Array(public_key))
         .toString("hex");
-      console.log(this.self.name + " private_key: " + this.self.private_key);
-      console.log(username + " public_key: " + public_key);
-      console.log("shared_key: " + shared_key);
       Vue.set(this.chatlist, this.chat_num, {
         id: ++this.chat_num,
         avatar: "",
         name: username,
         show: 0,
+        show_contact: 1,
         new_message_num: 0,
         badge_hidden: true,
         has_got_history: false,
@@ -1019,8 +1014,6 @@ export default {
     //   }).toString();
     // },
     decrypt: function(ciphertext, passphrase) {
-      console.log("ciphertext: " + ciphertext);
-      console.log("passphrase: " + passphrase);
       return CryptoJS.AES.decrypt(ciphertext, passphrase, {
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7

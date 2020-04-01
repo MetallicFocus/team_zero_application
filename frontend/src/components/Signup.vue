@@ -107,7 +107,7 @@ export default {
     },
     mounted() {
     if ("WebSocket" in window) {
-      this.websocket = new WebSocket("ws://197.48.174.123:1234");
+      this.websocket = new WebSocket("ws://localhost:1234");
       this.initWebSocket();
     } else {
       alert("Websocket is not supported by this browser!");

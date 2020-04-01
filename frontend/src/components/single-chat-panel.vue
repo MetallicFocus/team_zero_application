@@ -12,12 +12,14 @@
         <div v-for="message in chat.messages">
           <div v-if="message.time !== ''">
               <single-message-from-object
+                      v-show="message.show"
                       v-if="message.objectflag"
                       :avatar="message.avatar"
                       :time="message.time"
                       :content="message.content"
               ></single-message-from-object>
               <single-message-from-self
+                      v-show="message.show"
                       v-else
                       :avatar="message.avatar"
                       :time="message.time"

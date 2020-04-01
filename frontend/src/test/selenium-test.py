@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 import platform
 import time
 import random
@@ -14,6 +15,10 @@ chrome_options = webdriver.ChromeOptions()
 if ("Windows" not in platform.platform()):
     exit()
 driver = webdriver.Chrome(executable_path='./lib/chromedriver')
+
+options = webdriver.ChromeOptions()
+options.add_argument("user-data-dir=C:/Users/Lotuny/AppData/Local/Google/Chrome/User Data") #Path to your chrome profile
+driver = webdriver.Chrome(executable_path='./lib/chromedriver', chrome_options=options)
 
 test_user_name = []
 test_user_pwd = []
