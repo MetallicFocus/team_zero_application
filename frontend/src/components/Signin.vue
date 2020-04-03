@@ -460,6 +460,9 @@ export default {
                 this.signinState = false;
                 this.initPost();
                 break;
+              case "LOGIN: FAILED":
+                alert("Failed! Please check your login details!")
+                break;
               case "GETALLCONTACTS: SUCCESS":
                 var contacts = this.parsed_response.contacts;
                 for (let i in contacts) {
